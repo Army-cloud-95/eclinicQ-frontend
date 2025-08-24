@@ -7,9 +7,14 @@ const GetStarted = () => {
       
       <div className="flex-1 flex flex-col justify-center items-center">
         
-        <div className="text-2xl font-bold text-blue-700 mb-7">
-          Logo Placeholder
+        <div className="mb-7">
+          <img 
+            className="max-w-[160px] h-auto object-contain" 
+            src="logo.png" 
+            alt="logo" 
+          />
         </div>
+
         <div className='text-center mb-8 flex flex-col gap-[1px]'>
             <span className="text-[36px] font-bold text-[#424242]">
           Healthcare Management System
