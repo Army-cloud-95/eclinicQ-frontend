@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React from "react";
 import {
   Input,
   Dropdown,
@@ -8,34 +8,25 @@ import {
   FormSection,
   FormFieldRow
 } from '../../components/FormItems';
+import useDoctorRegistrationStore from '../../store/useDoctorRegistrationStore';
 
-
-const Step2 = ({ onNext, initialData }) => {
-  const [formData, setFormData] = useState(initialData || {
-    councilNumber: "",
-    councilName: "",
-    regYear: "",
-    graduation: "",
-    graduationCollege: "",
-    graduationYear: "",
-    hasPG: "", 
-    pgDegree: "",
-    pgCollege: "",
-    pgYear: "",
-    specialization: "",
-    experience: "",
-  });
-  const handleNext = () => {
-    if (onNext) onNext(formData);
-  };
-
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-  };
+const Step2 = () => {
+  const {
+    specialization,
+    experienceYears,
+    medicalCouncilName,
+    medicalCouncilRegYear,
+    medicalCouncilRegNo,
+    medicalDegreeType,
+    medicalDegreeUniversityName,
+    medicalDegreeYearOfCompletion,
+    pgMedicalDegreeType,
+    pgMedicalDegreeUniversityName,
+    pgMedicalDegreeYearOfCompletion,
+    setField,
+    documents,
+    setDocument
+  } = useDoctorRegistrationStore();
 
   // Common form field props
   const commonFieldProps = {
@@ -73,16 +64,16 @@ const Step2 = ({ onNext, initialData }) => {
             <FormFieldRow>
               <Input
                 label="Medical Council Registration Number"
-                name="councilNumber"
-                value={formData.councilNumber}
-                onChange={handleInputChange}
+                name="medicalCouncilRegNo"
+                value={medicalCouncilRegNo}
+                onChange={e => setField('medicalCouncilRegNo', e.target.value)}
                 {...commonFieldProps}
               />
               <Dropdown
                 label="Registration Council"
-                name="councilName"
-                value={formData.councilName}
-                onChange={handleInputChange}
+                name="medicalCouncilName"
+                value={medicalCouncilName}
+                onChange={e => setField('medicalCouncilName', e.target.value)}
                 options={councilOptions}
                 placeholder="Select Council"
                 {...commonFieldProps}
@@ -93,9 +84,9 @@ const Step2 = ({ onNext, initialData }) => {
               <div>
                 <Input
                   label="Registration Year"
-                  name="regYear"
-                  value={formData.regYear}
-                  onChange={handleInputChange}
+                  name="medicalCouncilRegYear"
+                  value={medicalCouncilRegYear}
+                  onChange={e => setField('medicalCouncilRegYear', e.target.value)}
                   {...commonFieldProps}
                 />
                 <p className="text-xs text-gray-400 mt-1">Visible to Patient</p>
@@ -103,6 +94,7 @@ const Step2 = ({ onNext, initialData }) => {
               <Upload
                 label="Upload MRN Proof"
                 compulsory={true}
+                onUpload={key => setDocument({ no: 1, type: 'medical_license', url: key })}
               />
             </FormFieldRow>
           </div>
@@ -115,17 +107,17 @@ const Step2 = ({ onNext, initialData }) => {
             <FormFieldRow>
               <Input
                 label="Graduation"
-                name="graduation"
-                value={formData.graduation}
-                onChange={handleInputChange}
+                name="medicalDegreeType"
+                value={medicalDegreeType}
+                onChange={e => setField('medicalDegreeType', e.target.value)}
                 placeholder="e.g. MBBS"
                 {...commonFieldProps}
               />
               <Input
                 label="College/ University"
-                name="graduationCollege"
-                value={formData.graduationCollege}
-                onChange={handleInputChange}
+                name="medicalDegreeUniversityName"
+                value={medicalDegreeUniversityName}
+                onChange={e => setField('medicalDegreeUniversityName', e.target.value)}
                 {...commonFieldProps}
               />
             </FormFieldRow>
@@ -133,14 +125,15 @@ const Step2 = ({ onNext, initialData }) => {
             <FormFieldRow>
               <Input
                 label="Year of Completion"
-                name="graduationYear"
-                value={formData.graduationYear}
-                onChange={handleInputChange}
+                name="medicalDegreeYearOfCompletion"
+                value={medicalDegreeYearOfCompletion}
+                onChange={e => setField('medicalDegreeYearOfCompletion', e.target.value)}
                 {...commonFieldProps}
               />
               <Upload
                 label="Upload Degree Proof"
                 compulsory={true}
+                onUpload={key => setDocument({ no: 2, type: 'degree_certificate', url: key })}
               />
             </FormFieldRow>
 
@@ -149,8 +142,8 @@ const Step2 = ({ onNext, initialData }) => {
               <Radio
                 label="Have Post Graduate Degree?"
                 name="hasPG"
-                value={formData.hasPG}
-                onChange={handleInputChange}
+                value={pgMedicalDegreeType ? 'yes' : 'no'}
+                onChange={e => setField('pgMedicalDegreeType', e.target.value === 'yes' ? '' : null)}
                 options={[
                   { value: "yes", label: "Yes" },
                   { value: "no", label: "No" }
@@ -158,35 +151,36 @@ const Step2 = ({ onNext, initialData }) => {
               />
 
               {/* Conditional Post Graduation Fields */}
-              {formData.hasPG === "yes" && (
+              {pgMedicalDegreeType && (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-4">
                     <Dropdown
                       label="Post Graduate Degree"
-                      name="pgDegree"
-                      value={formData.pgDegree}
-                      onChange={handleInputChange}
+                      name="pgMedicalDegreeType"
+                      value={pgMedicalDegreeType}
+                      onChange={e => setField('pgMedicalDegreeType', e.target.value)}
                       options={pgDegreeOptions}
                       placeholder="Select Degree"
                     />
                     <Input
                       label="Year of Completion"
-                      name="pgYear"
-                      value={formData.pgYear}
-                      onChange={handleInputChange}
+                      name="pgMedicalDegreeYearOfCompletion"
+                      value={pgMedicalDegreeYearOfCompletion}
+                      onChange={e => setField('pgMedicalDegreeYearOfCompletion', e.target.value)}
                     />
                   </div>
                   <div className="space-y-4">
                     <Input
                       label="College/ University"
-                      name="pgCollege"
-                      value={formData.pgCollege}
-                      onChange={handleInputChange}
+                      name="pgMedicalDegreeUniversityName"
+                      value={pgMedicalDegreeUniversityName}
+                      onChange={e => setField('pgMedicalDegreeUniversityName', e.target.value)}
                       placeholder="Search or Enter College"
                     />
                     <Upload
                       label="Upload Degree Proof"
                       compulsory={false}
+                      onUpload={key => setDocument({ no: 3, type: 'specialization_certificate', url: key })}
                     />
                   </div>
                 </div>
@@ -205,15 +199,15 @@ const Step2 = ({ onNext, initialData }) => {
               <Input
                 label="Specialization"
                 name="specialization"
-                value={formData.specialization}
-                onChange={handleInputChange}
+                value={specialization}
+                onChange={e => setField('specialization', e.target.value)}
                 placeholder="Select Degree Type"
               />
               <Input
                 label="Year of Experience"
-                name="experience"
-                value={formData.experience}
-                onChange={handleInputChange}
+                name="experienceYears"
+                value={experienceYears}
+                onChange={e => setField('experienceYears', e.target.value)}
                 placeholder="Enter Year"
               />
             </FormFieldRow>

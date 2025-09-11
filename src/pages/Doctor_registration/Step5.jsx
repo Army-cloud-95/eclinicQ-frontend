@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useRegistration } from "../../context/RegistrationContext";
+import useDoctorRegistrationStore from '../../store/useDoctorRegistrationStore';
 
 const plans = [
   {
@@ -49,15 +49,11 @@ const plans = [
 ];
 
 const Step5 = () => {
-  const { updateFormData, formData } = useRegistration();
-  
-  // keep track of selected plan
-  const [selectedPlan, setSelectedPlan] = useState(formData.hosSelectedPlan || "Basic Hospital");
+  const [selectedPlan, setSelectedPlan] = useState("Basic Hospital");
 
-  // Update form data when plan changes
   const handlePlanSelection = (planTitle) => {
     setSelectedPlan(planTitle);
-    updateFormData({ hosSelectedPlan: planTitle });
+    // Optionally, store plan in registration store if needed
   };
 
   return (
@@ -69,7 +65,6 @@ const Step5 = () => {
       <div className="grid grid-cols-2 gap-6">
         {plans.map((plan, index) => {
           const isSelected = selectedPlan === plan.title;
-
           return (
             <div
               key={index}

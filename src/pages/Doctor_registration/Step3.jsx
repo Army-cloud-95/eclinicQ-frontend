@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React from 'react'
 import { 
   Input, 
   Dropdown, 
@@ -8,41 +8,14 @@ import {
   FormFieldRow,
   MapLocation
 } from '../../components/FormItems';
+import useDoctorRegistrationStore from '../../store/useDoctorRegistrationStore';
 
-
-const Step3 = ({ onSubmit, initialData, onBack }) => {
-  const [formData, setFormData] = useState(initialData || {
-    clinicName: '',
-    clinicContactEmail: '',
-    clinicContactNumber: '',
-    uploadEstablishmentProof: '',
-    uploadFile: '',
-    clinicAddress: '',
-    mapLocation: '',
-    latitude: '',
-    longitude: '',
-    blockNo: '',
-    roadAreaStreet: '',
-    landmark: '',
-    pincode: '',
-    city: '',
-    state: '',
-    uploadHospitalImage: '',
-    emailVerification: false,
-    smsVerification: false
-  });
-
-
-  const handleInputChange = (e) => {
-    const { name, value, type, checked } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: type === 'checkbox' ? checked : value
-    }));
-  };
-
-
-  // No submit handler, parent handles navigation and submission
+const Step3 = () => {
+  const {
+    clinicData,
+    setClinicField,
+    setField
+  } = useDoctorRegistrationStore();
 
   // Common form field props
   const commonFieldProps = {
@@ -82,18 +55,18 @@ const Step3 = ({ onSubmit, initialData, onBack }) => {
             <FormFieldRow>
               <Input
                 label="Clinic Name"
-                name="clinicName"
-                value={formData.clinicName}
-                onChange={handleInputChange}
+                name="name"
+                value={clinicData.name}
+                onChange={e => setClinicField('name', e.target.value)}
                 placeholder="Enter Clinic Name"
                 {...commonFieldProps}
               />
               <Input
                 label="Clinic Contact Email"
-                name="clinicContactEmail"
+                name="email"
                 type="email"
-                value={formData.clinicContactEmail}
-                onChange={handleInputChange}
+                value={clinicData.email}
+                onChange={e => setClinicField('email', e.target.value)}
                 placeholder="Enter Clinic Email"
                 {...commonFieldProps}
               />
@@ -103,16 +76,17 @@ const Step3 = ({ onSubmit, initialData, onBack }) => {
             <FormFieldRow>
               <Input
                 label="Clinic Contact Number"
-                name="clinicContactNumber"
+                name="phone"
                 type="tel"
-                value={formData.clinicContactNumber}
-                onChange={handleInputChange}
+                value={clinicData.phone}
+                onChange={e => setClinicField('phone', e.target.value)}
                 placeholder="Enter Contact Number"
                 {...commonFieldProps}
               />
               <Upload
                 label="Upload Establishment Proof"
                 compulsory={true}
+                onUpload={key => setClinicField('proof', key)}
               />
             </FormFieldRow>
           </div>
@@ -130,7 +104,8 @@ const Step3 = ({ onSubmit, initialData, onBack }) => {
               <MapLocation 
                 heightClass="h-32" 
                 onChange={({ lat, lng }) => {
-                  setFormData(prev => ({ ...prev, latitude: lat, longitude: lng }));
+                  setClinicField('latitude', lat);
+                  setClinicField('longitude', lng);
                 }}
               />
             </div>
@@ -140,15 +115,15 @@ const Step3 = ({ onSubmit, initialData, onBack }) => {
               <Input
                 label="Block No./Shop no./House no."
                 name="blockNo"
-                value={formData.blockNo}
-                onChange={handleInputChange}
+                value={clinicData.blockNo}
+                onChange={e => setClinicField('blockNo', e.target.value)}
                 {...commonFieldProps}
               />
               <Input
                 label="Road/Area/Street"
-                name="roadAreaStreet"
-                value={formData.roadAreaStreet}
-                onChange={handleInputChange}
+                name="areaStreet"
+                value={clinicData.areaStreet}
+                onChange={e => setClinicField('areaStreet', e.target.value)}
                 {...commonFieldProps}
               />
             </FormFieldRow>
@@ -158,15 +133,15 @@ const Step3 = ({ onSubmit, initialData, onBack }) => {
               <Input
                 label="Landmark"
                 name="landmark"
-                value={formData.landmark}
-                onChange={handleInputChange}
+                value={clinicData.landmark}
+                onChange={e => setClinicField('landmark', e.target.value)}
                 {...commonFieldProps}
               />
               <Input
                 label="Pincode"
                 name="pincode"
-                value={formData.pincode}
-                onChange={handleInputChange}
+                value={clinicData.pincode}
+                onChange={e => setClinicField('pincode', e.target.value)}
                 {...commonFieldProps}
               />
             </FormFieldRow>
@@ -176,8 +151,8 @@ const Step3 = ({ onSubmit, initialData, onBack }) => {
               <Dropdown
                 label="City"
                 name="city"
-                value={formData.city}
-                onChange={handleInputChange}
+                value={clinicData.city}
+                onChange={e => setClinicField('city', e.target.value)}
                 options={cityOptions}
                 placeholder="Select City"
                 {...commonFieldProps}
@@ -185,8 +160,8 @@ const Step3 = ({ onSubmit, initialData, onBack }) => {
               <Dropdown
                 label="State"
                 name="state"
-                value={formData.state}
-                onChange={handleInputChange}
+                value={clinicData.state}
+                onChange={e => setClinicField('state', e.target.value)}
                 options={stateOptions}
                 placeholder="Select State"
                 {...commonFieldProps}
@@ -204,6 +179,7 @@ const Step3 = ({ onSubmit, initialData, onBack }) => {
               <Upload
                 label="Upload Hospital Image"
                 compulsory={true}
+                onUpload={key => setClinicField('image', key)}
               />
             </div>
           </div>
@@ -222,19 +198,18 @@ const Step3 = ({ onSubmit, initialData, onBack }) => {
                 <input
                   type="checkbox"
                   name="emailVerification"
-                  checked={formData.emailVerification}
-                  onChange={handleInputChange}
+                  checked={clinicData.emailVerification}
+                  onChange={e => setClinicField('emailVerification', e.target.checked)}
                   className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
                 />
                 <span className="text-sm text-gray-700">Email Verification</span>
               </label>
-              
               <label className="flex items-center space-x-3 cursor-pointer">
                 <input
                   type="checkbox"
                   name="smsVerification"
-                  checked={formData.smsVerification}
-                  onChange={handleInputChange}
+                  checked={clinicData.smsVerification}
+                  onChange={e => setClinicField('smsVerification', e.target.checked)}
                   className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
                 />
                 <span className="text-sm text-gray-700">SMS Verification</span>
