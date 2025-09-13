@@ -76,7 +76,10 @@ const Hos_4 = () => {
                 <p>Registered Address :</p>
                 <p>Status :</p>
               </div>
-              <Upload />
+              <Upload 
+                label="Upload GSTIN Document"
+                onUpload={(key) => setDocument({ type: 'GST', no: gstin || '', url: key })}
+              />
             </div>
 
             {/* ABHA */}
@@ -103,7 +106,10 @@ const Hos_4 = () => {
                 <p>Registered Address :</p>
                 <p>Status :</p>
               </div>
-              <Upload label="Upload File" />
+              <Upload 
+                label="Upload ABHA Facility Proof"
+                onUpload={(key) => setDocument({ type: 'ABHA', no: abhaId || '', url: key })}
+              />
             </div>
           </FormFieldRow>
 
@@ -184,7 +190,20 @@ const Hos_4 = () => {
                   </p>
                 </div>
                 <div className="flex items-start ">
-                  <Upload label="Upload File" className="w-full" />
+                  <Upload 
+                    label="Upload File" 
+                    className="w-full"
+                    onUpload={(key) => {
+                      const map = {
+                        stateHealthReg: { type: 'State Health Reg No', no: stateHealthReg || '' },
+                        panCard: { type: 'Pan Card', no: panCard || '' },
+                        rohiniId: { type: 'Rohini ID', no: rohiniId || '' },
+                        nabhAccreditation: { type: 'NABH', no: nabhAccreditation || '' },
+                      };
+                      const meta = map[field.name];
+                      if (meta) setDocument({ ...meta, url: key });
+                    }}
+                  />
                 </div>
               </FormFieldRow>
             ))}

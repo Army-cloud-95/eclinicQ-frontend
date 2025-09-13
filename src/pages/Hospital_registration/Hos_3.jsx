@@ -259,7 +259,13 @@ const Hos_3 = () => {
                 <span className="text-sm font-medium text-gray-700">Map Location</span>
                 <Info size={16} className="text-gray-400" />
               </div>
-              <MapLocation captionText="Siddaiah Rd" />
+              <MapLocation 
+                captionText="Siddaiah Rd"
+                onChange={(pos) => {
+                  setField('latitude', pos.lat);
+                  setField('longitude', pos.lng);
+                }}
+              />
             </div>
 
             {/* Address Fields */}
@@ -405,6 +411,7 @@ const Hos_3 = () => {
                 <Upload 
                   label="Upload Company Logo" 
                   compulsory={false}
+                  onUpload={(key) => setField('logo', key)}
                 />
               </div>
             </div>
@@ -414,6 +421,7 @@ const Hos_3 = () => {
               <Upload 
                 label="Upload Hospital Image" 
                 compulsory={true}
+                onUpload={(key) => setField('image', key)}
               />
             </div>
           </div>

@@ -42,10 +42,16 @@ const useHospitalRegistrationStore = create((set, get) => ({
     address: { ...state.address, [field]: value },
   })),
 
-  setDocument: (doc) => set((state) => ({
-    ...state,
-    documents: [...state.documents.filter(d => d.no !== doc.no), doc],
-  })),
+  // Upsert a document entry by type (more stable than matching by number)
+  setDocument: (doc) => set((state) => {
+    const others = Array.isArray(state.documents)
+      ? state.documents.filter((d) => d.type !== doc.type)
+      : [];
+    return {
+      ...state,
+      documents: [...others, doc],
+    };
+  }),
 
   setDocuments: (docs) => set({ documents: docs }),
 
@@ -85,9 +91,10 @@ const useHospitalRegistrationStore = create((set, get) => ({
         noOfBeds: state.noOfBeds !== '' && state.noOfBeds !== null && state.noOfBeds !== undefined ? Number(state.noOfBeds) : 0,
         accreditation: Array.isArray(state.accreditation) ? state.accreditation : [],
         adminId: state.adminId || '',
+        // Keep document numbers as strings (GSTIN/CIN/PAN can be alphanumeric)
         documents: Array.isArray(state.documents)
           ? state.documents.map((doc) => ({
-              no: doc && doc.no !== '' && doc.no !== null && doc.no !== undefined ? Number(doc.no) : 0,
+              no: (doc && doc.no) != null ? String(doc.no) : '',
               type: (doc && doc.type) || '',
               url: (doc && doc.url) || '',
             }))
