@@ -15,7 +15,7 @@ import GetStarted from "./pages/GetStarted";
 function App() {
   return (
     <Routes>
-      <Route path="/" element={<GetStarted />} />
+      <Route path="/" element={<DummyLogin/>} />
 
       {/* Admin panel routes */}
       <Route element={<Layout />}>

@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import axios from '../lib/axios';
+import useDoctorRegistrationStore from './useDoctorRegistrationStore';
 
 const initialState = {
   firstName: '',
@@ -9,8 +10,8 @@ const initialState = {
   gender: '',
   city: '',
   mfa: {
-    emailId: false,
-    phone: false,
+    emailId: true,
+    phone: true,
   },
   profilePhotoKey: '',
   role: 'doctor',
@@ -47,6 +48,7 @@ const useDoctorStep1Store = create((set) => ({
         profilePhotoKey,
         role,
       } = useDoctorStep1Store.getState();
+
       const body = {
         firstName,
         lastName,
@@ -58,13 +60,31 @@ const useDoctorStep1Store = create((set) => ({
         profilePhotoKey,
         role,
       };
-      await axios.post('/auth/register', body);
+
+      const res = await axios.post('/auth/register', body);
+
+      // Extract doctorId (userId for next steps) from response
+      const doctorId = res?.data?.data?.doctorId
+        || res?.data?.doctorId
+        || res?.data?.data?.userId;
+
+      // Persist into the doctor registration store for subsequent steps
+      if (doctorId) {
+        try {
+          const { setField } = useDoctorRegistrationStore.getState();
+          setField('userId', doctorId);
+        } catch (_) {
+          // no-op if store not available
+        }
+      }
+
       set({ success: true });
       setTimeout(() => set({ success: false }), 100);
-      return true;
+      return { success: true, doctorId };
     } catch (error) {
-      set({ error: error?.response?.data?.message || error.message });
-      return false;
+      const msg = error?.response?.data?.message || error.message;
+      set({ error: msg });
+      return { success: false, error: msg };
     } finally {
       set({ loading: false });
     }

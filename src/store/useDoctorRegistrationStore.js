@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import axiosInstance from '../lib/axios';
 
 const initialState = {
-  // Step 1
+  // Step 1 (captured from Step1 response)
   userId: '',
   specialization: '',
   experienceYears: '',
@@ -60,9 +60,13 @@ const useDoctorRegistrationStore = create((set, get) => ({
     set({ loading: true, error: null, success: false });
     try {
       const state = get();
+      // Ensure Step 1 has provided the userId
+      if (!state.userId) {
+        throw new Error('User ID is missing. Please complete Step 1.');
+      }
       // Compose the body as required, but filter out empty fields
       const body = {};
-      const fields = [
+  const fields = [
         'userId',
         'specialization',
         'experienceYears',

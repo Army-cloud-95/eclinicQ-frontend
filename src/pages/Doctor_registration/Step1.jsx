@@ -39,6 +39,12 @@ const Step1 = forwardRef((props, ref) => {
     }
   }, [uploadUrlData, setField]);
 
+  // Ensure MFA flags are always true in state
+  useEffect(() => {
+    setMfaField('emailId', true);
+    setMfaField('phone', true);
+  }, [setMfaField]);
+
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
     if (name === "emailVerification" || name === "smsVerification") {
