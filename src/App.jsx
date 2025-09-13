@@ -10,11 +10,12 @@ import MainPage from "./pages/DoctorList/DoctorInfo/MainPage";
 import MainPageHos from "./pages/HospitalList/HospitalInfo/MainPageHos";
 import { RegistrationProvider } from "./context/RegistrationContext";
 import DummyLogin from "./pages/DummyLogin";
+import GetStarted from "./pages/GetStarted";
 
 function App() {
   return (
     <Routes>
-      <Route path="/" element={<DummyLogin />} />
+      <Route path="/" element={<GetStarted />} />
 
       {/* Admin panel routes */}
       <Route element={<Layout />}>

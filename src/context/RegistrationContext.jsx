@@ -14,7 +14,6 @@ export const RegistrationProvider = ({ children }) => {
   const [currentStep, setCurrentStep] = useState(1);
   const [registrationType, setRegistrationType] = useState(''); // 'doctor' or 'hospital'
   const [formData, setFormData] = useState({
-    // Initialize with some default values for hospital registration
     hosStep3SubStep: 1,
     hosStep5SubStep: 1,
     hosTermsAccepted: false,

@@ -4,7 +4,7 @@ import useDoctorRegistrationStore from '../store/useDoctorRegistrationStore';
 
 const RegistrationFooter = ({ onCancel, onNext, onPrev, currentStep, maxSteps, nextLabel = "Save & Next →", disablePrev = false }) => {
   const { registrationType } = useRegistration();
-  
+
   if (currentStep === 6) {
     return (
       <footer className="flex-shrink-0 p-4 border-t border-gray-200 flex justify-between bg-white">
@@ -42,10 +42,10 @@ const RegistrationFooter = ({ onCancel, onNext, onPrev, currentStep, maxSteps, n
 
         <div className="flex gap-3">
           <button
-            onClick={onPrev}
-            className="px-4 py-2 rounded-lg border border-gray-300 hover:bg-gray-50 transition-colors"
+            className="px-4 py-2 rounded-lg border border-gray-300 hover:bg-gray-50 transition-colors disabled:opacity-50"
+            disabled={true}
           >
-            ← Previous
+             Previous
           </button>
 
           <button

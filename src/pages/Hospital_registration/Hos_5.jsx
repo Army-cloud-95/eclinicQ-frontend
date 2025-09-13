@@ -5,53 +5,67 @@ import { ProgressBar, AgreementBox, ActionButton } from '../../components/FormIt
 
 const Hos_5 = () => {
   const { currentStep, nextStep, prevStep, updateFormData, formData } = useRegistration();
-  
-  // Get current sub-step from context, default to 1
   const currentSubStep = formData.hosStep5SubStep || 1;
-  
-  // Initialize local state from context or default to false
   const [termsAccepted, setTermsAccepted] = useState(formData.hosTermsAccepted || false);
   const [privacyAccepted, setPrivacyAccepted] = useState(formData.hosPrivacyAccepted || false);
-  
-  // Mock data - would come from backend
-  const hospitalData = {
-    hospitalName: "Manipal Hospitals Life's On",
-    hospitalType: "Private Hospital",
-    speciality: "Multi Speciality",
-    profileUrl: "manipalhospital@eclinicq.com",
-    address: "Manipal Health Enterprise Pvt Ltd. The Annexe, #98/2, Rustom Bagh, Off HAL Airport Road, Bengaluru - 560017",
-    hospitalEmail: "support@Manipal.com",
-    hospitalContact: "+91 92826 39045",
-    rohiniId: "8900080336704",
-    website: "manipalhospital.com/bengaluru",
-    eClinicId: "HLN-001",
-    medicalSpecialties: ["Cardiology", "Orthopedics", "Pediatrics", "Internal Medicine", "Radiology"],
-    hospitalServices: ["Emergency Care", "Diagnostics Imaging", "Laboratory Services", "Outpatient Care", "Inpatient Care"],
-    hospitalFacilities: ["ICU", "Blood Bank", "24/7 Emergency care"],
-    accreditations: ["NABH - National Accreditation Board for Hospitals & Healthcare Providers"],
-    operatingHours: {
-      "Sunday": "09:00am-06:00pm",
-      "Monday": "09:00am-06:00pm", 
-      "Tuesday": "09:00am-06:00pm",
-      "Wednesday": "09:00am-06:00pm",
-      "Thursday": "09:00am-06:00pm",
-      "Friday": "09:00am-06:00pm"
-    },
-    adminDetails: {
-      userName: "Ketan Patni",
-      userDesignation: "Business Owner",
-      userRole: "Super Admin",
-      userEmail: "Ketanp@Manipal.com",
-      userContact: "+91 91753 67487",
-      mfaStatus: "Done"
-    },
-    documents: {
-      gstn: { id: "29AACCC2943F1ZS", file: "GSTIN.pdf", status: "Verified" },
-      abha: { id: "29AACCC2943F1ZS", file: "ABHA.pdf", status: "Verified" },
-      cin: { id: null, file: null, status: "Not Attached" },
-      rohini: { id: "8900080336704", file: "Rohini.pdf", status: "Under Review (24-48hrs)" }
-    }
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [success, setSuccess] = useState(null);
+
+  // Compose hospital payload from formData (Hos_3, Hos_4, Hos_5)
+  const buildHospitalPayload = () => {
+    // Address
+    const address = {
+      blockNo: formData.blockNumber || '',
+      landmark: formData.landmark || '',
+      street: formData.roadAreaStreet || ''
+    };
+    // Documents
+    const documents = [];
+    if (formData.gstin) documents.push({ no: formData.gstin, type: 'GST', url: formData.gstinFile || '' });
+    if (formData.stateHealthReg) documents.push({ no: formData.stateHealthReg, type: 'State Health Reg No', url: formData.stateHealthRegFile || '' });
+    if (formData.panCard) documents.push({ no: formData.panCard, type: 'Pan Card', url: formData.panCardFile || '' });
+    if (formData.cinNumber) documents.push({ no: formData.cinNumber, type: 'CIN', url: formData.cinFile || '' });
+    if (formData.rohiniId) documents.push({ no: formData.rohiniId, type: 'Rohini ID', url: formData.rohiniFile || '' });
+    if (formData.nabhAccreditation) documents.push({ no: formData.nabhAccreditation, type: 'NABH', url: formData.nabhFile || '' });
+
+    // Operating Hours
+    const days = ["sunday","monday","tuesday","wednesday","thursday","friday","saturday"];
+    const operatingHours = days.map(day => ({
+      dayOfWeek: day,
+      isAvailable: (formData.operatingHours || []).includes(day.charAt(0).toUpperCase() + day.slice(1)),
+      is24Hours: formData[`${day}24Hours`] || false,
+      timeRanges: [
+        { startTime: formData[`${day}StartTime`] || "09:00", endTime: formData[`${day}EndTime`] || "18:00" }
+      ]
+    }));
+
+    return {
+      name: formData.hospitalName,
+      type: formData.hospitalType,
+      emailId: formData.hospitalEmail,
+      phone: formData.hospitalContact,
+      address,
+      city: formData.city,
+      state: formData.state,
+      pincode: formData.pincode,
+      url: formData.website,
+      logo: formData.logoKey || '',
+      image: formData.hospitalImageKey || '',
+      latitude: formData.latitude || 0,
+      longitude: formData.longitude || 0,
+      medicalSpecialties: formData.medicalSpecialties || [],
+      hospitalServices: formData.hospitalServices || [],
+      establishmentYear: formData.establishedYear,
+      noOfBeds: formData.numberOfBeds,
+      accreditation: formData.accreditations || [],
+      adminId: formData.adminId || '',
+      documents,
+      operatingHours
+    };
   };
+
+  // No submit logic here; submission is handled in Hos_6
 
   // Update form data when terms change - only when they actually change
   useEffect(() => {
@@ -80,20 +94,14 @@ const Hos_5 = () => {
 
   
 
-  const StatusBadge = ({ status, type }) => {
-    if (type === 'verified') {
-      return <span className="text-green-600 text-sm font-medium">Verified</span>;
-    }
-    if (type === 'done') {
-      return <span className="text-green-600 text-sm font-medium">Done</span>;
-    }
-    if (type === 'review') {
-      return <span className="text-orange-500 text-sm font-medium">Under Review (24-48hrs)</span>;
-    }
-    if (type === 'not-attached') {
-      return <span className="text-gray-500 text-sm font-medium">Not Attached</span>;
-    }
-    return null;
+  // Simple badge for document status
+  const StatusBadge = ({ status }) => {
+    if (!status) return null;
+    if (status === 'Verified') return <span className="text-green-600 text-sm font-medium">Verified</span>;
+    if (status === 'Done') return <span className="text-green-600 text-sm font-medium">Done</span>;
+    if (status === 'Under Review (24-48hrs)') return <span className="text-orange-500 text-sm font-medium">Under Review (24-48hrs)</span>;
+    if (status === 'Not Attached') return <span className="text-gray-500 text-sm font-medium">Not Attached</span>;
+    return <span className="text-gray-500 text-sm font-medium">{status}</span>;
   };
 
   const Page1 = () => (
@@ -104,14 +112,6 @@ const Hos_5 = () => {
       </div>
 
       <ProgressBar step={1} total={2} />
-
-      <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6 flex items-start">
-        <CheckCircle className="w-5 h-5 text-green-500 mr-3 mt-0.5 flex-shrink-0" />
-        <div>
-          <p className="text-green-800 font-medium text-sm">Ready to Activate</p>
-          <p className="text-green-700 text-sm mt-1">Your hospital account is ready to be activated. Some verifications are still in progress but won't delay your access.</p>
-        </div>
-      </div>
 
       {/* Image Banner */}
       <div className='relative' >
@@ -129,62 +129,76 @@ const Hos_5 = () => {
           <div className="grid grid-cols-2 gap-x-12">
             <div className="space-y-2">
               <div className="flex items-center">
-                <span className="text-gray-600 text-sm w-24">Hospital Name</span>
+                <span className="text-gray-600 text-sm w-32">Hospital Name</span>
                 <span className="text-gray-600 text-sm">:</span>
-                <span className="text-gray-900 text-sm font-medium ml-2">{hospitalData.hospitalName}</span>
+                <span className="text-gray-900 text-sm font-medium ml-2">{formData.hospitalName}</span>
               </div>
               <div className="flex items-center">
-                <span className="text-gray-600 text-sm w-24">Hospital Type</span>
+                <span className="text-gray-600 text-sm w-32">Hospital Type</span>
                 <span className="text-gray-600 text-sm">:</span>
-                <span className="text-gray-900 text-sm font-medium ml-2">{hospitalData.hospitalType}</span>
+                <span className="text-gray-900 text-sm font-medium ml-2">{formData.hospitalType}</span>
               </div>
               <div className="flex items-center">
-                <span className="text-gray-600 text-sm w-24">Speciality</span>
+                <span className="text-gray-600 text-sm w-32">Contact Email</span>
                 <span className="text-gray-600 text-sm">:</span>
-                <span className="text-gray-900 text-sm font-medium ml-2">{hospitalData.speciality}</span>
+                <span className="text-gray-900 text-sm font-medium ml-2">{formData.hospitalEmail}</span>
               </div>
               <div className="flex items-center">
-                <span className="text-gray-600 text-sm w-24">Profile URL</span>
+                <span className="text-gray-600 text-sm w-32">Contact Number</span>
                 <span className="text-gray-600 text-sm">:</span>
-                <span className="text-gray-900 text-sm font-medium ml-2">{hospitalData.profileUrl}</span>
+                <span className="text-gray-900 text-sm font-medium ml-2">{formData.hospitalContact}</span>
               </div>
-              <div className="flex items-start">
-                <span className="text-gray-600 text-sm w-24 flex-shrink-0">Address</span>
+              <div className="flex items-center">
+                <span className="text-gray-600 text-sm w-32">Established Year</span>
                 <span className="text-gray-600 text-sm">:</span>
-                <span className="text-gray-900 text-sm font-medium ml-2 leading-relaxed">{hospitalData.address}</span>
+                <span className="text-gray-900 text-sm font-medium ml-2">{formData.establishedYear}</span>
+              </div>
+              <div className="flex items-center">
+                <span className="text-gray-600 text-sm w-32">Number of Beds</span>
+                <span className="text-gray-600 text-sm">:</span>
+                <span className="text-gray-900 text-sm font-medium ml-2">{formData.numberOfBeds}</span>
+              </div>
+              <div className="flex items-center">
+                <span className="text-gray-600 text-sm w-32">Website</span>
+                <span className="text-gray-600 text-sm">:</span>
+                <span className="text-gray-900 text-sm font-medium ml-2">{formData.website}</span>
               </div>
             </div>
             <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center">
-                  <span className="text-gray-600 text-sm w-28">Hospital Email</span>
-                  <span className="text-gray-600 text-sm">:</span>
-                  <span className="text-gray-900 text-sm font-medium ml-2">{hospitalData.hospitalEmail}</span>
-                </div>
-                <CheckCircle className="w-4 h-4 text-green-500" />
-              </div>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center">
-                  <span className="text-gray-600 text-sm w-28">Hospital Contact</span>
-                  <span className="text-gray-600 text-sm">:</span>
-                  <span className="text-gray-900 text-sm font-medium ml-2">{hospitalData.hospitalContact}</span>
-                </div>
-                <CheckCircle className="w-4 h-4 text-green-500" />
+              <div className="flex items-center">
+                <span className="text-gray-600 text-sm w-32">Block/Shop/House No.</span>
+                <span className="text-gray-600 text-sm">:</span>
+                <span className="text-gray-900 text-sm font-medium ml-2">{formData.blockNumber}</span>
               </div>
               <div className="flex items-center">
-                <span className="text-gray-600 text-sm w-28">Rohini ID</span>
+                <span className="text-gray-600 text-sm w-32">Road/Area/Street</span>
                 <span className="text-gray-600 text-sm">:</span>
-                <span className="text-gray-900 text-sm font-medium ml-2">{hospitalData.rohiniId}</span>
+                <span className="text-gray-900 text-sm font-medium ml-2">{formData.roadAreaStreet}</span>
               </div>
               <div className="flex items-center">
-                <span className="text-gray-600 text-sm w-28">Website</span>
+                <span className="text-gray-600 text-sm w-32">Landmark</span>
                 <span className="text-gray-600 text-sm">:</span>
-                <span className="text-gray-900 text-sm font-medium ml-2">{hospitalData.website}</span>
+                <span className="text-gray-900 text-sm font-medium ml-2">{formData.landmark}</span>
               </div>
               <div className="flex items-center">
-                <span className="text-gray-600 text-sm w-28">e-clinic ID</span>
+                <span className="text-gray-600 text-sm w-32">Pincode</span>
                 <span className="text-gray-600 text-sm">:</span>
-                <span className="text-gray-900 text-sm font-medium ml-2">{hospitalData.eClinicId}</span>
+                <span className="text-gray-900 text-sm font-medium ml-2">{formData.pincode}</span>
+              </div>
+              <div className="flex items-center">
+                <span className="text-gray-600 text-sm w-32">City</span>
+                <span className="text-gray-600 text-sm">:</span>
+                <span className="text-gray-900 text-sm font-medium ml-2">{formData.city}</span>
+              </div>
+              <div className="flex items-center">
+                <span className="text-gray-600 text-sm w-32">State</span>
+                <span className="text-gray-600 text-sm">:</span>
+                <span className="text-gray-900 text-sm font-medium ml-2">{formData.state}</span>
+              </div>
+              <div className="flex items-center">
+                <span className="text-gray-600 text-sm w-32">Hospital URL</span>
+                <span className="text-gray-600 text-sm">:</span>
+                <span className="text-gray-900 text-sm font-medium ml-2">{formData.hospitalUrl}</span>
               </div>
             </div>
           </div>
@@ -197,135 +211,68 @@ const Hos_5 = () => {
             <div className="flex items-start">
               <span className="text-gray-600 text-sm w-32 flex-shrink-0">Medical Specialties</span>
               <span className="text-gray-600 text-sm">:</span>
-              <span className="text-gray-900 text-sm font-medium ml-2">{hospitalData.medicalSpecialties.join(', ')}</span>
+              <span className="text-gray-900 text-sm font-medium ml-2">{(formData.medicalSpecialties || []).join(', ')}</span>
             </div>
             <div className="flex items-start">
               <span className="text-gray-600 text-sm w-32 flex-shrink-0">Hospital Services</span>
               <span className="text-gray-600 text-sm">:</span>
-              <span className="text-gray-900 text-sm font-medium ml-2">{hospitalData.hospitalServices.join(', ')}</span>
-            </div>
-            <div className="flex items-start">
-              <span className="text-gray-600 text-sm w-32 flex-shrink-0">Hospital Facilities</span>
-              <span className="text-gray-600 text-sm">:</span>
-              <span className="text-gray-900 text-sm font-medium ml-2">{hospitalData.hospitalFacilities.join(', ')}</span>
+              <span className="text-gray-900 text-sm font-medium ml-2">{(formData.hospitalServices || []).join(', ')}</span>
             </div>
             <div className="flex items-start">
               <span className="text-gray-600 text-sm w-32 flex-shrink-0">Accreditations</span>
               <span className="text-gray-600 text-sm">:</span>
-              <span className="text-gray-900 text-sm font-medium ml-2">{hospitalData.accreditations.join(', ')}</span>
+              <span className="text-gray-900 text-sm font-medium ml-2">{(formData.accreditations || []).join(', ')}</span>
             </div>
             <div className="flex items-start">
               <span className="text-gray-600 text-sm w-32 flex-shrink-0">Operating Hours</span>
               <span className="text-gray-600 text-sm">:</span>
               <div className="text-gray-900 text-sm font-medium ml-2">
-                {Object.entries(hospitalData.operatingHours).map(([day, hours]) => (
-                  <div key={day} className="flex">
-                    <span className="w-20">{day}:</span>
-                    <span>{hours}</span>
-                  </div>
+                {(formData.operatingHours || []).map(day => (
+                  <div key={day}>{day}</div>
                 ))}
               </div>
             </div>
           </div>
         </div>
 
-        {/* Primary Admin Account Details */}
+        {/* Document Verification (from Hos_4) */}
         <div className="bg-white border border-gray-300 rounded-md p-4">
-          <h3 className="text-base font-medium text-gray-900 mb-4">Primary Admin Account Details</h3>
-          <div className="grid grid-cols-2 gap-x-12">
-            <div className="space-y-2">
-              <div className="flex items-center">
-                <span className="text-gray-600 text-sm w-24">User Name</span>
-                <span className="text-gray-600 text-sm">:</span>
-                <span className="text-gray-900 text-sm font-medium ml-2">{hospitalData.adminDetails.userName}</span>
-              </div>
-              <div className="flex items-center">
-                <span className="text-gray-600 text-sm w-24">User Designation</span>
-                <span className="text-gray-600 text-sm">:</span>
-                <span className="text-gray-900 text-sm font-medium ml-2">{hospitalData.adminDetails.userDesignation}</span>
-              </div>
-              <div className="flex items-center">
-                <span className="text-gray-600 text-sm w-24">User Role</span>
-                <span className="text-gray-600 text-sm">:</span>
-                <span className="text-gray-900 text-sm font-medium ml-2">{hospitalData.adminDetails.userRole}</span>
-              </div>
+          <h3 className="text-base font-medium text-gray-900 mb-4">Document Verification</h3>
+          <div className="space-y-2">
+            <div className="flex items-center">
+              <span className="text-gray-600 text-sm w-32">GSTIN</span>
+              <span className="text-gray-600 text-sm">:</span>
+              <span className="text-gray-900 text-sm font-medium ml-2">{formData.gstin}</span>
             </div>
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center">
-                  <span className="text-gray-600 text-sm w-28">User Email</span>
-                  <span className="text-gray-600 text-sm">:</span>
-                  <span className="text-gray-900 text-sm font-medium ml-2">{hospitalData.adminDetails.userEmail}</span>
-                </div>
-                <CheckCircle className="w-4 h-4 text-green-500" />
-              </div>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center">
-                  <span className="text-gray-600 text-sm w-28">User Contact</span>
-                  <span className="text-gray-600 text-sm">:</span>
-                  <span className="text-gray-900 text-sm font-medium ml-2">{hospitalData.adminDetails.userContact}</span>
-                </div>
-                <CheckCircle className="w-4 h-4 text-green-500" />
-              </div>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center">
-                  <span className="text-gray-600 text-sm w-28">MFA Status</span>
-                  <span className="text-gray-600 text-sm">:</span>
-                  <span className="text-gray-900 text-sm font-medium ml-2">{hospitalData.adminDetails.mfaStatus}</span>
-                </div>
-                <StatusBadge status={hospitalData.adminDetails.mfaStatus} type="done" />
-              </div>
+            <div className="flex items-center">
+              <span className="text-gray-600 text-sm w-32">ABHA Facility ID</span>
+              <span className="text-gray-600 text-sm">:</span>
+              <span className="text-gray-900 text-sm font-medium ml-2">{formData.abhaId}</span>
             </div>
-          </div>
-        </div>
-
-        {/* Verified Documents & Status */}
-        <div className="bg-white border border-gray-300 rounded-md p-4">
-          <h3 className="text-base font-medium text-gray-900 mb-4">Verified Documents & Status</h3>
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center">
-                <span className="text-gray-600 text-sm w-24">GSTN</span>
-                <span className="text-gray-600 text-sm">:</span>
-                <span className="text-gray-900 text-sm font-medium ml-2">{hospitalData.documents.gstn.id}</span>
-              </div>
-              <div className="flex items-center gap-3">
-                <button className="text-blue-600 text-sm hover:underline">{hospitalData.documents.gstn.file}</button>
-                <StatusBadge status={hospitalData.documents.gstn.status} type="verified" />
-              </div>
+            <div className="flex items-center">
+              <span className="text-gray-600 text-sm w-32">CIN Number</span>
+              <span className="text-gray-600 text-sm">:</span>
+              <span className="text-gray-900 text-sm font-medium ml-2">{formData.cinNumber}</span>
             </div>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center">
-                <span className="text-gray-600 text-sm w-24">ABHA Facility ID</span>
-                <span className="text-gray-600 text-sm">:</span>
-                <span className="text-gray-900 text-sm font-medium ml-2">{hospitalData.documents.abha.id}</span>
-              </div>
-              <div className="flex items-center gap-3">
-                <button className="text-blue-600 text-sm hover:underline">{hospitalData.documents.abha.file}</button>
-                <StatusBadge status={hospitalData.documents.abha.status} type="verified" />
-              </div>
+            <div className="flex items-center">
+              <span className="text-gray-600 text-sm w-32">State Health Reg. No</span>
+              <span className="text-gray-600 text-sm">:</span>
+              <span className="text-gray-900 text-sm font-medium ml-2">{formData.stateHealthReg}</span>
             </div>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center">
-                <span className="text-gray-600 text-sm w-24">CIN</span>
-                <span className="text-gray-600 text-sm">:</span>
-                <span className="text-gray-900 text-sm font-medium ml-2">-</span>
-              </div>
-              <div className="flex items-center gap-3">
-                <span className="text-gray-500 text-sm">-</span>
-                <StatusBadge status={hospitalData.documents.cin.status} type="not-attached" />
-              </div>
+            <div className="flex items-center">
+              <span className="text-gray-600 text-sm w-32">PAN Card</span>
+              <span className="text-gray-600 text-sm">:</span>
+              <span className="text-gray-900 text-sm font-medium ml-2">{formData.panCard}</span>
             </div>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center">
-                <span className="text-gray-600 text-sm w-24">Rohini ID</span>
-                <span className="text-gray-600 text-sm">:</span>
-                <span className="text-gray-900 text-sm font-medium ml-2">{hospitalData.documents.rohini.id}</span>
-              </div>
-              <div className="flex items-center gap-3">
-                <button className="text-blue-600 text-sm hover:underline">{hospitalData.documents.rohini.file}</button>
-                <StatusBadge status={hospitalData.documents.rohini.status} type="review" />
-              </div>
+            <div className="flex items-center">
+              <span className="text-gray-600 text-sm w-32">Rohini ID</span>
+              <span className="text-gray-600 text-sm">:</span>
+              <span className="text-gray-900 text-sm font-medium ml-2">{formData.rohiniId}</span>
+            </div>
+            <div className="flex items-center">
+              <span className="text-gray-600 text-sm w-32">NABH Accreditation</span>
+              <span className="text-gray-600 text-sm">:</span>
+              <span className="text-gray-900 text-sm font-medium ml-2">{formData.nabhAccreditation}</span>
             </div>
           </div>
         </div>
@@ -389,12 +336,13 @@ const Hos_5 = () => {
             </div>
             <p className="text-gray-600 text-sm mb-4">Sign digitally using Aadhar eSign and Upload Pan card</p>
           </div>
-          
           <div className="flex gap-4 items-center">
             <ActionButton variant="pancard" className='h-10'>Use Aadhar eSign</ActionButton>
             <ActionButton variant="pancard" className='h-10'>Upload Pancard</ActionButton>
           </div>
         </div>
+
+  {/* Navigation handled by RegistrationFooter */}
       </div>
     </div>
   );

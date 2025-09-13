@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from "react";
-import { useRegistration } from "../../context/RegistrationContext";
+import React from "react";
+import useHospitalRegistrationStore from '../../store/useHospitalRegistrationStore';
+import { useRegistration } from '../../context/RegistrationContext';
 import { Info } from "lucide-react";
 import { 
   Input,
@@ -15,76 +16,73 @@ import {
   ProgressBar
 } from "../../components/FormItems";
 
+
 const Hos_3 = () => {
+  // Use global registration context for substep navigation
   const { formData, updateFormData } = useRegistration();
+  const hosStep3SubStep = formData.hosStep3SubStep || 1;
+  const currentSubStep = hosStep3SubStep;
 
-  // current substep (1 = Hospital Details, 2 = Services & Facilities)
-  const currentSubStep = formData.hosStep3SubStep || 1;
+  // Use Zustand store for field values only
+  const {
+    name,
+    type,
+    emailId,
+    phone,
+    address,
+    city,
+    state,
+    pincode,
+    url,
+    logo,
+    image,
+    latitude,
+    longitude,
+    medicalSpecialties,
+    hospitalServices,
+    establishmentYear,
+    noOfBeds,
+    accreditation,
+    adminId,
+    documents,
+    operatingHours,
+    setField,
+    setAddressField,
+    setDocument,
+    setDocuments,
+    setOperatingHours
+  } = useHospitalRegistrationStore();
 
-  // Local state merged with context
-  const [hospitalData, setHospitalData] = useState({
-    hospitalName: formData.hospitalName || "",
-    hospitalType: formData.hospitalType || "",
-    hospitalEmail: formData.hospitalEmail || "",
-    hospitalContact: formData.hospitalContact || "",
-    establishedYear: formData.establishedYear || "",
-    website: formData.website || "",
-    numberOfBeds: formData.numberOfBeds || "",
-    blockNumber: formData.blockNumber || "",
-    roadAreaStreet: formData.roadAreaStreet || "",
-    landmark: formData.landmark || "",
-    pincode: formData.pincode || "",
-    city: formData.city || "",
-    state: formData.state || "",
-    hospitalUrl: formData.hospitalUrl || "",
-    // Keep existing fields for Page2
-    hospitalAddress: formData.hospitalAddress || "",
-    operatingHours: formData.operatingHours || ["Sunday"],
-    // Time fields for each day
-    sundayStartTime: formData.sundayStartTime || "09:00",
-    sundayEndTime: formData.sundayEndTime || "18:00",
-    sunday24Hours: formData.sunday24Hours || false,
-    mondayStartTime: formData.mondayStartTime || "09:00",
-    mondayEndTime: formData.mondayEndTime || "18:00",
-    monday24Hours: formData.monday24Hours || false,
-    tuesdayStartTime: formData.tuesdayStartTime || "09:00",
-    tuesdayEndTime: formData.tuesdayEndTime || "18:00",
-    tuesday24Hours: formData.tuesday24Hours || false,
-    wednesdayStartTime: formData.wednesdayStartTime || "09:00",
-    wednesdayEndTime: formData.wednesdayEndTime || "18:00",
-    wednesday24Hours: formData.wednesday24Hours || false,
-    thursdayStartTime: formData.thursdayStartTime || "09:00",
-    thursdayEndTime: formData.thursdayEndTime || "18:00",
-    thursday24Hours: formData.thursday24Hours || false,
-    fridayStartTime: formData.fridayStartTime || "09:00",
-    fridayEndTime: formData.fridayEndTime || "18:00",
-    friday24Hours: formData.friday24Hours || false,
-    saturdayStartTime: formData.saturdayStartTime || "09:00",
-    saturdayEndTime: formData.saturdayEndTime || "18:00",
-    saturday24Hours: formData.saturday24Hours || false,
-    medicalSpecialties: formData.medicalSpecialties || [],
-    hospitalServices: formData.hospitalServices || [],
-    accreditations: formData.accreditations || [],
-  });
-
+  const storeAll = useHospitalRegistrationStore();
   // Update global context whenever local state changes
-  useEffect(() => {
-    updateFormData({ ...hospitalData, hosStep3SubStep: currentSubStep });
-  }, [hospitalData, currentSubStep]);
+
 
   // Handle inputs
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setHospitalData((prev) => ({ ...prev, [name]: value }));
+    setField(name, value);
+  };
+
+  // Use dedicated handler for nested address fields
+  const handleAddressChange = (e) => {
+    const { name, value } = e.target;
+    setAddressField(name, value);
   };
 
   const handleCheckboxChange = (section, value) => {
-    setHospitalData((prev) => {
-      const updated = prev[section].includes(value)
-        ? prev[section].filter((item) => item !== value)
-        : [...prev[section], value];
-      return { ...prev, [section]: updated };
-    });
+    const currentArr = section === "medicalSpecialties"
+      ? medicalSpecialties
+      : section === "hospitalServices"
+      ? hospitalServices
+      : section === "accreditation"
+      ? accreditation
+      : [];
+
+    const updated = Array.isArray(currentArr) && currentArr.includes(value)
+      ? currentArr.filter((item) => item !== value)
+      : [...(currentArr || []), value];
+
+    setField(section, updated);
   };
 
   // Substep Navigation
@@ -93,7 +91,7 @@ const Hos_3 = () => {
 
 
   // Page 1 → Hospital Details (Redesigned to match the image)
-  const Page1 = () => (
+  const renderPage1 = () => (
     <div className="rounded-md bg-white p-8 min-h-full">
       <div className="rounded-xl items-center mx-auto">
         {/* Header */}
@@ -116,9 +114,9 @@ const Hos_3 = () => {
               <div>
                 <Input
                   label="Hospital Name"
-                  name="hospitalName"
+                  name="name"
                   placeholder="Hospital Name"
-                  value={hospitalData.hospitalName}
+                  value={name}
                   onChange={handleInputChange}
                   compulsory={true}
                   required={true}
@@ -130,8 +128,8 @@ const Hos_3 = () => {
               <div>
                 <Dropdown
                   label="Hospital Type"
-                  name="hospitalType"
-                  value={hospitalData.hospitalType}
+                  name="type"
+                  value={type}
                   onChange={handleInputChange}
                   compulsory={true}
                   required={true}
@@ -150,25 +148,25 @@ const Hos_3 = () => {
 
               {/* Hospital Contact Email */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-1">
+                <label className="flex text-sm font-medium text-gray-700 mb-2 items-center gap-1">
                   Hospital Contact Email <div className="w-1 h-1 bg-red-500 rounded-full"></div>
                 </label>
                 <div className="flex gap-2">
                   <input
                     type="email"
-                    name="hospitalEmail"
+                    name="emailId"
                     placeholder="Enter Work Email"
-                    value={hospitalData.hospitalEmail}
+                    value={emailId || ""}
                     onChange={handleInputChange}
                     className="flex-1 h-[32px] px-2 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-colors"
                   />
                   <button 
                     className={`px-4 py-2 rounded-lg text-sm transition-colors ${
-                      hospitalData.hospitalEmail.trim() 
+                      (emailId || "").trim()
                         ? 'bg-blue-600 text-white hover:bg-blue-700' 
                         : 'bg-gray-300 text-gray-500 cursor-not-allowed'
                     }`}
-                    disabled={!hospitalData.hospitalEmail.trim()}
+                    disabled={!((emailId || "").trim())}
                   >
                     Send OTP
                   </button>
@@ -178,25 +176,25 @@ const Hos_3 = () => {
 
               {/* Hospital Contact Number */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-1">
+                <label className="flex text-sm font-medium text-gray-700 mb-2 items-center gap-1">
                   Hospital Contact Number <div className="w-1 h-1 bg-red-500 rounded-full"></div>
                 </label>
                 <div className="flex gap-2">
                   <input
                     type="tel"
-                    name="hospitalContact"
+                    name="phone"
                     placeholder="Enter Contact Number"
-                    value={hospitalData.hospitalContact}
+                    value={phone || ""}
                     onChange={handleInputChange}
                     className="flex-1 h-[32px] px-2 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-colors"
                   />
                   <button 
                     className={`px-4 py-2 rounded-lg text-sm transition-colors ${
-                      hospitalData.hospitalContact.trim() 
+                      (phone || "").trim()
                         ? 'bg-blue-600 text-white hover:bg-blue-700' 
                         : 'bg-gray-300 text-gray-500 cursor-not-allowed'
                     }`}
-                    disabled={!hospitalData.hospitalContact.trim()}
+                    disabled={!((phone || "").trim())}
                   >
                     Send OTP
                   </button>
@@ -211,8 +209,8 @@ const Hos_3 = () => {
               <div>
                 <Dropdown
                   label="Established Year"
-                  name="establishedYear"
-                  value={hospitalData.establishedYear}
+                  name="establishmentYear"
+                  value={establishmentYear}
                   onChange={handleInputChange}
                   options={Array.from({ length: 50 }, (_, i) => 2024 - i).map(year => ({
                     value: year.toString(),
@@ -226,10 +224,10 @@ const Hos_3 = () => {
               <div>
                 <Input
                   label="Number of Beds"
-                  name="numberOfBeds"
+                  name="noOfBeds"
                   type="number"
                   placeholder="Enter Beds Count"
-                  value={hospitalData.numberOfBeds}
+                  value={noOfBeds}
                   onChange={handleInputChange}
                 />
               </div>
@@ -238,10 +236,10 @@ const Hos_3 = () => {
               <div>
                 <Input
                   label="Website"
-                  name="website"
+                  name="url"
                   type="url"
                   placeholder="Paste Website Link"
-                  value={hospitalData.website}
+                  value={url || ""}
                   onChange={handleInputChange}
                 />
               </div>
@@ -270,10 +268,10 @@ const Hos_3 = () => {
               <div>
                 <Input
                   label="Block no./Shop no./House no."
-                  name="blockNumber"
+                  name="blockNo"
                   placeholder="Enter Block Number/ Shop Number/ House Nu..."
-                  value={hospitalData.blockNumber}
-                  onChange={handleInputChange}
+                  value={address?.blockNo || ""}
+                  onChange={handleAddressChange}
                   compulsory={true}
                   required={true}
                 />
@@ -283,10 +281,10 @@ const Hos_3 = () => {
               <div>
                 <Input
                   label="Road/Area/Street"
-                  name="roadAreaStreet"
+                  name="street"
                   placeholder="Enter Road/Area/Street"
-                  value={hospitalData.roadAreaStreet}
-                  onChange={handleInputChange}
+                  value={address?.street || ""}
+                  onChange={handleAddressChange}
                   compulsory={true}
                   required={true}
                 />
@@ -298,8 +296,8 @@ const Hos_3 = () => {
                   label="Landmark"
                   name="landmark"
                   placeholder="Enter landmark"
-                  value={hospitalData.landmark}
-                  onChange={handleInputChange}
+                  value={address?.landmark || ""}
+                  onChange={handleAddressChange}
                   compulsory={true}
                   required={true}
                 />
@@ -311,7 +309,7 @@ const Hos_3 = () => {
                   label="Pincode"
                   name="pincode"
                   placeholder="Enter Pincode"
-                  value={hospitalData.pincode}
+                  value={pincode}
                   onChange={handleInputChange}
                   compulsory={true}
                   required={true}
@@ -324,7 +322,7 @@ const Hos_3 = () => {
                   label="City"
                   name="city"
                   placeholder="Enter City"
-                  value={hospitalData.city}
+                  value={city}
                   onChange={handleInputChange}
                   compulsory={true}
                   required={true}
@@ -336,7 +334,7 @@ const Hos_3 = () => {
                 <Dropdown
                   label="State"
                   name="state"
-                  value={hospitalData.state}
+                  value={state}
                   onChange={handleInputChange}
                   compulsory={true}
                   required={true}
@@ -384,15 +382,15 @@ const Hos_3 = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {/* Hospital URL */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-1">
+                <label className="flex text-sm font-medium text-gray-700 mb-2 items-center gap-1">
                   Hospital URL <img src="/i-icon.png" alt="" className='w-3 h-3' />
                 </label>
                 <div className="flex">
                   <input
                     type="text"
-                    name="hospitalUrl"
+                    name="url"
                     placeholder="Enter Hospital User Name"
-                    value={hospitalData.hospitalUrl || ""}
+                    value={url || ""}
                     onChange={handleInputChange}
                     className="flex-1 h-[32px] px-2 py-2 border border-gray-300 rounded-l-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-colors"
                   />
@@ -427,7 +425,7 @@ const Hos_3 = () => {
   );
 
   // Page 2 → Services & Facilities
-  const Page2 = () => (
+  const renderPage2 = () => (
     <div className="rounded-md bg-white p-8 min-h-full">
       <div className="rounded-xl items-center mx-auto">
         <div className="text-center mb-3">
@@ -453,7 +451,7 @@ const Hos_3 = () => {
                     <label key={spec} className="flex items-center gap-3 text-sm">
                       <input
                         type="checkbox"
-                        checked={hospitalData.medicalSpecialties.includes(spec)}
+                        checked={Array.isArray(medicalSpecialties) && medicalSpecialties.includes(spec)}
                         onChange={() => handleCheckboxChange("medicalSpecialties", spec)}
                         className="h-4 w-4 border-gray-300 rounded text-blue-600 focus:ring-blue-500"
                       />
@@ -468,7 +466,7 @@ const Hos_3 = () => {
                     <label key={spec} className="flex items-center gap-3 text-sm">
                       <input
                         type="checkbox"
-                        checked={hospitalData.medicalSpecialties.includes(spec)}
+                        checked={Array.isArray(medicalSpecialties) && medicalSpecialties.includes(spec)}
                         onChange={() => handleCheckboxChange("medicalSpecialties", spec)}
                         className="h-4 w-4 border-gray-300 rounded text-blue-600 focus:ring-blue-500"
                       />
@@ -483,7 +481,7 @@ const Hos_3 = () => {
                     <label key={spec} className="flex items-center gap-3 text-sm">
                       <input
                         type="checkbox"
-                        checked={hospitalData.medicalSpecialties.includes(spec)}
+                        checked={Array.isArray(medicalSpecialties) && medicalSpecialties.includes(spec)}
                         onChange={() => handleCheckboxChange("medicalSpecialties", spec)}
                         className="h-4 w-4 border-gray-300 rounded text-blue-600 focus:ring-blue-500"
                       />
@@ -510,7 +508,7 @@ const Hos_3 = () => {
                     <label key={service} className="flex items-center gap-3 text-sm">
                       <input
                         type="checkbox"
-                        checked={hospitalData.hospitalServices.includes(service)}
+                        checked={Array.isArray(hospitalServices) && hospitalServices.includes(service)}
                         onChange={() => handleCheckboxChange("hospitalServices", service)}
                         className="h-4 w-4 border-gray-300 rounded text-blue-600 focus:ring-blue-500"
                       />
@@ -525,7 +523,7 @@ const Hos_3 = () => {
                     <label key={service} className="flex items-center gap-3 text-sm">
                       <input
                         type="checkbox"
-                        checked={hospitalData.hospitalServices.includes(service)}
+                        checked={Array.isArray(hospitalServices) && hospitalServices.includes(service)}
                         onChange={() => handleCheckboxChange("hospitalServices", service)}
                         className="h-4 w-4 border-gray-300 rounded text-blue-600 focus:ring-blue-500"
                       />
@@ -540,7 +538,7 @@ const Hos_3 = () => {
                     <label key={service} className="flex items-center gap-3 text-sm">
                       <input
                         type="checkbox"
-                        checked={hospitalData.hospitalServices.includes(service)}
+                        checked={Array.isArray(hospitalServices) && hospitalServices.includes(service)}
                         onChange={() => handleCheckboxChange("hospitalServices", service)}
                         className="h-4 w-4 border-gray-300 rounded text-blue-600 focus:ring-blue-500"
                       />
@@ -570,8 +568,8 @@ const Hos_3 = () => {
                   <label key={acc} className="flex items-center gap-3 text-sm">
                     <input
                       type="checkbox"
-                      checked={hospitalData.accreditations.includes(acc)}
-                      onChange={() => handleCheckboxChange("accreditations", acc)}
+                      checked={Array.isArray(accreditation) && accreditation.includes(acc)}
+                      onChange={() => handleCheckboxChange("accreditation", acc)}
                       className="h-4 w-4 border-gray-300 rounded text-blue-600 focus:ring-blue-500"
                     />
                     <span className="text-gray-700">{acc}</span>
@@ -581,7 +579,7 @@ const Hos_3 = () => {
             </div>
           </div>
 
-                    {/* Operating Hours Section */}
+          {/* Operating Hours Section */}
           <div className="space-y-4">
             <div>
               <h2 className="text-lg font-semibold text-gray-900">Operating Hours</h2>
@@ -593,34 +591,19 @@ const Hos_3 = () => {
                 <DayCard
                   key={day}
                   day={day}
-                  isAvailable={hospitalData.operatingHours.includes(day)}
+                  isAvailable={Array.isArray(operatingHours) && operatingHours.includes(day)}
                   onToggleChange={() => {
-                    const updated = hospitalData.operatingHours.includes(day)
-                      ? hospitalData.operatingHours.filter(d => d !== day)
-                      : [...hospitalData.operatingHours, day];
-                    setHospitalData(prev => ({ ...prev, operatingHours: updated }));
+                    const updated = Array.isArray(operatingHours) && operatingHours.includes(day)
+                      ? operatingHours.filter(d => d !== day)
+                      : [...(operatingHours || []), day];
+                    setOperatingHours(updated);
                   }}
-                  startTime={hospitalData[`${day.toLowerCase()}StartTime`] || "09:00"}
-                  endTime={hospitalData[`${day.toLowerCase()}EndTime`] || "18:00"}
-                  onStartTimeChange={(e) => {
-                    setHospitalData(prev => ({
-                      ...prev,
-                      [`${day.toLowerCase()}StartTime`]: e.target.value
-                    }));
-                  }}
-                  onEndTimeChange={(e) => {
-                    setHospitalData(prev => ({
-                      ...prev,
-                      [`${day.toLowerCase()}EndTime`]: e.target.value
-                    }));
-                  }}
-                  is24Hours={hospitalData[`${day.toLowerCase()}24Hours`] || false}
-                  on24HoursChange={(e) => {
-                    setHospitalData(prev => ({
-                      ...prev,
-                      [`${day.toLowerCase()}24Hours`]: e.target.checked
-                    }));
-                  }}
+                  startTime={storeAll[`${day.toLowerCase()}StartTime`] || "09:00"}
+                  endTime={storeAll[`${day.toLowerCase()}EndTime`] || "18:00"}
+                  onStartTimeChange={(e) => setField(`${day.toLowerCase()}StartTime`, e.target.value)}
+                  onEndTimeChange={(e) => setField(`${day.toLowerCase()}EndTime`, e.target.value)}
+                  is24Hours={!!storeAll[`${day.toLowerCase()}24Hours`]}
+                  on24HoursChange={(e) => setField(`${day.toLowerCase()}24Hours`, e.target.checked)}
                 />
               ))}
             </div>
@@ -633,7 +616,7 @@ const Hos_3 = () => {
 
   return (
     <div className="min-h-screen bg-white">
-      {currentSubStep === 1 ? <Page1 /> : <Page2 />}
+      {currentSubStep === 1 ? renderPage1() : renderPage2()}
     </div>
   );
 };

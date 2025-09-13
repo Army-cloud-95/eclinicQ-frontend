@@ -5,11 +5,17 @@ const Hos_7 = () => {
     // Prevent scrolling on body and html
     document.body.style.overflow = 'hidden';
     document.documentElement.style.overflow = 'hidden';
-    
-    // Cleanup function to restore scrolling when component unmounts
+    // Disable back navigation
+    window.history.pushState(null, '', window.location.href);
+    const handlePopState = () => {
+      window.history.pushState(null, '', window.location.href);
+    };
+    window.addEventListener('popstate', handlePopState);
+    // Cleanup function to restore scrolling and popstate
     return () => {
       document.body.style.overflow = 'unset';
       document.documentElement.style.overflow = 'unset';
+      window.removeEventListener('popstate', handlePopState);
     };
   }, []);
 

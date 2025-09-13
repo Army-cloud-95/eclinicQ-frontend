@@ -1,4 +1,5 @@
 import { useLocation, useNavigate } from "react-router-dom";
+import { createHospital } from '../../services/hospitalService';
 import { useRegistration } from "../../context/RegistrationContext";
 import SidebarSteps from "../Sidebar/SidebarSteps";
 import RegistrationFooter from "../RegistrationFooter";
@@ -188,26 +189,60 @@ const Layout_registration_new = () => {
           nextStep();
         }
       }
-      // Handle Step 5 sub-steps for hospital (Review & Create) - only when user is a doctor
+      // Handle Step 5 for hospital (Review & Create)
       else if (currentStep === 5) {
-        // This only applies when user is a doctor (isDoctor === 'yes')
-        const currentSubStep = formData.hosStep5SubStep || 1;
-        
-        if (currentSubStep === 1) {
-          // Move to sub-step 2 (Terms and Agreement)
-          updateFormData({ hosStep5SubStep: 2 });
-        } else if (currentSubStep === 2) {
-          // Check if terms are accepted before moving to next step
-          if (formData.hosTermsAccepted && formData.hosPrivacyAccepted) {
-            nextStep();
-          } else {
-            // Show alert that terms must be accepted
-            alert('Please accept the Terms & Conditions and Data Privacy Agreement to continue.');
+        // Only for hospital registration (isDoctor === 'no')
+        if (formData.isDoctor === 'no') {
+          const currentSubStep = formData.hosStep5SubStep || 1;
+          if (currentSubStep === 1) {
+            // Move to sub-step 2 (Terms and Agreement)
+            updateFormData({ hosStep5SubStep: 2 });
+          } else if (currentSubStep === 2) {
+            // Check if terms are accepted before moving to next step
+            if (formData.hosTermsAccepted && formData.hosPrivacyAccepted) {
+              setFooterLoading(true);
+              try {
+                const payload = { ...formData };
+                await createHospital(payload);
+                nextStep();
+              } catch (err) {
+                alert(err?.message || 'Submission failed');
+              } finally {
+                setFooterLoading(false);
+              }
+            } else {
+              // Show alert that terms must be accepted
+              alert('Please accept the Terms & Conditions and Data Privacy Agreement to continue.');
+            }
+          }
+        } else {
+          // This only applies when user is a doctor (isDoctor === 'yes')
+          const currentSubStep = formData.hosStep5SubStep || 1;
+          if (currentSubStep === 1) {
+            // Move to sub-step 2 (Terms and Agreement)
+            updateFormData({ hosStep5SubStep: 2 });
+          } else if (currentSubStep === 2) {
+            // Check if terms are accepted before moving to next step
+            if (formData.hosTermsAccepted && formData.hosPrivacyAccepted) {
+              nextStep();
+            } else {
+              // Show alert that terms must be accepted
+              alert('Please accept the Terms & Conditions and Data Privacy Agreement to continue.');
+            }
           }
         }
       } else if (currentStep === 6) {
-        // Move to Step 7 (success page)
-        nextStep();
+        // On Step 6 (Hos_6), POST to API before moving to Step 7
+        setFooterLoading(true);
+        try {
+          const payload = { ...formData, hosSelectedPlan: formData.hosSelectedPlan };
+          await createHospital(payload);
+          nextStep();
+        } catch (err) {
+          alert(err?.message || 'Submission failed');
+        } finally {
+          setFooterLoading(false);
+        }
       } else if (currentStep === 7) {
         // Navigate to hospital profile/dashboard
         navigate('/hospital');

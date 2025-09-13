@@ -18,7 +18,7 @@ const Hos_2 = () => {
     graduation: "",
     graduationCollege: "",
     graduationYear: "",
-    hasPG: "", // radio value
+    hasPG: "", 
     pgDegree: "",
     pgCollege: "",
     pgYear: "",
@@ -34,7 +34,6 @@ const Hos_2 = () => {
     }));
   };
 
-  // Common form field props
   const commonFieldProps = {
     compulsory: true,
     required: true

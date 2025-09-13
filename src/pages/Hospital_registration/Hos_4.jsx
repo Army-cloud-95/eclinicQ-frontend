@@ -1,6 +1,6 @@
 import React from "react";
 import { Info } from "lucide-react";
-import { useRegistration } from "../../context/RegistrationContext";
+import useHospitalRegistrationStore from '../../store/useHospitalRegistrationStore';
 import { 
   Input,
   Radio,
@@ -11,13 +11,24 @@ import {
 } from "../../components/FormItems";
 
 const Hos_4 = () => {
-  const { formData, updateFormData } = useRegistration();
+  const {
+    gstin,
+    abhaId,
+    hasCin,
+    cinNumber,
+    stateHealthReg,
+    panCard,
+    rohiniId,
+    nabhAccreditation,
+    documents,
+    setField,
+    setDocument,
+    setDocuments
+  } = useHospitalRegistrationStore();
 
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
-    updateFormData({
-      [name]: type === 'radio' ? value : value
-    });
+    setField(name, type === 'radio' ? value : value);
   };
 
   return (
@@ -47,7 +58,7 @@ const Hos_4 = () => {
                     label="GSTIN"
                     name="gstin"
                     placeholder="Enter 15-digit GSTIN"
-                    value={formData.gstin || ''}
+                    value={gstin || ''}
                     onChange={handleInputChange}
                     compulsory={true}
                     required={true}
@@ -76,7 +87,7 @@ const Hos_4 = () => {
                     label="ABHA Facility ID"
                     name="abhaId"
                     placeholder="Enter Abha ID"
-                    value={formData.abhaId || ''}
+                    value={abhaId || ''}
                     onChange={handleInputChange}
                   />
                 </div>
@@ -101,20 +112,20 @@ const Hos_4 = () => {
             <Radio
               label="Do you have CIN (Corporate Hospital Registration Number)?"
               name="hasCin"
-              value={formData.hasCin}
+              value={hasCin}
               onChange={handleInputChange}
               options={[
                 { value: "yes", label: "Yes" },
                 { value: "no", label: "No" }
               ]}
             />
-            {formData.hasCin === 'yes' && (
+            {hasCin === 'yes' && (
               <div>
                 <Input
                   label="CIN Number"
                   name="cinNumber"
                   placeholder="Enter CIN Number"
-                  value={formData.cinNumber || ''}
+                  value={cinNumber || ''}
                   onChange={handleInputChange}
                 />
               </div>
@@ -155,7 +166,15 @@ const Hos_4 = () => {
                     label={field.label}
                     name={field.name}
                     placeholder={field.placeholder}
-                    value={formData[field.name] || ''}
+                    value={(() => {
+                      switch(field.name) {
+                        case 'stateHealthReg': return stateHealthReg || '';
+                        case 'panCard': return panCard || '';
+                        case 'rohiniId': return rohiniId || '';
+                        case 'nabhAccreditation': return nabhAccreditation || '';
+                        default: return '';
+                      }
+                    })()}
                     onChange={handleInputChange}
                     compulsory={field.required}
                     required={field.required}

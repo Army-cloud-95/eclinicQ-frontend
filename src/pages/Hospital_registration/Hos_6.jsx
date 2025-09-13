@@ -1,5 +1,7 @@
 import React, { useState } from "react";
 import { useRegistration } from "../../context/RegistrationContext";
+import useHospitalRegistrationStore from '../../store/useHospitalRegistrationStore';
+import { createHospital } from '../../services/hospitalService';
 
 const plans = [
   {
@@ -49,16 +51,19 @@ const plans = [
 ];
 
 const Hos_6 = () => {
-  const { updateFormData, formData } = useRegistration();
-  
-  // keep track of selected plan
+  const { updateFormData, formData, nextStep } = useRegistration();
+  const { data } = useHospitalRegistrationStore();
   const [selectedPlan, setSelectedPlan] = useState(formData.hosSelectedPlan || "Basic Hospital");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [success, setSuccess] = useState(null);
 
-  // Update form data when plan changes
+// Update form data when plan changes
   const handlePlanSelection = (planTitle) => {
     setSelectedPlan(planTitle);
     updateFormData({ hosSelectedPlan: planTitle });
   };
+
 
   return (
     <div className="flex flex-col items-center p-8 bg-white h-full">
@@ -69,7 +74,6 @@ const Hos_6 = () => {
       <div className="grid grid-cols-2 gap-6">
         {plans.map((plan, index) => {
           const isSelected = selectedPlan === plan.title;
-
           return (
             <div
               key={index}
@@ -88,7 +92,6 @@ const Hos_6 = () => {
                   </p>
                 </div>
               </div>
-
               {/* Features */}
               <div className="mt-2 space-y-2">
                 <p className="font-medium">Access to:</p>
@@ -99,9 +102,7 @@ const Hos_6 = () => {
                   </div>
                 ))}
               </div>
-
               <hr className="mt-1"/>
-
               {/* Button */}
               <button
                 onClick={() => handlePlanSelection(plan.title)}
@@ -117,6 +118,7 @@ const Hos_6 = () => {
           );
         })}
       </div>
+  {/* Save & Next Button is now handled by RegistrationFooter */}
     </div>
   );
 };
