@@ -42,7 +42,11 @@ const DummyLogin = () => {
   // Redirect to absolute dashboard URL on current origin
   window.location.replace(`${window.location.origin}/dashboard`)
     } catch (e) {
-      setError(e?.response?.data?.message || e.message || 'Login failed')
+      const raw = e?.response?.data?.message ?? e?.message ?? 'Login failed';
+      const msg = typeof raw === 'string' ? raw : (raw?.message || raw?.error || JSON.stringify(raw));
+      setError(msg);
+      // Helpful for debugging complex server errors without breaking UI
+      console.error('Login failed:', e);
     }
   }
 
@@ -83,7 +87,9 @@ const DummyLogin = () => {
           </label>
 
           {error && (
-            <div style={{ color: '#dc2626', fontSize: '14px' }}>{error}</div>
+            <div style={{ color: '#dc2626', fontSize: '14px' }}>
+              {typeof error === 'string' ? error : JSON.stringify(error)}
+            </div>
           )}
 
           <button

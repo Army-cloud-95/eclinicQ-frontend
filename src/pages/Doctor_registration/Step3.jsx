@@ -5,6 +5,7 @@ import {
   Upload, 
   FormContainer, 
   FormSection, 
+  MFA,
   FormFieldRow,
   MapLocation
 } from '../../components/FormItems';
@@ -184,38 +185,14 @@ const Step3 = () => {
             </div>
           </div>
 
-          {/* Multi-Factor Authentication */}
-          <div className="border border-blue-200 rounded-lg p-5">
-            <h3 className="text-sm font-semibold text-gray-900 mb-2">
-              Multi-Factor Authentication (MFA) <span className="text-red-500">*</span>
-            </h3>
-            <p className="text-xs text-gray-600 mb-4">
-              For enhanced security, we require setting up MFA for all admin accounts
-            </p>
-            
-            <div className="space-y-3">
-              <label className="flex items-center space-x-3 cursor-pointer">
-                <input
-                  type="checkbox"
-                  name="emailVerification"
-                  checked={clinicData.emailVerification}
-                  onChange={e => setClinicField('emailVerification', e.target.checked)}
-                  className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
-                />
-                <span className="text-sm text-gray-700">Email Verification</span>
-              </label>
-              <label className="flex items-center space-x-3 cursor-pointer">
-                <input
-                  type="checkbox"
-                  name="smsVerification"
-                  checked={clinicData.smsVerification}
-                  onChange={e => setClinicField('smsVerification', e.target.checked)}
-                  className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
-                />
-                <span className="text-sm text-gray-700">SMS Verification</span>
-              </label>
-            </div>
-          </div>
+          {/* Multi-Factor Authentication (always checked & disabled) */}
+          <MFA 
+            formData={{
+              emailVerification: true,
+              smsVerification: true
+            }}
+            disabled={true}
+          />
         </div>
   {/* Navigation handled by parent, no submit button here */}
       </FormSection>

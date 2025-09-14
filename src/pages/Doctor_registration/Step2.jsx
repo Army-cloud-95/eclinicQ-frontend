@@ -6,7 +6,8 @@ import {
   Radio,
   FormContainer,
   FormSection,
-  FormFieldRow
+  FormFieldRow,
+  MFA
 } from '../../components/FormItems';
 import useDoctorRegistrationStore from '../../store/useDoctorRegistrationStore';
 
@@ -25,7 +26,10 @@ const Step2 = () => {
     pgMedicalDegreeYearOfCompletion,
     setField,
     documents,
-    setDocument
+  setDocument,
+  additionalPractices,
+  addPractice,
+  updatePractice,
   } = useDoctorRegistrationStore();
 
   // Common form field props
@@ -37,16 +41,56 @@ const Step2 = () => {
   // Council options
   const councilOptions = [
     { value: "Maharashtra Medical Council", label: "Maharashtra Medical Council" },
-    { value: "Delhi Medical Council", label: "Delhi Medical Council" }
+    { value: "Andhra Pradesh Medical Council", label: "Andhra Pradesh Medical Council" },
+    { value: "Arunachal Pradesh Medical Council", label: "Arunachal Pradesh Medical Council" },
+    { value: "Assam Medical Council", label: "Assam Medical Council" },
+    { value: "Bihar Medical Council", label: "Bihar Medical Council" },
+    { value: "Chhattisgarh Medical Council", label: "Chhattisgarh Medical Council" },
+    { value: "Delhi Medical Council", label: "Delhi Medical Council" },
+    { value: "Goa Medical Council", label: "Goa Medical Council" },
+    { value: "Gujarat Medical Council", label: "Gujarat Medical Council" },
+    { value: "Haryana Medical Council", label: "Haryana Medical Council" }
   ];
 
   // Post graduate degree options
   const pgDegreeOptions = [
-    { value: "MD", label: "MD" },
-    { value: "MS", label: "MS" },
-    { value: "DM", label: "DM" },
-    { value: "MCh", label: "MCh" },
-    { value: "DNB", label: "DNB" }
+    { value: "MD (Internal Medicine)", label: "MD (Internal Medicine)" },
+    { value: "MS (General Surgery)", label: "MS (General Surgery)" },
+    { value: "MD (Pediatrics)", label: "MD (Pediatrics)" },
+    { value: "MS (Orthopedics)", label: "MS (Orthopedics)" },
+    { value: "MD (Radiology)", label: "MD (Radiology)" },
+    { value: "MS (ENT)", label: "MS (ENT)" }
+  ];
+
+  // Graduation degree options
+  const gradDegreeOptions = [
+    { value: "MBBS", label: "MBBS" },
+    { value: "BDS", label: "BDS" },
+    { value: "BAMS", label: "BAMS" },
+    { value: "BHMS", label: "BHMS" },
+    { value: "BUMS", label: "BUMS" },
+    { value: "BNYS", label: "BNYS" },
+    { value: "BSMS", label: "BSMS" }
+  ];
+
+  // College/University options (sample, can be expanded)
+  const collegeOptions = [
+    { value: "AIIMS Delhi", label: "AIIMS Delhi" },
+    { value: "Grant Medical College Mumbai", label: "Grant Medical College Mumbai" },
+    { value: "KEM Hospital Mumbai", label: "KEM Hospital Mumbai" },
+    { value: "Christian Medical College Vellore", label: "Christian Medical College Vellore" },
+    { value: "Maulana Azad Medical College Delhi", label: "Maulana Azad Medical College Delhi" },
+    { value: "Other", label: "Other" }
+  ];
+
+  // Specialization options (from requested list)
+  const specializationOptions = [
+    { value: "General Medicine (Internal Medicine)", label: "General Medicine (Internal Medicine)" },
+    { value: "General Surgery", label: "General Surgery" },
+    { value: "Pediatrics", label: "Pediatrics" },
+    { value: "Orthopedics", label: "Orthopedics" },
+    { value: "Obstetrics & Gynecology", label: "Obstetrics & Gynecology" },
+    { value: "Dermatology", label: "Dermatology" },
   ];
 
   return (
@@ -105,19 +149,22 @@ const Step2 = () => {
 
             {/* Graduation */}
             <FormFieldRow>
-              <Input
-                label="Graduation"
+              <Dropdown
+                label="Graduation Degree"
                 name="medicalDegreeType"
                 value={medicalDegreeType}
                 onChange={e => setField('medicalDegreeType', e.target.value)}
-                placeholder="e.g. MBBS"
+                options={gradDegreeOptions}
+                placeholder="Select Degree"
                 {...commonFieldProps}
               />
-              <Input
+              <Dropdown
                 label="College/ University"
                 name="medicalDegreeUniversityName"
                 value={medicalDegreeUniversityName}
                 onChange={e => setField('medicalDegreeUniversityName', e.target.value)}
+                options={collegeOptions}
+                placeholder="Select College/University"
                 {...commonFieldProps}
               />
             </FormFieldRow>
@@ -142,8 +189,18 @@ const Step2 = () => {
               <Radio
                 label="Have Post Graduate Degree?"
                 name="hasPG"
-                value={pgMedicalDegreeType ? 'yes' : 'no'}
-                onChange={e => setField('pgMedicalDegreeType', e.target.value === 'yes' ? '' : null)}
+                value={pgMedicalDegreeType !== null ? 'yes' : 'no'}
+                onChange={e => {
+                  const v = e.target.value;
+                  if (v === 'no') {
+                    setField('pgMedicalDegreeType', null);
+                    setField('pgMedicalDegreeUniversityName', '');
+                    setField('pgMedicalDegreeYearOfCompletion', '');
+                  } else {
+                    // Initialize to empty string to show dependent fields without selecting a degree yet
+                    if (pgMedicalDegreeType === null) setField('pgMedicalDegreeType', '');
+                  }
+                }}
                 options={[
                   { value: "yes", label: "Yes" },
                   { value: "no", label: "No" }
@@ -151,7 +208,7 @@ const Step2 = () => {
               />
 
               {/* Conditional Post Graduation Fields */}
-              {pgMedicalDegreeType && (
+              {pgMedicalDegreeType !== null && (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-4">
                     <Dropdown
@@ -170,12 +227,13 @@ const Step2 = () => {
                     />
                   </div>
                   <div className="space-y-4">
-                    <Input
+                    <Dropdown
                       label="College/ University"
                       name="pgMedicalDegreeUniversityName"
                       value={pgMedicalDegreeUniversityName}
                       onChange={e => setField('pgMedicalDegreeUniversityName', e.target.value)}
-                      placeholder="Search or Enter College"
+                      options={collegeOptions}
+                      placeholder="Select College/University"
                     />
                     <Upload
                       label="Upload Degree Proof"
@@ -192,16 +250,31 @@ const Step2 = () => {
 
           {/* Practice Details */}
           <div className="space-y-4">
-            <h2 className="text-lg font-semibold text-gray-900">
-              Practice Details
-            </h2>
+            <div className="flex items-center gap-2">
+              <h2 className="text-lg font-semibold text-gray-900">Practice Details</h2>
+              <button
+                type="button"
+                onClick={addPractice}
+                title="Add specialization"
+                className="w-6 h-6 flex items-center justify-center rounded border border-gray-300 text-gray-600 hover:bg-gray-50"
+                aria-label="Add specialization"
+              >
+                +
+              </button>
+            </div>
             <FormFieldRow>
-              <Input
+              <Dropdown
                 label="Specialization"
                 name="specialization"
-                value={specialization}
-                onChange={e => setField('specialization', e.target.value)}
-                placeholder="Select Degree Type"
+                value={typeof specialization === 'object' ? (specialization?.value || specialization?.name || '') : specialization}
+                onChange={e => {
+                  const val = e.target.value;
+                  const opt = specializationOptions.find(o => o.value === val);
+                  setField('specialization', { name: opt?.label || val, value: val });
+                }}
+                options={specializationOptions}
+                placeholder="Select Specialization"
+                {...commonFieldProps}
               />
               <Input
                 label="Year of Experience"
@@ -209,8 +282,41 @@ const Step2 = () => {
                 value={experienceYears}
                 onChange={e => setField('experienceYears', e.target.value)}
                 placeholder="Enter Year"
+                {...commonFieldProps}
               />
             </FormFieldRow>
+
+            {Array.isArray(additionalPractices) && additionalPractices.length > 0 && (
+              <div className="space-y-3">
+                {additionalPractices.map((p, idx) => (
+                  <FormFieldRow key={idx}>
+                    <Dropdown
+                      label="Specialization"
+                      name={`additional_specialization_${idx}`}
+                      value={typeof p.specialization === 'object' ? (p.specialization?.value || p.specialization?.name || '') : (p.specialization || '')}
+                      onChange={e => {
+                        const val = e.target.value;
+                        const opt = specializationOptions.find(o => o.value === val);
+                        updatePractice(idx, { specialization: { name: opt?.label || val, value: val } });
+                      }}
+                      options={specializationOptions}
+                      placeholder="Select Specialization"
+                      compulsory
+                      required
+                    />
+                    <Input
+                      label="Year of Experience"
+                      name={`additional_experience_${idx}`}
+                      value={p.experienceYears}
+                      onChange={e => updatePractice(idx, { experienceYears: e.target.value })}
+                      placeholder="Enter Year"
+                      compulsory
+                      required
+                    />
+                  </FormFieldRow>
+                ))}
+              </div>
+            )}
           </div>
         </div>
   {/* Navigation handled by parent, no submit button here */}

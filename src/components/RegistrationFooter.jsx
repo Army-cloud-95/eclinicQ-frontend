@@ -59,7 +59,7 @@ const RegistrationFooter = ({ onCancel, onNext, onPrev, currentStep, maxSteps, n
     );
   }
 
-  const { submit, loading, error, success } = useDoctorRegistrationStore();
+  const { submit, loading, error, success, userId, specialization } = useDoctorRegistrationStore();
   const { setCurrentStep } = useRegistration();
   const [localError, setLocalError] = React.useState(null);
   const [disablePrevLocal, setDisablePrevLocal] = React.useState(false);
@@ -68,14 +68,29 @@ const RegistrationFooter = ({ onCancel, onNext, onPrev, currentStep, maxSteps, n
 
   const handleSubmit = async () => {
     setLocalError(null);
-    try {
-      await submit();
-      // If success, go to step 6 and disable previous
+    // Guard: ensure userId exists (set after Step1 registers the doctor)
+    if (!userId) {
+      const msg = 'User ID is missing. Please complete Step 1 (Account Creation) successfully before submitting.';
+      setLocalError(msg);
+      alert(msg);
+      return;
+    }
+    // Guard: required business fields
+  const specOk = specialization && (typeof specialization === 'object' ? specialization.value : specialization);
+  if (!specOk) {
+      const msg = 'Please enter your Specialization in Step 2 before submitting.';
+      setLocalError(msg);
+      alert(msg);
+      return;
+    }
+    const ok = await submit();
+    if (ok) {
       setCurrentStep(6);
       setDisablePrevLocal(true);
-    } catch (e) {
-      setLocalError(error || 'Registration failed');
-      alert(error || 'Registration failed');
+    } else {
+      const msg = error || 'Registration failed';
+      setLocalError(msg);
+      alert(msg);
     }
   };
 
@@ -112,7 +127,7 @@ const RegistrationFooter = ({ onCancel, onNext, onPrev, currentStep, maxSteps, n
             {nextLabel}
           </button>
         )}
-        {isLastStep && (localError || error) && <span className="ml-4 text-red-600">{localError || error}</span>}
+  {/* Error alerts are shown via window.alert in handleSubmit; no inline red text */}
         {isLastStep && success && <span className="ml-4 text-green-600">Registration successful!</span>}
       </div>
     </footer>

@@ -2,35 +2,66 @@ import React, { useState, useEffect } from 'react';
 import { CheckCircle, Circle } from 'lucide-react';
 import { useRegistration } from '../../context/RegistrationContext';
 import { ProgressBar, SectionHeader, ReviewBanner, ReviewCard, AgreementBox, ActionButton } from '../../components/FormItems';
+import useDoctorStep1Store from '../../store/useDoctorStep1Store';
+import useDoctorRegistrationStore from '../../store/useDoctorRegistrationStore';
 
 const Step4 = () => {
   const { currentStep, nextStep, prevStep, updateFormData, formData } = useRegistration();
+  // Pull latest values from stores
+  const step1 = useDoctorStep1Store();
+  const reg = useDoctorRegistrationStore();
   
   const currentSubStep = formData.step4SubStep || 1;
   
   const [termsAccepted, setTermsAccepted] = useState(formData.termsAccepted || false);
   const [privacyAccepted, setPrivacyAccepted] = useState(formData.privacyAccepted || false);
-  
+  // Helpers to build display strings safely
+  const orDash = (v) => (v === 0 ? '0' : (v ? v : '—'));
+  const joinNonEmpty = (arr, sep = ', ') => arr.filter(Boolean).join(sep);
+  const formatCompleted = (label, year) => {
+    if (!label && !year) return '—';
+    if (label && year) return `${label} (Completed : ${year})`;
+    return label || `Completed : ${year}`;
+  };
+  const computeMfaStatus = () => {
+    const email = step1?.mfa?.emailId;
+    const phone = step1?.mfa?.phone;
+    if (email && phone) return 'Done';
+    if (email || phone) return 'Partial';
+    return 'Pending';
+  };
+  const buildAddress = () => {
+    const c = reg?.clinicData || {};
+    const line1 = joinNonEmpty([c.blockNo, c.areaStreet, c.landmark], ', ');
+    const line2 = joinNonEmpty([c.city, c.state, c.pincode], ', ');
+    return orDash(joinNonEmpty([line1, line2], ' '));
+  };
   const doctorData = {
-    doctorName: "Milind Chachun",
-    gender: "Male",
-    userRole: "Super Admin/Doctor",
-    personalEmail: "MilindChachun@gmail.com",
-    personalContact: "+91 91753 67487",
-    mfaStatus: "Done",
-    mrnNumber: "29AACCC2943F1ZS",
-    registrationCouncil: "Maharashtra State Council",
-    registrationYear: "2008",
-    graduationDegree: "MBBS (Completed : 2008)",
-    medicalInstitute: "Government Medical College, Nagpur",
-    postGraduation: "MD in General Medicine (Completed : 2011)",
-    specialization: "General Medicine (Exp : 17 years)",
-    clinicName: "Manipal Clinic Life's On",
-    hospitalType: "Private Hospital",
-    clinicEmail: "support@Manipal.com",
-    clinicContact: "+91 99828 39045",
-    eClinicId: "HLN-001",
-    address: "Manipal Health Enterprise Pvt Ltd. The Annexe, #88/2, Rustom Bagh, Off HAL Airport Road, Bengaluru - 560017"
+    doctorName: orDash(joinNonEmpty([step1?.firstName, step1?.lastName], ' ')),
+    gender: orDash(step1?.gender),
+    userRole: orDash(step1?.role ? (step1.role === 'doctor' ? 'Doctor' : step1.role) : undefined),
+    personalEmail: orDash(step1?.emailId),
+    personalContact: orDash(step1?.phone),
+    mfaStatus: computeMfaStatus(),
+    mrnNumber: orDash(reg?.medicalCouncilRegNo),
+    registrationCouncil: orDash(reg?.medicalCouncilName),
+    registrationYear: orDash(reg?.medicalCouncilRegYear),
+    graduationDegree: formatCompleted(reg?.medicalDegreeType, reg?.medicalDegreeYearOfCompletion),
+    medicalInstitute: orDash(reg?.medicalDegreeUniversityName),
+    postGraduation: formatCompleted(reg?.pgMedicalDegreeType, reg?.pgMedicalDegreeYearOfCompletion),
+    specialization: (() => {
+      const specVal = reg?.specialization;
+      const specName = typeof specVal === 'object' ? (specVal?.name || specVal?.value) : specVal;
+      const exp = reg?.experienceYears;
+      if (!specName && !exp) return '—';
+      return `${specName || ''}${exp ? ` (Exp : ${exp} years)` : ''}`.trim();
+    })(),
+    clinicName: orDash(reg?.clinicData?.name),
+    hospitalType: orDash(reg?.clinicData?.type), // may be undefined in store
+    clinicEmail: orDash(reg?.clinicData?.email),
+    clinicContact: orDash(reg?.clinicData?.phone),
+    eClinicId: orDash(reg?.eClinicId), // not present yet; placeholder
+    address: buildAddress(),
   };
 
   useEffect(() => {
@@ -161,8 +192,18 @@ const Step4 = () => {
             <Row>
               <LabelValue label="Medical Institute" value={doctorData.medicalInstitute} />
             </Row>
-            <div className="pt-1">
+            <div className="pt-1 space-y-1">
               <LabelValue label="Specialization" value={doctorData.specialization} />
+              {Array.isArray(reg?.additionalPractices) && reg.additionalPractices.length > 0 && (
+                <div className="ml-[170px] space-y-1">
+                  {reg.additionalPractices.map((p, i) => {
+                    const name = typeof p?.specialization === 'object' ? (p.specialization?.name || p.specialization?.value) : p?.specialization;
+                    const exp = p?.experienceYears;
+                    const text = `${name || '—'}${exp ? ` (Exp : ${exp} years)` : ''}`;
+                    return <div key={i} className="text-sm text-gray-900 font-medium">• {text}</div>
+                  })}
+                </div>
+              )}
             </div>
           </div>
         </ReviewCard>

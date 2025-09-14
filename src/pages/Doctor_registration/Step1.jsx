@@ -57,14 +57,14 @@ const Step1 = forwardRef((props, ref) => {
   const handleSubmit = async (e) => {
     if (e) e.preventDefault();
     const result = await submit();
-    if (result) {
+    if (result?.success) {
       alert("Account created successfully!");
-      reset();
+  // Keep Step1 values so they're visible in later review (Step4)
+  // Do not reset here; we'll clear after full registration if needed
       return true;
-    } else if (error) {
-      alert(error || "Registration failed");
-      return false;
     }
+    const msg = result?.error || error || "Registration failed";
+    alert(msg);
     return false;
   };
 
@@ -81,10 +81,10 @@ const Step1 = forwardRef((props, ref) => {
 
   const cityOptions = [
     { value: "Akola, Maharashtra", label: "Akola, Maharashtra" },
-    { value: "Mumbai, Maharashtra", label: "Mumbai, Maharashtra" },
-    { value: "Delhi, Delhi", label: "Delhi, Delhi" },
-    { value: "Bangalore, Karnataka", label: "Bangalore, Karnataka" },
-    { value: "Chennai, Tamil Nadu", label: "Chennai, Tamil Nadu" },
+    { value: "Aurangabad, Maharashtra", label: "Aurangabad, Maharashtra" },
+    { value: "Nagpur, Maharashtra", label: "Nagpur, Maharashtra" },
+    { value: "Amravati, Maharashtra", label: "Amravati, Maharashtra" },
+    { value: "Akot, Maharashtra", label: "Akot, Maharashtra" }
   ];
 
   return (
