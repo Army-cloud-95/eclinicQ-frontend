@@ -3,9 +3,14 @@ import { useRegistration } from "../context/RegistrationContext";
 import useDoctorRegistrationStore from '../store/useDoctorRegistrationStore';
 
 const RegistrationFooter = ({ onCancel, onNext, onPrev, currentStep, maxSteps, nextLabel = "Save & Next →", disablePrev = false }) => {
-  const { registrationType } = useRegistration();
+  const { registrationType, formData } = useRegistration();
+  const isHospital = registrationType === 'hospital';
+  const hospitalOwnerAlsoDoctor = isHospital && String(formData?.isDoctor || 'no') === 'yes';
 
-  if (currentStep === 6) {
+  // Final success footer:
+  // - Doctor flow finishes at step 6
+  // - Hospital flow finishes at step 6 when isDoctor === 'no'
+  if ((registrationType === 'doctor' && currentStep === 6) || (isHospital && !hospitalOwnerAlsoDoctor && currentStep === 6)) {
     return (
       <footer className="flex-shrink-0 p-4 border-t border-gray-200 flex justify-between bg-white">
         <button onClick={onCancel} className="px-4 py-2 rounded-lg border border-gray-300 hover:bg-gray-50 transition-colors">
@@ -33,7 +38,7 @@ const RegistrationFooter = ({ onCancel, onNext, onPrev, currentStep, maxSteps, n
   }
 
   // For Step 7 (hospital success page), show different navigation
-  if (currentStep === 7 && registrationType === 'hospital') {
+  if (currentStep === 7 && isHospital) {
     return (
       <footer className="flex-shrink-0 p-4 border-t border-gray-200 flex justify-between bg-white">
         <button onClick={onCancel} className="px-4 py-2 rounded-lg border border-gray-300 hover:bg-gray-50 transition-colors">

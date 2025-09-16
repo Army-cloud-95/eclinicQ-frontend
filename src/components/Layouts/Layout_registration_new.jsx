@@ -7,6 +7,10 @@ import RegistrationFooter from "../RegistrationFooter";
 import RegistrationFlow from "../RegistrationFlow";
 import React, { useRef, useState } from "react";
 import Step1 from '../../pages/Doctor_registration/Step1';
+// Import stores directly to avoid runtime require (ESM only)
+import useDoctorRegistrationStore from '../../store/useDoctorRegistrationStore';
+import useDoctorStep1Store from '../../store/useDoctorStep1Store';
+import useHospitalDoctorDetailsStore from '../../store/useHospitalDoctorDetailsStore';
 
 const Layout_registration_new = () => {
   const { currentStep, nextStep, prevStep, registrationType, setRegistrationType, formData, updateFormData, setCurrentStep } = useRegistration();
@@ -179,9 +183,6 @@ const Layout_registration_new = () => {
         setFooterLoading(true);
         try {
           // Use the centralized doctor registration store submit
-          const dr = require('../../store/useDoctorRegistrationStore');
-          const useDoctorRegistrationStore = dr?.default || dr;
-          if (!useDoctorRegistrationStore) throw new Error('Registration store not available');
           const ok = await useDoctorRegistrationStore.getState().submit();
           if (ok === true) {
             nextStep();
@@ -335,13 +336,9 @@ const Layout_registration_new = () => {
         setFooterLoading(true);
         try {
           if (formData.isDoctor === 'yes') {
-            const dr = require('../../store/useDoctorRegistrationStore');
-            const useDoctorRegistrationStore = dr?.default || dr;
-            if (useDoctorRegistrationStore) {
-              const ok = await useDoctorRegistrationStore.getState().submit();
-              if (!ok) {
-                throw new Error('Doctor details submission failed');
-              }
+            const ok = await useHospitalDoctorDetailsStore.getState().submit();
+            if (!ok) {
+              throw new Error('Doctor details submission failed');
             }
           }
           // Only submit hospital here when isDoctor is 'yes'.

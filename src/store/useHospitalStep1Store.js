@@ -1,7 +1,9 @@
 import { create } from 'zustand';
 import axios from '../lib/axios';
 import useHospitalRegistrationStore from './useHospitalRegistrationStore';
+import useDoctorRegistrationStore from './useDoctorRegistrationStore';
 import useAuthStore from './useAuthStore';
+import useDoctorStep1Store from './useDoctorStep1Store';
 
 const useHospitalStep1Store = create((set, get) => ({
   form: {
@@ -68,7 +70,7 @@ const useHospitalStep1Store = create((set, get) => ({
         payload.profilePhotoKey = form.profilePhotoKey;
       }
 
-      const res = await axios.post('/auth/register', payload);
+  const res = await axios.post('/auth/register', payload);
       const data = res?.data || {};
 
       // Extract the created admin/user id (varies by backend)
@@ -77,6 +79,25 @@ const useHospitalStep1Store = create((set, get) => ({
         try {
           const { setField } = useHospitalRegistrationStore.getState();
           setField('adminId', String(adminId));
+        } catch (_) {
+          // no-op
+        }
+      }
+      // If owner is also a doctor, propagate the created user/doctor id into the doctor registration store
+      if (isDoctor) {
+        try {
+          // Mirror extraction logic used in doctor Step1 for maximum compatibility
+          const doctorId = data?.data?.doctorId || data?.doctorId || data?.data?.userId || data?.userId || adminId || '';
+          if (doctorId) {
+            const { setField: setDoctorField } = useDoctorRegistrationStore.getState();
+            setDoctorField('userId', String(doctorId));
+            // No longer mirror into doctor Step1 store; Hos_2 uses a dedicated store
+            // Mirror into hospital doctor details store (Hos_2 dedicated)
+            try {
+              const setFieldHosDoc = (await import('./useHospitalDoctorDetailsStore')).default.getState().setField;
+              setFieldHosDoc('userId', String(doctorId));
+            } catch (_) {}
+          }
         } catch (_) {
           // no-op
         }
