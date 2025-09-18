@@ -11,6 +11,7 @@ import {
   MFA
 } from '../../components/FormItems';
 
+
 const Step1 = forwardRef((props, ref) => {
   const {
     firstName,
@@ -31,6 +32,8 @@ const Step1 = forwardRef((props, ref) => {
     reset
   } = useDoctorStep1Store();
 
+  const [formErrors, setFormErrors] = React.useState({});
+
   const uploadUrlData = useImageUploadStore((state) => state.uploadUrl);
 
   useEffect(() => {
@@ -45,22 +48,64 @@ const Step1 = forwardRef((props, ref) => {
     setMfaField('phone', true);
   }, [setMfaField]);
 
+
+  // Validation functions
+  const validateField = (name, value) => {
+    switch (name) {
+      case "firstName":
+      case "lastName":
+        if (!value || value.trim().length === 0) return "Required";
+        return "";
+      case "emailId":
+        if (!value) return "Required";
+        // Simple email regex
+        if (!/^\S+@\S+\.\S+$/.test(value)) return "Invalid email format";
+        return "";
+      case "phone":
+        if (!value) return "Required";
+        if (!/^\d{10}$/.test(value)) return "Phone must be 10 digits";
+        return "";
+      case "gender":
+      case "city":
+        if (!value) return "Required";
+        return "";
+      default:
+        return "";
+    }
+  };
+
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
     if (name === "emailVerification" || name === "smsVerification") {
       setMfaField(name === "emailVerification" ? "emailId" : "phone", checked);
     } else {
       setField(name, type === "checkbox" ? checked : value);
+      // Validate on change
+      setFormErrors((prev) => ({
+        ...prev,
+        [name]: validateField(name, type === "checkbox" ? checked : value)
+      }));
     }
   };
 
+
   const handleSubmit = async (e) => {
     if (e) e.preventDefault();
+    // Validate all fields before submit
+    const fieldsToValidate = { firstName, lastName, emailId, phone, gender, city };
+    const newErrors = {};
+    Object.entries(fieldsToValidate).forEach(([key, val]) => {
+      const err = validateField(key, val);
+      if (err) newErrors[key] = err;
+    });
+    setFormErrors(newErrors);
+    if (Object.keys(newErrors).length > 0) {
+      // Focus first error field if needed
+      return false;
+    }
     const result = await submit();
     if (result?.success) {
       alert("Account created successfully!");
-  // Keep Step1 values so they're visible in later review (Step4)
-  // Do not reset here; we'll clear after full registration if needed
       return true;
     }
     const msg = result?.error || error || "Registration failed";
@@ -96,60 +141,78 @@ const Step1 = forwardRef((props, ref) => {
         <div className="space-y-6">
           {/* Name Row */}
           <FormFieldRow>
-            <Input
-              label="First Name"
-              name="firstName"
-              value={firstName}
-              onChange={handleInputChange}
-              compulsory
-            />
-            <Input
-              label="Last Name"
-              name="lastName"
-              value={lastName}
-              onChange={handleInputChange}
-              compulsory
-            />
+            <div className="w-full">
+              <Input
+                label="First Name"
+                name="firstName"
+                value={firstName}
+                onChange={handleInputChange}
+                compulsory
+              />
+              {formErrors.firstName && <span className="text-red-500 text-xs">{formErrors.firstName}</span>}
+            </div>
+            <div className="w-full">
+              <Input
+                label="Last Name"
+                name="lastName"
+                value={lastName}
+                onChange={handleInputChange}
+                compulsory
+              />
+              {formErrors.lastName && <span className="text-red-500 text-xs">{formErrors.lastName}</span>}
+            </div>
           </FormFieldRow>
 
           {/* Email and Phone Row */}
           <FormFieldRow>
-            <Input
-              label="Work Email"
-              name="emailId"
-              type="email"
-              value={emailId}
-              onChange={handleInputChange}
-              compulsory
-            />
-            <Input
-              label="Contact Number"
-              name="phone"
-              type="tel"
-              value={phone}
-              onChange={handleInputChange}
-              compulsory
-            />
+            <div className="w-full">
+              <Input
+                label="Work Email"
+                name="emailId"
+                type="email"
+                value={emailId}
+                onChange={handleInputChange}
+                compulsory
+              />
+              {formErrors.emailId && <span className="text-red-500 text-xs">{formErrors.emailId}</span>}
+            </div>
+            <div className="w-full">
+              <Input
+                label="Contact Number"
+                name="phone"
+                type="tel"
+                value={phone}
+                onChange={handleInputChange}
+                compulsory
+              />
+              {formErrors.phone && <span className="text-red-500 text-xs">{formErrors.phone}</span>}
+            </div>
           </FormFieldRow>
 
           {/* Gender and City Row */}
           <FormFieldRow>
-            <Dropdown
-              label="Gender"
-              name="gender"
-              value={gender}
-              onChange={handleInputChange}
-              options={genderOptions}
-              compulsory
-            />
-            <Dropdown
-              label="City"
-              name="city"
-              value={city}
-              onChange={handleInputChange}
-              options={cityOptions}
-              compulsory
-            />
+            <div className="w-full">
+              <Dropdown
+                label="Gender"
+                name="gender"
+                value={gender}
+                onChange={handleInputChange}
+                options={genderOptions}
+                compulsory
+              />
+              {formErrors.gender && <span className="text-red-500 text-xs">{formErrors.gender}</span>}
+            </div>
+            <div className="w-full">
+              <Dropdown
+                label="City"
+                name="city"
+                value={city}
+                onChange={handleInputChange}
+                options={cityOptions}
+                compulsory
+              />
+              {formErrors.city && <span className="text-red-500 text-xs">{formErrors.city}</span>}
+            </div>
           </FormFieldRow>
 
           {/* Upload Profile Picture */}

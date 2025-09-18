@@ -15,6 +15,7 @@ const Step4 = () => {
   
   const [termsAccepted, setTermsAccepted] = useState(formData.termsAccepted || false);
   const [privacyAccepted, setPrivacyAccepted] = useState(formData.privacyAccepted || false);
+  const [formError, setFormError] = useState("");
   // Helpers to build display strings safely
   const orDash = (v) => (v === 0 ? '0' : (v ? v : '—'));
   const joinNonEmpty = (arr, sep = ', ') => arr.filter(Boolean).join(sep);
@@ -77,12 +78,24 @@ const Step4 = () => {
     const newValue = !termsAccepted;
     setTermsAccepted(newValue);
     updateFormData({ termsAccepted: newValue });
+    if (formError) setFormError("");
   };
 
   const handlePrivacyChange = () => {
     const newValue = !privacyAccepted;
     setPrivacyAccepted(newValue);
     updateFormData({ privacyAccepted: newValue });
+    if (formError) setFormError("");
+  };
+
+  // Validation before proceeding (call this before nextStep)
+  const validateAgreements = () => {
+    if (!termsAccepted || !privacyAccepted) {
+      setFormError("You must accept both Terms & Conditions and Data Privacy Agreement to proceed.");
+      return false;
+    }
+    setFormError("");
+    return true;
   };
 
   const StatusBadge = ({ status, type }) => {
@@ -302,6 +315,11 @@ const Step4 = () => {
 
   return (
     <div className="min-h-screen bg-white">
+      {formError && (
+        <div className="max-w-2xl mx-auto p-2">
+          <span className="text-red-500 text-sm font-semibold">{formError}</span>
+        </div>
+      )}
       {currentSubStep === 1 ? <Page1 /> : <Page2 />}
     </div>
   );

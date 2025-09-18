@@ -11,6 +11,7 @@ import {
 } from '../../components/FormItems';
 import useDoctorRegistrationStore from '../../store/useDoctorRegistrationStore';
 
+
 const Step2 = () => {
   const {
     specialization,
@@ -26,11 +27,74 @@ const Step2 = () => {
     pgMedicalDegreeYearOfCompletion,
     setField,
     documents,
-  setDocument,
-  additionalPractices,
-  addPractice,
-  updatePractice,
+    setDocument,
+    additionalPractices,
+    addPractice,
+    updatePractice,
   } = useDoctorRegistrationStore();
+
+  const [formErrors, setFormErrors] = React.useState({});
+
+  // Validation functions
+  const validateField = (name, value) => {
+    switch (name) {
+      case "medicalCouncilRegNo":
+        if (!value) return "Required";
+        if (!/^\w{4,}$/.test(value)) return "Invalid Reg. No.";
+        return "";
+      case "medicalCouncilName":
+        if (!value) return "Required";
+        return "";
+      case "medicalCouncilRegYear":
+        if (!value) return "Required";
+        if (!/^\d{4}$/.test(value)) return "Year must be 4 digits";
+        return "";
+      case "medicalDegreeType":
+      case "medicalDegreeUniversityName":
+      case "medicalDegreeYearOfCompletion":
+        if (!value) return "Required";
+        return "";
+      case "experienceYears":
+        if (!value) return "Required";
+        if (!/^\d+$/.test(value) || Number(value) < 0) return "Invalid years";
+        return "";
+      case "specialization":
+        if (!value || (typeof value === 'object' && !value.value && !value.name)) return "Required";
+        return "";
+      default:
+        return "";
+    }
+  };
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setField(name, value);
+    setFormErrors((prev) => ({
+      ...prev,
+      [name]: validateField(name, value)
+    }));
+  };
+
+  // Validate all fields before submit (if submit button is added)
+  const validateAll = () => {
+    const fieldsToValidate = {
+      medicalCouncilRegNo,
+      medicalCouncilName,
+      medicalCouncilRegYear,
+      medicalDegreeType,
+      medicalDegreeUniversityName,
+      medicalDegreeYearOfCompletion,
+      specialization,
+      experienceYears
+    };
+    const newErrors = {};
+    Object.entries(fieldsToValidate).forEach(([key, val]) => {
+      const err = validateField(key, val);
+      if (err) newErrors[key] = err;
+    });
+    setFormErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
 
   // Common form field props
   const commonFieldProps = {
@@ -106,22 +170,28 @@ const Step2 = () => {
               Medical Registration
             </h2>
             <FormFieldRow>
-              <Input
-                label="Medical Council Registration Number"
-                name="medicalCouncilRegNo"
-                value={medicalCouncilRegNo}
-                onChange={e => setField('medicalCouncilRegNo', e.target.value)}
-                {...commonFieldProps}
-              />
-              <Dropdown
-                label="Registration Council"
-                name="medicalCouncilName"
-                value={medicalCouncilName}
-                onChange={e => setField('medicalCouncilName', e.target.value)}
-                options={councilOptions}
-                placeholder="Select Council"
-                {...commonFieldProps}
-              />
+              <div className="w-full">
+                <Input
+                  label="Medical Council Registration Number"
+                  name="medicalCouncilRegNo"
+                  value={medicalCouncilRegNo}
+                  onChange={handleInputChange}
+                  {...commonFieldProps}
+                />
+                {formErrors.medicalCouncilRegNo && <span className="text-red-500 text-xs">{formErrors.medicalCouncilRegNo}</span>}
+              </div>
+              <div className="w-full">
+                <Dropdown
+                  label="Registration Council"
+                  name="medicalCouncilName"
+                  value={medicalCouncilName}
+                  onChange={handleInputChange}
+                  options={councilOptions}
+                  placeholder="Select Council"
+                  {...commonFieldProps}
+                />
+                {formErrors.medicalCouncilName && <span className="text-red-500 text-xs">{formErrors.medicalCouncilName}</span>}
+              </div>
             </FormFieldRow>
 
             <FormFieldRow>
@@ -130,9 +200,10 @@ const Step2 = () => {
                   label="Registration Year"
                   name="medicalCouncilRegYear"
                   value={medicalCouncilRegYear}
-                  onChange={e => setField('medicalCouncilRegYear', e.target.value)}
+                  onChange={handleInputChange}
                   {...commonFieldProps}
                 />
+                {formErrors.medicalCouncilRegYear && <span className="text-red-500 text-xs">{formErrors.medicalCouncilRegYear}</span>}
                 <p className="text-xs text-gray-400 mt-1">Visible to Patient</p>
               </div>
               <Upload
@@ -149,24 +220,30 @@ const Step2 = () => {
 
             {/* Graduation */}
             <FormFieldRow>
-              <Dropdown
-                label="Graduation Degree"
-                name="medicalDegreeType"
-                value={medicalDegreeType}
-                onChange={e => setField('medicalDegreeType', e.target.value)}
-                options={gradDegreeOptions}
-                placeholder="Select Degree"
-                {...commonFieldProps}
-              />
-              <Dropdown
-                label="College/ University"
-                name="medicalDegreeUniversityName"
-                value={medicalDegreeUniversityName}
-                onChange={e => setField('medicalDegreeUniversityName', e.target.value)}
-                options={collegeOptions}
-                placeholder="Select College/University"
-                {...commonFieldProps}
-              />
+              <div className="w-full">
+                <Dropdown
+                  label="Graduation Degree"
+                  name="medicalDegreeType"
+                  value={medicalDegreeType}
+                  onChange={handleInputChange}
+                  options={gradDegreeOptions}
+                  placeholder="Select Degree"
+                  {...commonFieldProps}
+                />
+                {formErrors.medicalDegreeType && <span className="text-red-500 text-xs">{formErrors.medicalDegreeType}</span>}
+              </div>
+              <div className="w-full">
+                <Dropdown
+                  label="College/ University"
+                  name="medicalDegreeUniversityName"
+                  value={medicalDegreeUniversityName}
+                  onChange={handleInputChange}
+                  options={collegeOptions}
+                  placeholder="Select College/University"
+                  {...commonFieldProps}
+                />
+                {formErrors.medicalDegreeUniversityName && <span className="text-red-500 text-xs">{formErrors.medicalDegreeUniversityName}</span>}
+              </div>
             </FormFieldRow>
 
             <FormFieldRow>
@@ -174,9 +251,10 @@ const Step2 = () => {
                 label="Year of Completion"
                 name="medicalDegreeYearOfCompletion"
                 value={medicalDegreeYearOfCompletion}
-                onChange={e => setField('medicalDegreeYearOfCompletion', e.target.value)}
+                onChange={handleInputChange}
                 {...commonFieldProps}
               />
+              {formErrors.medicalDegreeYearOfCompletion && <span className="text-red-500 text-xs">{formErrors.medicalDegreeYearOfCompletion}</span>}
               <Upload
                 label="Upload Degree Proof"
                 compulsory={true}
@@ -263,27 +341,29 @@ const Step2 = () => {
               </button>
             </div>
             <FormFieldRow>
-              <Dropdown
-                label="Specialization"
-                name="specialization"
-                value={typeof specialization === 'object' ? (specialization?.value || specialization?.name || '') : specialization}
-                onChange={e => {
-                  const val = e.target.value;
-                  const opt = specializationOptions.find(o => o.value === val);
-                  setField('specialization', { name: opt?.label || val, value: val });
-                }}
-                options={specializationOptions}
-                placeholder="Select Specialization"
-                {...commonFieldProps}
-              />
-              <Input
-                label="Year of Experience"
-                name="experienceYears"
-                value={experienceYears}
-                onChange={e => setField('experienceYears', e.target.value)}
-                placeholder="Enter Year"
-                {...commonFieldProps}
-              />
+              <div className="w-full">
+                <Dropdown
+                  label="Specialization"
+                  name="specialization"
+                  value={typeof specialization === 'object' ? (specialization?.value || specialization?.name || '') : specialization}
+                  onChange={handleInputChange}
+                  options={specializationOptions}
+                  placeholder="Select Specialization"
+                  {...commonFieldProps}
+                />
+                {formErrors.specialization && <span className="text-red-500 text-xs">{formErrors.specialization}</span>}
+              </div>
+              <div className="w-full">
+                <Input
+                  label="Year of Experience"
+                  name="experienceYears"
+                  value={experienceYears}
+                  onChange={handleInputChange}
+                  placeholder="Enter Year"
+                  {...commonFieldProps}
+                />
+                {formErrors.experienceYears && <span className="text-red-500 text-xs">{formErrors.experienceYears}</span>}
+              </div>
             </FormFieldRow>
 
             {Array.isArray(additionalPractices) && additionalPractices.length > 0 && (

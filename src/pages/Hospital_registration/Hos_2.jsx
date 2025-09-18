@@ -80,8 +80,48 @@ const Hos_2 = () => {
     { value: "Dermatology", label: "Dermatology" },
   ];
 
+
+  const [formErrors, setFormErrors] = React.useState({});
+
+  // Validation functions
+  const validateField = (name, value) => {
+    switch (name) {
+      case 'councilNumber':
+        if (!value) return 'Required';
+        if (!/^\w{4,}$/.test(value)) return 'Invalid Reg. No.';
+        return '';
+      case 'councilName':
+        if (!value) return 'Required';
+        return '';
+      case 'regYear':
+        if (!value) return 'Required';
+        if (!/^\d{4}$/.test(value)) return 'Year must be 4 digits';
+        return '';
+      case 'graduation':
+      case 'graduationCollege':
+      case 'graduationYear':
+        if (!value) return 'Required';
+        return '';
+      case 'specialization':
+        if (!value || (typeof value === 'object' && !value.value && !value.name)) return 'Required';
+        return '';
+      case 'experience':
+        if (!value) return 'Required';
+        if (!/^\d+$/.test(value) || Number(value) < 0) return 'Invalid years';
+        return '';
+      case 'pgDegree':
+      case 'pgCollege':
+      case 'pgYear':
+        if (hasPG === 'yes' && !value) return 'Required';
+        return '';
+      default:
+        return '';
+    }
+  };
+
   const handleInputChange = (e) => {
     const { name, value } = e.target;
+    // ...existing code...
     switch (name) {
       case 'councilNumber':
         setField('medicalCouncilRegNo', value);
@@ -103,7 +143,6 @@ const Hos_2 = () => {
         break;
       case 'hasPG':
         setHasPG(value);
-        // Clear PG fields if toggled to 'no'
         if (value !== 'yes') {
           setField('pgMedicalDegreeType', '');
           setField('pgMedicalDegreeUniversityName', '');
@@ -131,6 +170,10 @@ const Hos_2 = () => {
       default:
         break;
     }
+    setFormErrors((prev) => ({
+      ...prev,
+      [name]: validateField(name, value)
+    }));
   };
 
   const commonFieldProps = {
@@ -151,25 +194,31 @@ const Hos_2 = () => {
               Medical Registration
             </h2>
             <FormFieldRow>
-              <Input
-                label="Medical Council Registration Number"
-                name="councilNumber"
-                value={drStore.medicalCouncilRegNo || ''}
-                onChange={handleInputChange}
-                {...commonFieldProps}
-              />
-              <Dropdown
-                label="Registration Council"
-                name="councilName"
-                value={drStore.medicalCouncilName || ''}
-                onChange={handleInputChange}
-                options={councilOptions}
-                placeholder="Select Council"
-                {...commonFieldProps}
-              />
+              <div className="w-full">
+                <Input
+                  label="Medical Council Registration Number"
+                  name="councilNumber"
+                  value={drStore.medicalCouncilRegNo || ''}
+                  onChange={handleInputChange}
+                  {...commonFieldProps}
+                />
+                {formErrors.councilNumber && <span className="text-red-500 text-xs">{formErrors.councilNumber}</span>}
+              </div>
+              <div className="w-full">
+                <Dropdown
+                  label="Registration Council"
+                  name="councilName"
+                  value={drStore.medicalCouncilName || ''}
+                  onChange={handleInputChange}
+                  options={councilOptions}
+                  placeholder="Select Council"
+                  {...commonFieldProps}
+                />
+                {formErrors.councilName && <span className="text-red-500 text-xs">{formErrors.councilName}</span>}
+              </div>
             </FormFieldRow>
             <FormFieldRow>
-              <div>
+              <div className="w-full">
                 <Input
                   label="Registration Year"
                   name="regYear"
@@ -177,6 +226,7 @@ const Hos_2 = () => {
                   onChange={handleInputChange}
                   {...commonFieldProps}
                 />
+                {formErrors.regYear && <span className="text-red-500 text-xs">{formErrors.regYear}</span>}
                 <p className="text-xs text-gray-400 mt-1">Visible to Patient</p>
               </div>
               <Upload
@@ -193,33 +243,42 @@ const Hos_2 = () => {
               Education Details
             </h2>
             <FormFieldRow>
-              <Dropdown
-                label="Graduation Degree"
-                name="graduation"
-                value={drStore.medicalDegreeType || ''}
-                onChange={handleInputChange}
-                options={gradDegreeOptions}
-                placeholder="Select Degree"
-                {...commonFieldProps}
-              />
-              <Dropdown
-                label="College/ University"
-                name="graduationCollege"
-                value={drStore.medicalDegreeUniversityName || ''}
-                onChange={handleInputChange}
-                options={collegeOptions}
-                placeholder="Select College/University"
-                {...commonFieldProps}
-              />
+              <div className="w-full">
+                <Dropdown
+                  label="Graduation Degree"
+                  name="graduation"
+                  value={drStore.medicalDegreeType || ''}
+                  onChange={handleInputChange}
+                  options={gradDegreeOptions}
+                  placeholder="Select Degree"
+                  {...commonFieldProps}
+                />
+                {formErrors.graduation && <span className="text-red-500 text-xs">{formErrors.graduation}</span>}
+              </div>
+              <div className="w-full">
+                <Dropdown
+                  label="College/ University"
+                  name="graduationCollege"
+                  value={drStore.medicalDegreeUniversityName || ''}
+                  onChange={handleInputChange}
+                  options={collegeOptions}
+                  placeholder="Select College/University"
+                  {...commonFieldProps}
+                />
+                {formErrors.graduationCollege && <span className="text-red-500 text-xs">{formErrors.graduationCollege}</span>}
+              </div>
             </FormFieldRow>
             <FormFieldRow>
-              <Input
-                label="Graduation Year"
-                name="graduationYear"
-                value={drStore.medicalDegreeYearOfCompletion || ''}
-                onChange={handleInputChange}
-                {...commonFieldProps}
-              />
+              <div className="w-full">
+                <Input
+                  label="Graduation Year"
+                  name="graduationYear"
+                  value={drStore.medicalDegreeYearOfCompletion || ''}
+                  onChange={handleInputChange}
+                  {...commonFieldProps}
+                />
+                {formErrors.graduationYear && <span className="text-red-500 text-xs">{formErrors.graduationYear}</span>}
+              </div>
               <Upload 
                 label="Upload Degree Proof" 
                 compulsory={true} 
@@ -252,6 +311,7 @@ const Hos_2 = () => {
                     placeholder="Select Degree"
                     {...commonFieldProps}
                   />
+                  {formErrors.pgDegree && <span className="text-red-500 text-xs">{formErrors.pgDegree}</span>}
                   <Input
                     label="Year of Completion"
                     name="pgYear"
@@ -259,6 +319,7 @@ const Hos_2 = () => {
                     onChange={handleInputChange}
                     {...commonFieldProps}
                   />
+                  {formErrors.pgYear && <span className="text-red-500 text-xs">{formErrors.pgYear}</span>}
                 </div>
                 <div className="space-y-4">
                   <Dropdown
@@ -270,6 +331,7 @@ const Hos_2 = () => {
                     placeholder="Select College/University"
                     {...commonFieldProps}
                   />
+                  {formErrors.pgCollege && <span className="text-red-500 text-xs">{formErrors.pgCollege}</span>}
                   <Upload 
                     label="Upload Degree Proof" 
                     compulsory={false}
@@ -297,23 +359,29 @@ const Hos_2 = () => {
               </button>
             </div>
             <FormFieldRow>
-              <Dropdown
-                label="Specialization"
-                name="specialization"
-                value={typeof drStore.specialization === 'object' ? (drStore.specialization?.value || drStore.specialization?.name || '') : (drStore.specialization || '')}
-                onChange={handleInputChange}
-                options={specializationOptions}
-                placeholder="Select Specialization"
-                {...commonFieldProps}
-              />
-              <Input
-                label="Year of Experience"
-                name="experience"
-                value={drStore.experienceYears || ''}
-                onChange={handleInputChange}
-                placeholder="Enter Year"
-                {...commonFieldProps}
-              />
+              <div className="w-full">
+                <Dropdown
+                  label="Specialization"
+                  name="specialization"
+                  value={typeof drStore.specialization === 'object' ? (drStore.specialization?.value || drStore.specialization?.name || '') : (drStore.specialization || '')}
+                  onChange={handleInputChange}
+                  options={specializationOptions}
+                  placeholder="Select Specialization"
+                  {...commonFieldProps}
+                />
+                {formErrors.specialization && <span className="text-red-500 text-xs">{formErrors.specialization}</span>}
+              </div>
+              <div className="w-full">
+                <Input
+                  label="Year of Experience"
+                  name="experience"
+                  value={drStore.experienceYears || ''}
+                  onChange={handleInputChange}
+                  placeholder="Enter Year"
+                  {...commonFieldProps}
+                />
+                {formErrors.experience && <span className="text-red-500 text-xs">{formErrors.experience}</span>}
+              </div>
             </FormFieldRow>
 
             {Array.isArray(additionalPractices) && additionalPractices.length > 0 && (

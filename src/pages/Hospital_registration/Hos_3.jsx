@@ -58,16 +58,85 @@ const Hos_3 = () => {
 
 
   // Handle inputs
+
+  const [formErrors, setFormErrors] = React.useState({});
+
+  // Validation functions
+  const validateField = (name, value) => {
+    switch (name) {
+      case 'name':
+        if (!value) return 'Required';
+        return '';
+      case 'type':
+        if (!value) return 'Required';
+        return '';
+      case 'emailId':
+        if (!value) return 'Required';
+        if (!/^\S+@\S+\.\S+$/.test(value)) return 'Invalid email format';
+        return '';
+      case 'phone':
+        if (!value) return 'Required';
+        if (!/^\d{10}$/.test(value)) return 'Phone must be 10 digits';
+        return '';
+      case 'blockNo':
+      case 'street':
+      case 'landmark':
+      case 'city':
+      case 'state':
+        if (!value) return 'Required';
+        return '';
+      case 'pincode':
+        if (!value) return 'Required';
+        if (!/^\d{6}$/.test(value)) return 'Pincode must be 6 digits';
+        return '';
+      default:
+        return '';
+    }
+  };
+
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setField(name, value);
+    setFormErrors((prev) => ({
+      ...prev,
+      [name]: validateField(name, value)
+    }));
   };
 
-  // Use dedicated handler for nested address fields
+  // Single handler for address fields
   const handleAddressChange = (e) => {
     const { name, value } = e.target;
     setAddressField(name, value);
+    setFormErrors((prev) => ({
+      ...prev,
+      [name]: validateField(name, value)
+    }));
   };
+
+  // Validate all fields before next/submit
+  const validateAll = () => {
+    const fieldsToValidate = {
+      name,
+      type,
+      emailId,
+      phone,
+      blockNo: address?.blockNo,
+      street: address?.street,
+      landmark: address?.landmark,
+      city,
+      state,
+      pincode
+    };
+    const newErrors = {};
+    Object.entries(fieldsToValidate).forEach(([key, val]) => {
+      const err = validateField(key, val);
+      if (err) newErrors[key] = err;
+    });
+    setFormErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+
 
   const handleCheckboxChange = (section, value) => {
     const currentArr = section === "medicalSpecialties"
@@ -86,7 +155,12 @@ const Hos_3 = () => {
   };
 
   // Substep Navigation
-  const nextSubStep = () => updateFormData({ hosStep3SubStep: currentSubStep + 1 });
+  const nextSubStep = () => {
+    // Validate all fields before moving to next substep
+    const isValid = validateAll();
+    if (!isValid) return;
+    updateFormData({ hosStep3SubStep: currentSubStep + 1 });
+  };
   const prevSubStep = () => updateFormData({ hosStep3SubStep: currentSubStep - 1 });
 
 
@@ -121,6 +195,7 @@ const Hos_3 = () => {
                   compulsory={true}
                   required={true}
                 />
+                {formErrors.name && <span className="text-red-500 text-xs">{formErrors.name}</span>}
                 <p className="text-xs text-gray-400 mt-1">Visible to Patient</p>
               </div>
 
@@ -143,6 +218,7 @@ const Hos_3 = () => {
                   ]}
                   placeholder="Select Hospital Type"
                 />
+                {formErrors.type && <span className="text-red-500 text-xs">{formErrors.type}</span>}
                 <p className="text-xs text-gray-400 mt-1">Visible to Patient</p>
               </div>
 
@@ -171,6 +247,7 @@ const Hos_3 = () => {
                     Send OTP
                   </button>
                 </div>
+                {formErrors.emailId && <span className="text-red-500 text-xs">{formErrors.emailId}</span>}
                 <p className="text-xs text-gray-400 mt-1">Visible to Patient</p>
               </div>
 
@@ -199,6 +276,7 @@ const Hos_3 = () => {
                     Send OTP
                   </button>
                 </div>
+                {formErrors.phone && <span className="text-red-500 text-xs">{formErrors.phone}</span>}
                 <p className="text-xs text-gray-400 mt-1">Visible to Patient</p>
               </div>
             </div>
@@ -281,6 +359,7 @@ const Hos_3 = () => {
                   compulsory={true}
                   required={true}
                 />
+                {formErrors.blockNo && <span className="text-red-500 text-xs">{formErrors.blockNo}</span>}
               </div>
 
               {/* Road/Area/Street */}
@@ -294,6 +373,7 @@ const Hos_3 = () => {
                   compulsory={true}
                   required={true}
                 />
+                {formErrors.street && <span className="text-red-500 text-xs">{formErrors.street}</span>}
               </div>
 
               {/* Landmark */}
@@ -307,6 +387,7 @@ const Hos_3 = () => {
                   compulsory={true}
                   required={true}
                 />
+                {formErrors.landmark && <span className="text-red-500 text-xs">{formErrors.landmark}</span>}
               </div>
 
               {/* Pincode */}
@@ -320,6 +401,7 @@ const Hos_3 = () => {
                   compulsory={true}
                   required={true}
                 />
+                {formErrors.pincode && <span className="text-red-500 text-xs">{formErrors.pincode}</span>}
               </div>
 
               {/* City */}
@@ -333,6 +415,7 @@ const Hos_3 = () => {
                   compulsory={true}
                   required={true}
                 />
+                {formErrors.city && <span className="text-red-500 text-xs">{formErrors.city}</span>}
               </div>
 
               {/* State */}
@@ -376,6 +459,7 @@ const Hos_3 = () => {
                   ]}
                   placeholder="Select State"
                 />
+                {formErrors.state && <span className="text-red-500 text-xs">{formErrors.state}</span>}
               </div>
             </div>
           </div>
