@@ -39,6 +39,7 @@ import settingUnselect from './icons/Sidebar/MainSidebar/setting_unselect.png';
 
 // Navbar icons
 import bell from './icons/Navbar/bell.png';
+import appointement from './Doctor_module/appointement.png';
 
 export {
   // Root PNGs
@@ -66,6 +67,7 @@ export {
   packageBlue,
   review,
   reviewBlue,
+  appointement,
   // Sidebar MainSidebar Icons
   dashboardSelected,
   dashboardUnselect,
@@ -79,3 +81,5 @@ export {
   // Navbar icons
   bell
 };
+
+

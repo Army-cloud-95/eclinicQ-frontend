@@ -16,7 +16,7 @@ const variants = {
 // Sizes
 const sizes = {
   small: "px-3 py-1 text-sm rounded-md",
-  large: "px-5 py-2 text-base rounded-lg",
+  large: "p-2 h-8 text-sm rounded-md",
 };
 
 export default function Button({
