@@ -7,7 +7,9 @@ import Patients from "./pages/Layout_sidebar/Patients";
 import Settings from "./pages/Layout_sidebar/Settings";
 import Layout_registration_new from "./components/Layouts/Layout_registration_new";
 import MainPage from "./pages/DoctorList/DoctorInfo/MainPage";
+import DoctorDetailsPage from "./pages/DoctorList/DoctorInfo/DoctorDetailsPage";
 import MainPageHos from "./pages/HospitalList/HospitalInfo/MainPageHos";
+import HospitalDetailsPage from "./pages/HospitalList/HospitalInfo/HospitalDetailsPage";
 import { RegistrationProvider } from "./context/RegistrationContext";
 import DummyLogin from "./pages/DummyLogin";
 import GetStarted from "./pages/GetStarted";
@@ -25,7 +27,9 @@ function App() {
       <Route element={<Layout />}>
         <Route path="dashboard" element={<Dashboard />} />
         <Route path="doctor" element={<Doctor />} />
+  <Route path="doctor/:id" element={<DoctorDetailsPage />} />
         <Route path="hospital" element={<Hospitals />} />
+  <Route path="hospital/:id" element={<HospitalDetailsPage />} />
         <Route path="patients" element={<Patients />} />
         <Route path="settings" element={<Settings />} />
 

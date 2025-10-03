@@ -1,27 +1,15 @@
 import { MoreVertical, Eye, ChevronsUpDown } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import AvatarCircle from "../AvatarCircle";
 import Badge from "../Badge";
 
-// Demo data laid out exactly like the UI reference
-const doctors = [
-  { name: "Dr. Rahul Sharma", exp: "M | 3 years of experience", id: "D0654321", contact: "+91 9876543210", email: "rajesh.kumar@example.com", location: "Akola, MH", specialization: "General Physician", specializationMore: 1, designation: "DVM in Veterinary Medicine" },
-  { name: "Dr. Arjun Singh", exp: "F | 9 years of experience", id: "DO456789", contact: "+91 7654321098", email: "suresh.patel@mail.com", location: "Jaipur, RJ", specialization: "General Physician", specializationMore: 1, designation: "MSc in Artificial Intelligence" },
-  { name: "Dr. Kavya Nair", exp: "M | 8 years of experience", id: "D0789123", contact: "+91 5432109876", email: "vikram.agarwal@service.com", location: "Chennai, TN", specialization: "General Physician", specializationMore: 1, designation: "MSc in Data Science" },
-  { name: "Dr. Rahul Choudhury", exp: "F | 3 years of experience", id: "D0987654", contact: "+91 8765432109", email: "anita.sharma@domain.com", location: "Pune, MH", specialization: "General Physician", specializationMore: 1, designation: "PhD in Chemistry" },
-  { name: "Dr. Sneha Joshi", exp: "M | 8 years of experience", id: "D0321987", contact: "+91 6543210987", email: "neha.singh@webmail.com", location: "Bhopal, MP", specialization: "General Physician", specializationMore: 1, designation: "MS in Civil Engineering" },
-  { name: "Dr. Vikram Patel", exp: "F | 6 years of experience", id: "DO123456", contact: "+91 6543210987", email: "neha.singh@webmail.com", location: "Bhopal, MP", specialization: "General Physician", specializationMore: 1, designation: "MSc in Environmental Science" },
-  { name: "Dr. Riya Verma", exp: "M | 2 years of experience", id: "DO234567", contact: "+91 9876543211", email: "deepak.rao@company.com", location: "Delhi, DL", specialization: "General Physician", specializationMore: 1, designation: "MFA in Creative Writing" },
-  { name: "Dr. Karan Sharma", exp: "F | 5 years of experience", id: "DO345678", contact: "+91 8765432110", email: "pooja.patel@gmail.com", location: "Ahmedabad, GJ", specialization: "General Physician", specializationMore: 1, designation: "PhD in Neuroscience" },
-  { name: "Dr. Meera Tiwari", exp: "M | 1 year of experience", id: "DO456789", contact: "+91 7654321097", email: "rahul.kumar@business.com", location: "Hyderabad, TG", specialization: "General Physician", specializationMore: 1, designation: "MSc in Biochemistry" },
-  { name: "Dr. Deepak Prasad", exp: "F | 6 years of experience", id: "DO111222", contact: "+91 1234567890", email: "sita.verma@xyz.com", location: "Mumbai, MH", specialization: "02/03/2025 | 1:00 PM", specializationMore: 1, designation: "MBA in Healthcare Management" },
-  { name: "Dr. Nisha Talwar", exp: "F | 5 years of experience", id: "DO333444", contact: "+91 0987654321", email: "karan.mittal@example.com", location: "Kolkata, WB", specialization: "02/03/2025 | 1:30 PM", specializationMore: 1, designation: "MD Pediatrics" },
-  { name: "Dr. Himanshu Gupta", exp: "M | 4 years of experience", id: "DO555666", contact: "+91 1122334455", email: "ravi.sharma@mail.com", location: "Lucknow, UP", specialization: "02/03/2025 | 2:00 PM", specializationMore: 1, designation: "MEng in Software Engineering" },
-  { name: "Dr. Suman Rao", exp: "F | 2 years of experience", id: "DO777888", contact: "+91 9988776655", email: "priya.jain@service.com", location: "Noida, UP", specialization: "02/03/2025 | 2:30 PM", specializationMore: 1, designation: "MS Orthopedic" },
-  { name: "Dr. Pooja Jain", exp: "M | 5 years of experience", id: "DO999000", contact: "+91 2233445566", email: "manoj.kumar@xyz.com", location: "Ahmedabad, GJ", specialization: "02/03/2025 | 3:00 PM", specializationMore: 1, designation: "MFA in Film Production" },
-  { name: "Dr. Sameer Gupta", exp: "F | 8 years of experience", id: "DO888999", contact: "+91 3344556677", email: "sonia.patel@domain.com", location: "Surat, GJ", specialization: "02/03/2025 | 3:30 PM", specializationMore: 1, designation: "MD in Cardiology" },
-];
+export default function Table({ doctors = [] }) {
+  const navigate = useNavigate();
 
-export default function Table() {
+  const openDoctor = (doc) => {
+  // Route param will carry userId for details API call
+  navigate(`/doctor/${encodeURIComponent(doc.userId || doc.id)}`, { state: { doctor: doc } });
+  };
   return (
   <div className="bg-white flex flex-col">
       {/* Sticky table header + scrollable body */}
@@ -63,13 +51,16 @@ export default function Table() {
             </thead>
             <tbody>
   {doctors.map((doc, idx) => (
-    <tr key={idx} className="border-b border-gray-200 hover:bg-gray-50 text-sm ">
+    <tr key={idx} className="border-b border-gray-200 hover:bg-gray-50 text-sm cursor-pointer" onClick={() => openDoctor(doc)}>
       <td className="pl-4 pr-4 py-2">
                     <div className="flex items-center gap-2">
             <AvatarCircle name={doc.name} size="s" color="orange" />
                       <div>
                         <p className="font-medium text-gray-900 leading-5">{doc.name}</p>
-                        <p className="text-xs text-gray-500">{doc.exp}</p>
+                        <p className="text-xs text-gray-500">
+                          {doc.gender ? `${String(doc.gender).charAt(0).toUpperCase()} | ` : ''}
+                          {doc.exp}
+                        </p>
                       </div>
                     </div>
                   </td>
@@ -96,8 +87,8 @@ export default function Table() {
                     </div>
                   </td>
                   <td className="px-4 py-3">
-                    <div className="flex items-center justify-end gap-1 text-gray-600">
-                      <button className="p-1.5 rounded hover:bg-gray-100" aria-label="View">
+                    <div className="flex items-center justify-end gap-1 text-gray-600" onClick={(e) => e.stopPropagation()}>
+                      <button className="p-1.5 rounded hover:bg-gray-100" aria-label="View" onClick={() => openDoctor(doc)}>
                         <Eye className="h-4 w-4" />
                       </button>
                       <span className="mx-2 h-4 w-px bg-gray-200" aria-hidden="true" />

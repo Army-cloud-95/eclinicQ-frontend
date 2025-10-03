@@ -3,7 +3,7 @@ import Details from "../../../pages/HospitalList/HospitalInfo/Sections/Details";
 import Doctor from "../../../pages/HospitalList/HospitalInfo/Sections/Doctor";
 import HosStaff from "../../../pages/HospitalList/HospitalInfo/Sections/HosStaff";
 
-const HospitalNav = () => {
+const HospitalNav = ({ hospital }) => {
   const [activeTab, setActiveTab] = useState("details");
 
   const tabs = [
@@ -18,11 +18,11 @@ const HospitalNav = () => {
   const renderContent = () => {
     switch (activeTab) {
       case "details":
-        return <Details/>;
+        return <Details hospital={hospital} />;
       case "doctor":
-        return <Doctor/>;
+        return <Doctor hospital={hospital} />;
       case "staff":
-        return <HosStaff />;
+        return <HosStaff hospital={hospital} />;
       default:
         return null;
     }

@@ -27,7 +27,7 @@ const InfoSection = ({ title, children }) => (
   </div>
 );
 
-const Info = () => {
+const Info = ({ doctor }) => {
   return (
     <div className="flex flex-col pt-3 px-3 pb-6 gap-6">
       {/* About Doctor */}
@@ -38,13 +38,10 @@ const Info = () => {
           </span>
         </div>
         <span className="font-normal text-[#626060] text-xs">
-          Dr. Milind Chauhan practices Gynaecologist and Obstetrician in
-          Andheri East, Mumbai and has 13 years of experience in this field. He
-          has completed his DNB - Obstetric and Gynecology and MBBS. Dr. Milind
-          Chauhan has gained the confidence of patients and is a popular
-          Gynaecologist and Obstetrician expert in Mumbai who performs treatment
-          and procedures for various health issues related to Gynaecologist and
-          Obstetrician.
+          {doctor?.specializationWithExperience?.length
+            ? doctor.specializationWithExperience
+                .map((s) => `${s.specialization} (${s.experience} yrs)`).join(', ')
+            : doctor?.specialization || '—'}
         </span>
       </div>
 
@@ -52,70 +49,59 @@ const Info = () => {
       <div className="flex flex-wrap gap-6">
         {/* Basic Info */}
         <InfoSection title="Basic Info">
-          <InfoRow label="Name:" value="Rahul Sharma" />
-          <InfoRow label="Date Of Birth:" value="02 Feb 1986" />
-          <InfoRow label="Age:" value="29 Years" />
-          <InfoRow label="Gender:" value="Male" />
-          <InfoRow label="Date Joined Platform:" value="12/08/2018" />
-          <InfoRow label="Profile Created:" value="12/08/2018" />
+          <InfoRow label="Name:" value={doctor?.name || '-'} />
+          <InfoRow label="Date Of Birth:" value={doctor?.dateOfBirth || '-'} />
+          <InfoRow label="Age:" value={doctor?.age != null ? String(doctor.age) : '-'} />
+          <InfoRow label="Gender:" value={doctor?.gender ? String(doctor.gender).toUpperCase() : '-'} />
+          <InfoRow label="Date Joined Platform:" value={doctor?.dateJoinedPlatform || '-'} />
+          <InfoRow label="Profile Created:" value={doctor?.profileCreated || '-'} />
         </InfoSection>
 
         {/* Contact Details */}
         <InfoSection title="Contact Details">
-          <InfoRow label="Primary Phone:" value="+91 98765 43210" />
-          <InfoRow label="Email Address:" value="rahul.sharma@gmail.com" />
-          <InfoRow label="Primary Language:" value="Hindi" />
-          <InfoRow label="Secondary Language:" value="English/Marathi" />
+          <InfoRow label="Primary Phone:" value={doctor?.primaryPhone || doctor?.contact || '-'} />
+          <InfoRow label="Email Address:" value={doctor?.emailAddress || doctor?.email || '-'} />
+          <InfoRow label="Location:" value={doctor?.location || '-'} />
         </InfoSection>
 
         {/* Professional Information */}
         <InfoSection title="Professional Information">
-          <InfoRow label="MRN Number:" value="29AACCC2943F1ZS" />
-          <InfoRow label="Registration Council:" value="Maharashtra State Council" />
-          <InfoRow label="Registration Year:" value="2008" />
-          <InfoRow label="Specialization:" value="General Medicine (Exp: 10 years)" />
+          <InfoRow label="MRN Number:" value={doctor?.mrnNumber || '-'} />
+          <InfoRow label="Registration Council:" value={doctor?.registrationCouncil || '-'} />
+          <InfoRow label="Registration Year:" value={doctor?.registrationYear || '-'} />
+          <InfoRow label="Specialization:" value={doctor?.specialization || '-'} />
         </InfoSection>
 
         {/* Educational Information */}
         <InfoSection title="Educational Information">
           <InfoRow
             label="Graduation Degree:"
-            value="MBBS (Completed - 2008) Government Medical College, Nagpur"
+            value={doctor?.graduationDegree
+              ? `${doctor.graduationDegree.degree || ''} (Completed - ${doctor.graduationDegree.completionYear || '-'}) ${doctor.graduationDegree.college || ''}`.trim()
+              : '-'}
           />
           <InfoRow
             label="Post Graduation Degree:"
-            value="MD in General Medicine (Completed - 2011) Government Medical College, Nagpur"
+            value={doctor?.postGraduationDegree
+              ? `${doctor.postGraduationDegree.degree || ''} (Completed - ${doctor.postGraduationDegree.completionYear || '-'}) ${doctor.postGraduationDegree.college || ''}`.trim()
+              : '-'}
           />
         </InfoSection>
 
         {/* Certificates & Documents */}
         <InfoSection title="Certificates & Documents">
-          <InfoRow label="MRN Number:" value="MRN Proof.pdf" link="#" />
-          <InfoRow label="GST Number:" value="GST Proof.pdf" link="#" />
-          <InfoRow
-            label="Graduation Degree:"
-            value="Graduation Proof.pdf"
-            link="#"
-          />
-          <InfoRow
-            label="Post Graduation Degree:"
-            value="Post Graduation Proof.pdf"
-            link="#"
-          />
-          <InfoRow label="Identity:" value="Pan Card Proof.pdf" link="#" />
-          <InfoRow
-            label="Clinic Establishment:"
-            value="Clinic Establishment Proof.pdf"
-            link="#"
-          />
+          <InfoRow label="MRN Number Proof:" value={doctor?.mrnNumberProof || '-'} link={doctor?.mrnNumberProof || undefined} />
+          <InfoRow label="GST Proof:" value={doctor?.gstProof || '-'} link={doctor?.gstProof || undefined} />
+          <InfoRow label="Graduation Degree Proof:" value={doctor?.graduationDegreeProof || '-'} link={doctor?.graduationDegreeProof || undefined} />
+          <InfoRow label="Post Graduation Degree Proof:" value={doctor?.postGraduationProof || '-'} link={doctor?.postGraduationProof || undefined} />
+          <InfoRow label="Identity Proof:" value={doctor?.identityProof || '-'} link={doctor?.identityProof || undefined} />
+          <InfoRow label="Clinic Establishment Proof:" value={doctor?.clinicEstablishmentProof || '-'} link={doctor?.clinicEstablishmentProof || undefined} />
         </InfoSection>
 
         {/* Address Details */}
         <InfoSection title="Address Details">
-          <InfoRow label="Permanent Address:" value="Jawahar Nagar Gokul Colony" />
-          <InfoRow label="City:" value="Akola" />
-          <InfoRow label="State:" value="Maharashtra" />
-          <InfoRow label="Zip Code:" value="444001" />
+          <InfoRow label="Address:" value={doctor?.address || '-'} />
+          <InfoRow label="Location:" value={doctor?.location || '-'} />
         </InfoSection>
       </div>
     </div>

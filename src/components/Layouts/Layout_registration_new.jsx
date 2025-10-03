@@ -200,7 +200,7 @@ const Layout_registration_new = () => {
       } else if (currentStep < 5) {
         nextStep();
       }
-    } else if (registrationType === 'hospital') {
+  } else if (registrationType === 'hospital') {
       // Step 1: trigger form submit via ref, only move if valid
       if (currentStep === 1 && hos1Ref.current && hos1Ref.current.submit) {
         const result = await hos1Ref.current.submit();
@@ -286,7 +286,7 @@ const Layout_registration_new = () => {
         }
       }
       // Handle Step 5 for hospital (Review & Create)
-      else if (currentStep === 5) {
+  else if (currentStep === 5) {
         // Only for hospital registration (isDoctor === 'no')
         if (formData.isDoctor === 'no') {
           const currentSubStep = formData.hosStep5SubStep || 1;
@@ -332,6 +332,11 @@ const Layout_registration_new = () => {
           }
         }
       } else if (currentStep === 6) {
+        // Final success screen for non-doctor owners: go straight to Hospitals dashboard
+        if (String(formData.isDoctor || 'no') === 'no') {
+          navigate('/hospital');
+          return;
+        }
         // On Step 6 (Hos_6), if user is a doctor, first post doctor details, then proceed
         setFooterLoading(true);
         try {

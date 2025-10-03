@@ -4,7 +4,7 @@ import Clinical from "../../../pages/DoctorList/DoctorInfo/Sections/Clinical";
 import Consultation from "../../../pages/DoctorList/DoctorInfo/Sections/Consultation";
 import Staff from "../../../pages/DoctorList/DoctorInfo/Sections/Staff";
 
-const PageNav = () => {
+const PageNav = ({ doctor }) => {
   const [activeTab, setActiveTab] = useState("info");
 
   const tabs = [
@@ -17,13 +17,13 @@ const PageNav = () => {
   const renderContent = () => {
     switch (activeTab) {
       case "info":
-        return <Info />;
+        return <Info doctor={doctor} />;
       case "clinical":
-        return <Clinical />;
+        return <Clinical doctor={doctor} />;
       case "consultation":
-        return <Consultation />;
+        return <Consultation doctor={doctor} />;
       case "staff":
-        return <Staff />;
+        return <Staff doctor={doctor} />;
       default:
         return null;
     }

@@ -23,7 +23,7 @@ export default function ActivationSuccess({ onCompleteProfile }) {
               if (onCompleteProfile) return onCompleteProfile();
               navigate('/onboarding');
             }}>Complete Your Profile</Button>
-            <Button variant="primary" trailingIcon={() => (<span>↗</span>)} onClick={() => navigate('/dashboard')}>Go to Dashboard</Button>
+            <Button variant="primary" trailingIcon={() => (<span>↗</span>)} onClick={() => navigate('/doc')}>Go to Dashboard</Button>
           </div>
         </div>
       </div>
