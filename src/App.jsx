@@ -1,15 +1,15 @@
 import { Routes, Route } from "react-router-dom";
 import Layout from "./components/Layouts/Layout_sidebar";
-import Dashboard from "./pages/Layout_sidebar/Dashboard";
-import Doctor from "./pages/Layout_sidebar/Doctor";
-import Hospitals from "./pages/Layout_sidebar/Hospitals";
-import Patients from "./pages/Layout_sidebar/Patients";
-import Settings from "./pages/Layout_sidebar/Settings";
+import Dashboard from "./SuperAdmin/pages/Dashboard/Dashboard";
+import Doctor from "./SuperAdmin/pages/Doctors/Doctor";
+import Hospitals from "./SuperAdmin/pages/Hospitals/Hospitals";
+import Patients from "./SuperAdmin/pages/Patients/Patients";
+import Settings from "./SuperAdmin/pages/Settings/Settings";
 import Layout_registration_new from "./components/Layouts/Layout_registration_new";
-import MainPage from "./pages/DoctorList/DoctorInfo/MainPage";
-import DoctorDetailsPage from "./pages/DoctorList/DoctorInfo/DoctorDetailsPage";
-import MainPageHos from "./pages/HospitalList/HospitalInfo/MainPageHos";
-import HospitalDetailsPage from "./pages/HospitalList/HospitalInfo/HospitalDetailsPage";
+import MainPage from "./SuperAdmin/pages/Doctors/DoctorList/DoctorInfo/MainPage";
+import DoctorDetailsPage from "./SuperAdmin/pages/Doctors/DoctorList/DoctorInfo/DoctorDetailsPage";
+import MainPageHos from "./SuperAdmin/pages/Hospitals/HospitalList/HospitalInfo/MainPageHos";
+import HospitalDetailsPage from "./SuperAdmin/pages/Hospitals/HospitalList/HospitalInfo/HospitalDetailsPage";
 import { RegistrationProvider } from "./context/RegistrationContext";
 import DummyLogin from "./pages/DummyLogin";
 import GetStarted from "./pages/GetStarted";
@@ -17,6 +17,10 @@ import OnboardingFlow from "./DoctorModule/Pages/Login/OnboardingFlow";
 import Doctor_layout from "./DoctorModule/Components/Layout/DoctorLayout";
 import DocDashboard from "./DoctorModule/Pages/Dashboard/DocDashboard";
 import Queue from "./DoctorModule/Pages/Queue/Queue";
+import PatientListPage from "./pages/PatientList";
+import Patient from "./DoctorModule/Pages/Patient/Patient";
+import DocPatients from "./DoctorModule/Pages/Patients/Patient";
+import PatientDetails from "./DoctorModule/Pages/Patients/PatientDetails";
 
 function App() {
   return (
@@ -32,6 +36,7 @@ function App() {
   <Route path="hospital/:id" element={<HospitalDetailsPage />} />
         <Route path="patients" element={<Patients />} />
         <Route path="settings" element={<Settings />} />
+  <Route path="patients-list" element={<PatientListPage />} />
 
         <Route path="doctor1" element={<MainPage/>} />
         <Route path="hos1" element={<MainPageHos/>} />
@@ -57,6 +62,8 @@ function App() {
         {/* default doctor dashboard */}
         <Route index element={<DocDashboard />} />
         <Route path="queue" element={<Queue />} />
+  <Route path="patients" element={<DocPatients />} />
+  <Route path="patients/:id" element={<PatientDetails />} />
         {/* future doctor-specific routes can be nested here, e.g., patients, settings */}
       </Route>
 

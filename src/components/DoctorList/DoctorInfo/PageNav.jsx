@@ -1,8 +1,8 @@
 import React, { useState } from "react";
-import Info from "../../../pages/DoctorList/DoctorInfo/Sections/Info";
-import Clinical from "../../../pages/DoctorList/DoctorInfo/Sections/Clinical";
-import Consultation from "../../../pages/DoctorList/DoctorInfo/Sections/Consultation";
-import Staff from "../../../pages/DoctorList/DoctorInfo/Sections/Staff";
+import Info from "../../../SuperAdmin/pages/Doctors/DoctorList/DoctorInfo/Sections/Info";
+import Clinical from "../../../SuperAdmin/pages/Doctors/DoctorList/DoctorInfo/Sections/Clinical";
+import Consultation from "../../../SuperAdmin/pages/Doctors/DoctorList/DoctorInfo/Sections/Consultation";
+import Staff from "../../../SuperAdmin/pages/Doctors/DoctorList/DoctorInfo/Sections/Staff";
 
 const PageNav = ({ doctor }) => {
   const [activeTab, setActiveTab] = useState("info");

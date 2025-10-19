@@ -1,8 +1,8 @@
 import React, { useState } from "react";
-import Details from "../../../pages/HospitalList/HospitalInfo/Sections/Details";
-import Doctor from "../../../pages/HospitalList/HospitalInfo/Sections/Doctor";
+import Details from "../../../SuperAdmin/pages/Hospitals/HospitalList/HospitalInfo/Sections/Details";
+import Doctor from "../../../SuperAdmin/pages/Hospitals/HospitalList/HospitalInfo/Sections/Doctor";
 // Use the exact Staff Access UI from Doctor Details
-import DocStaff from "../../../pages/DoctorList/DoctorInfo/Sections/Staff";
+import DocStaff from "../../../SuperAdmin/pages/Doctors/DoctorList/DoctorInfo/Sections/Staff";
 
 const HospitalNav = ({ hospital }) => {
   const [activeTab, setActiveTab] = useState("details");

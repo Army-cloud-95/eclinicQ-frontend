@@ -6,7 +6,7 @@ import SidebarSteps from "../Sidebar/SidebarSteps";
 import RegistrationFooter from "../RegistrationFooter";
 import RegistrationFlow from "../RegistrationFlow";
 import React, { useRef, useState } from "react";
-import Step1 from '../../pages/Doctor_registration/Step1';
+import Step1 from '../../SuperAdmin/pages/Dashboard/Doctor_registration/Step1';
 // Import stores directly to avoid runtime require (ESM only)
 import useDoctorRegistrationStore from '../../store/useDoctorRegistrationStore';
 import useDoctorStep1Store from '../../store/useDoctorStep1Store';

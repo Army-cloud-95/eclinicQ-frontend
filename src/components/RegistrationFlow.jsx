@@ -2,21 +2,21 @@ import React from 'react';
 import { useRegistration } from '../context/RegistrationContext';
 
 // Doctor Registration Steps
-import Step1 from '../pages/Doctor_registration/Step1';
-import Step2 from '../pages/Doctor_registration/Step2';
-import Step3 from '../pages/Doctor_registration/Step3';
-import Step4 from '../pages/Doctor_registration/Step4';
-import Step5 from '../pages/Doctor_registration/Step5';
-import Step6 from '../pages/Doctor_registration/Step6';
+import Step1 from '../SuperAdmin/pages/Dashboard/Doctor_registration/Step1';
+import Step2 from '../SuperAdmin/pages/Dashboard/Doctor_registration/Step2';
+import Step3 from '../SuperAdmin/pages/Dashboard/Doctor_registration/Step3';
+import Step4 from '../SuperAdmin/pages/Dashboard/Doctor_registration/Step4';
+import Step5 from '../SuperAdmin/pages/Dashboard/Doctor_registration/Step5';
+import Step6 from '../SuperAdmin/pages/Dashboard/Doctor_registration/Step6';
 
 // Hospital Registration Steps
-import Hos_1 from '../pages/Hospital_registration/Hos_1';
-import Hos_2 from '../pages/Hospital_registration/Hos_2';
-import Hos_3 from '../pages/Hospital_registration/Hos_3';
-import Hos_4 from '../pages/Hospital_registration/Hos_4';
-import Hos_5 from '../pages/Hospital_registration/Hos_5';
-import Hos_6 from '../pages/Hospital_registration/Hos_6';
-import Hos_7 from '../pages/Hospital_registration/Hos_7';
+import Hos_1 from '../SuperAdmin/pages/Dashboard/Hospital_registration/Hos_1';
+import Hos_2 from '../SuperAdmin/pages/Dashboard/Hospital_registration/Hos_2';
+import Hos_3 from '../SuperAdmin/pages/Dashboard/Hospital_registration/Hos_3';
+import Hos_4 from '../SuperAdmin/pages/Dashboard/Hospital_registration/Hos_4';
+import Hos_5 from '../SuperAdmin/pages/Dashboard/Hospital_registration/Hos_5';
+import Hos_6 from '../SuperAdmin/pages/Dashboard/Hospital_registration/Hos_6';
+import Hos_7 from '../SuperAdmin/pages/Dashboard/Hospital_registration/Hos_7';
 
 
 const RegistrationFlow = React.forwardRef(({ type }, ref) => {

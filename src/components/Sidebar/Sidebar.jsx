@@ -71,8 +71,8 @@ const Sidebar = () => {
       {/* Top Section */}
       <div>
         {/* Logo */}
-        <div className="px-4 py-3">
-          <img src={logo} alt="logo" className="w-[128px] h-auto" />
+        <div className="px-4 py-3 h-16 w-full flex items-center">
+          <img src={logo} alt="logo" className="w-[128px]" />
         </div>
 
         {/* Menu Items */}
