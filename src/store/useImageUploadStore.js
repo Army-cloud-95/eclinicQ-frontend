@@ -23,18 +23,29 @@ const useImageUploadStore = create((set) => ({
     }
     set({ isLoading: true, error: null });
     try {
-      const response = await axiosInstance.post("/uploads/getUploadUrl", {
+      // Use new upload URL endpoint
+      const response = await axiosInstance.post("/storage/upload-url", {
         contentType,
       });
-      if (response.data && response.data.data && response.data.data.uploadUrl && response.data.data.key) {
-        set({ uploadUrl: response.data.data, isLoading: false });
-        return response.data.data;
-      } else {
-        set({ error: "Invalid upload URL response", isLoading: false });
-        return null;
+      const payload = response?.data?.data || response?.data || {};
+      const uploadUrl = payload?.uploadUrl || payload?.url || payload?.signedUrl;
+      const key = payload?.key || payload?.fileKey || payload?.path;
+      if (uploadUrl && key) {
+        const data = { uploadUrl, key };
+        set({ uploadUrl: data, isLoading: false });
+        return data;
       }
+      set({ error: "Invalid upload URL response", isLoading: false });
+      return null;
     } catch (error) {
-      set({ error: error.response?.data || error.message, isLoading: false });
+      const resp = error?.response;
+      const msg = resp?.data?.message || resp?.data?.error || resp?.statusText || error.message || 'Upload URL request failed';
+      console.error('getUploadUrl error:', {
+        status: resp?.status,
+        data: resp?.data,
+        message: msg,
+      });
+      set({ error: msg, isLoading: false });
       return null;
     }
   },

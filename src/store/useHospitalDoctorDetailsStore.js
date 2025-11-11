@@ -83,36 +83,73 @@ const useHospitalDoctorDetailsStore = create((set, get) => ({
         });
       }
 
+      // Build education array per new API schema
+      const education = [];
+      const ugDegree = (state.medicalDegreeType || '').toString().trim();
+      const ugInstitute = (state.medicalDegreeUniversityName || '').toString().trim();
+      const ugYearStr = toStr(state.medicalDegreeYearOfCompletion, '');
+      const ugYearNum = ugYearStr && /^\d{4}$/.test(ugYearStr) ? Number(ugYearStr) : undefined;
+      if (ugDegree || ugInstitute || ugYearNum) {
+        education.push({
+          instituteName: ugInstitute || undefined,
+          graduationType: 'UG',
+          degree: ugDegree || undefined,
+          completionYear: ugYearNum !== undefined ? ugYearNum : undefined,
+        });
+      }
+      const pgDegree = (state.pgMedicalDegreeType || '').toString().trim();
+      const pgInstitute = (state.pgMedicalDegreeUniversityName || '').toString().trim();
+      const pgYearStr = toStr(state.pgMedicalDegreeYearOfCompletion, '');
+      const pgYearNum = pgYearStr && /^\d{4}$/.test(pgYearStr) ? Number(pgYearStr) : undefined;
+      if (pgDegree || pgInstitute || pgYearNum) {
+        education.push({
+          instituteName: pgInstitute || undefined,
+          graduationType: 'PG',
+          degree: pgDegree || undefined,
+          completionYear: pgYearNum !== undefined ? pgYearNum : undefined,
+        });
+      }
+
+      // Map documents to { no, type, fileName, tempKey }
       const documents = Array.isArray(state.documents)
-        ? state.documents.filter((d) => d && d.url && d.type && (d.no !== undefined && d.no !== null))
+        ? state.documents
+            .filter((d) => d && d.type && (d.tempKey || d.url) && (d.no !== undefined && d.no !== null))
+            .map((d) => ({
+              no: d.no,
+              type: d.type,
+              fileName: d.fileName || d.name || 'document',
+              tempKey: d.tempKey || d.url,
+            }))
         : [];
 
+      // Build final body per new API spec (omit clinicData and old degree fields)
       const body = {
         userId: String(userId),
         specialization: specializationArr,
         medicalCouncilName: state.medicalCouncilName,
         medicalCouncilRegYear: toStr(state.medicalCouncilRegYear, ''),
         medicalCouncilRegNo: state.medicalCouncilRegNo,
-        medicalDegreeType: state.medicalDegreeType,
-        medicalDegreeUniversityName: state.medicalDegreeUniversityName,
-        medicalDegreeYearOfCompletion: toStr(state.medicalDegreeYearOfCompletion, ''),
-        pgMedicalDegreeType: state.pgMedicalDegreeType,
-        pgMedicalDegreeUniversityName: state.pgMedicalDegreeUniversityName,
-        pgMedicalDegreeYearOfCompletion: toStr(state.pgMedicalDegreeYearOfCompletion, ''),
+        ...(education.length > 0 ? { education } : {}),
         hasClinic: false,
         ...(documents.length > 0 ? { documents } : {}),
       };
 
       const res = await axiosInstance.post('/doctors/create', body);
-      if (!res || res.status !== 200) {
-        const e = new Error('ERR_SUBMIT_FAILED');
+      const status = res?.status || 0;
+      const ok = status >= 200 && status < 300;
+      const resp = res?.data || {};
+      if (!ok) {
+        const apiMsg = resp?.message || resp?.error || 'ERR_SUBMIT_FAILED';
+        const e = new Error(apiMsg);
         e.code = 'ERR_SUBMIT_FAILED';
         throw e;
       }
       set({ loading: false, success: true });
       return true;
     } catch (error) {
-      const msg = error.code || error.message || 'ERR_SUBMIT_FAILED';
+      const resp = error?.response?.data;
+      const backendMsg = resp?.message || (Array.isArray(resp?.errors) && resp.errors[0]?.message) || undefined;
+      const msg = backendMsg || error.code || error.message || 'ERR_SUBMIT_FAILED';
       set({ loading: false, error: msg, success: false });
       return false;
     }

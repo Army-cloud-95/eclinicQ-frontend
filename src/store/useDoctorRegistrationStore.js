@@ -110,52 +110,65 @@ const useDoctorRegistrationStore = create((set, get) => ({
           if (nm) specializationArr.push({ name: nm, expYears: toExpYearsStr(p?.experienceYears, '0') });
         });
       }
-      // Compose the body as required, but filter out empty fields
-  const body = {};
-  const fields = [
-        'userId',
-        'medicalCouncilName',
-        'medicalCouncilRegYear',
-        'medicalCouncilRegNo',
-        'medicalDegreeType',
-        'medicalDegreeUniversityName',
-        'medicalDegreeYearOfCompletion',
-        'pgMedicalDegreeType',
-        'pgMedicalDegreeUniversityName',
-        'pgMedicalDegreeYearOfCompletion',
-        'hasClinic',
-      ];
-  fields.forEach((key) => {
-        if (state[key] !== '' && state[key] !== null && state[key] !== undefined) {
-          body[key] = state[key];
-        }
-      });
-  // Add specialization as array: [{ name: string; expYears: number }]
-  body.specialization = specializationArr;
-  // Additional practices are represented within specialization array above
+      // Build education array per new API schema
+      const education = [];
+      const ugDegree = (state.medicalDegreeType || '').toString().trim();
+      const ugInstitute = (state.medicalDegreeUniversityName || '').toString().trim();
+      const ugYearStr = toStr(state.medicalDegreeYearOfCompletion, '');
+      const ugYearNum = ugYearStr && /^\d{4}$/.test(ugYearStr) ? Number(ugYearStr) : undefined;
+      if (ugDegree || ugInstitute || ugYearNum) {
+        education.push({
+          instituteName: ugInstitute || undefined,
+          graduationType: 'UG',
+          degree: ugDegree || undefined,
+          completionYear: ugYearNum !== undefined ? ugYearNum : undefined,
+        });
+      }
+      const pgDegree = (state.pgMedicalDegreeType || '').toString().trim();
+      const pgInstitute = (state.pgMedicalDegreeUniversityName || '').toString().trim();
+      const pgYearStr = toStr(state.pgMedicalDegreeYearOfCompletion, '');
+      const pgYearNum = pgYearStr && /^\d{4}$/.test(pgYearStr) ? Number(pgYearStr) : undefined;
+      if (pgDegree || pgInstitute || pgYearNum) {
+        education.push({
+          instituteName: pgInstitute || undefined,
+          graduationType: 'PG',
+          degree: pgDegree || undefined,
+          completionYear: pgYearNum !== undefined ? pgYearNum : undefined,
+        });
+      }
 
-      // Ensure year fields are strings to match backend validation
-      if (body.medicalCouncilRegYear !== undefined) {
-        body.medicalCouncilRegYear = toStr(state.medicalCouncilRegYear, '');
-      }
-      if (body.medicalDegreeYearOfCompletion !== undefined) {
-        body.medicalDegreeYearOfCompletion = toStr(state.medicalDegreeYearOfCompletion, '');
-      }
-      if (body.pgMedicalDegreeYearOfCompletion !== undefined) {
-        body.pgMedicalDegreeYearOfCompletion = toStr(state.pgMedicalDegreeYearOfCompletion, '');
-      }
-      // Only add clinicData if it has at least one non-empty value
-      if (state.clinicData && Object.values(state.clinicData).some(v => v !== '' && v !== null && v !== undefined)) {
+      // Map documents to { no, type, fileName, tempKey }
+      const documents = Array.isArray(state.documents)
+        ? state.documents
+            .filter((d) => d && d.type && (d.tempKey || d.url) && (d.no !== undefined && d.no !== null))
+            .map((d) => ({
+              no: d.no,
+              type: d.type,
+              fileName: d.fileName || d.name || 'document',
+              tempKey: d.tempKey || d.url,
+            }))
+        : [];
+
+      // Compose the body for new API schema
+      const body = {
+        userId: String(state.userId),
+        specialization: specializationArr,
+        medicalCouncilName: state.medicalCouncilName,
+        medicalCouncilRegYear: toStr(state.medicalCouncilRegYear, ''),
+        medicalCouncilRegNo: state.medicalCouncilRegNo,
+        ...(education.length > 0 ? { education } : {}),
+        hasClinic: !!state.hasClinic,
+      };
+      // Only include clinicData if hasClinic is true and values present
+      if (state.hasClinic && state.clinicData && Object.values(state.clinicData).some(v => v !== '' && v !== null && v !== undefined)) {
         body.clinicData = {};
         Object.entries(state.clinicData).forEach(([k, v]) => {
+          // Skip fields not allowed by backend schema
+          if (k === 'proof' || k === 'image') return;
           if (v !== '' && v !== null && v !== undefined) {
             body.clinicData[k] = v;
           }
         });
-        // Always include MFA fields as true (disabled in UI)
-        body.clinicData.emailVerification = true;
-        body.clinicData.smsVerification = true;
-        // Coerce numeric fields in clinicData
         if (body.clinicData.latitude !== undefined) {
           const nlat = Number(state.clinicData.latitude);
           if (Number.isFinite(nlat)) body.clinicData.latitude = nlat;
@@ -165,22 +178,27 @@ const useDoctorRegistrationStore = create((set, get) => ({
           if (Number.isFinite(nlon)) body.clinicData.longitude = nlon;
         }
       }
-      // Only add documents if array is not empty
-      if (Array.isArray(state.documents) && state.documents.length > 0) {
-        body.documents = state.documents.filter(doc => doc && doc.url);
+      if (documents.length > 0) {
+        body.documents = documents;
       }
-      // Replace with your axios instance
-  const res = await axiosInstance.post('/doctors/create', body);
-  if (!res || res.status !== 200) {
-        const e = new Error('ERR_SUBMIT_FAILED');
+
+      const res = await axiosInstance.post('/doctors/create', body);
+      const status = res?.status || 0;
+      const ok = status >= 200 && status < 300;
+      const resp = res?.data || {};
+      if (!ok) {
+        const apiMsg = resp?.message || resp?.error || 'ERR_SUBMIT_FAILED';
+        const e = new Error(apiMsg);
         e.code = 'ERR_SUBMIT_FAILED';
         throw e;
       }
-  set({ loading: false, success: true });
-  return true;
+      set({ loading: false, success: true });
+      return true;
     } catch (error) {
-      // Prefer standardized error codes, but fallback to message
-      const msg = error.code || error.message || 'ERR_SUBMIT_FAILED';
+      // Prefer backend message if available
+      const resp = error?.response?.data;
+      const backendMsg = resp?.message || (Array.isArray(resp?.errors) && resp.errors[0]?.message) || undefined;
+      const msg = backendMsg || error.code || error.message || 'ERR_SUBMIT_FAILED';
       set({ loading: false, error: msg, success: false });
       return false;
     }

@@ -17,7 +17,7 @@ const useHospitalStep1Store = create((set, get) => ({
   mfa: { emailId: true, phone: true },
     profilePhotoKey: '',
     isAlsoDoctor: false,
-    role: 'admin',
+  role: 'HOSPITAL_ADMIN',
   },
   setField: (field, value) => set(state => ({
     form: { ...state.form, [field]: value }
@@ -39,7 +39,7 @@ const useHospitalStep1Store = create((set, get) => ({
       mfa: { emailId: true, phone: true },
       profilePhotoKey: '',
       isAlsoDoctor: false,
-      role: 'Hospital_Admin',
+  role: 'HOSPITAL_ADMIN',
     }
   }),
   submit: async () => {
@@ -52,14 +52,14 @@ const useHospitalStep1Store = create((set, get) => ({
         lastName: form.lastName,
         emailId: form.emailId,
         phone: form.phone,
-        gender: form.gender,
+  gender: String(form.gender || '').toLowerCase(),
         mfa: {
           emailId: true,
           phone: true,
         },
         city: form.city,
         isAlsoDoctor: isDoctor,
-        role: 'Hospital_Admin',
+        role: 'HOSPITAL_ADMIN',
       };
 
       // Only require and include profile photo when also a doctor

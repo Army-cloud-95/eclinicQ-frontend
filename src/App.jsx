@@ -52,9 +52,12 @@ import HFDConsultation from "./HospitalFDModule/Pages/Settings/HFDConsultation";
 import HFDStaffPermissions from "./HospitalFDModule/Pages/Settings/HFDStaffPermissions";
 import FDOnboardingFlow from "./FrontDeskModule/Pages/Login/OnboardingFlow";
 import HOnboardingFlow from "./HospitalModule/Pages/Login/OnboardingFlow";
-import FDSignIn from "./FrontDeskModule/Pages/Login/SignIn";
+// Deprecated individual sign-in wrappers replaced by unified route
+// import FDSignIn from "./FrontDeskModule/Pages/Login/SignIn";
 import HFDOnboardingFlow from "./HospitalFDModule/Pages/Login/OnboardingFlow";
-import HFDFSignIn from "./HospitalFDModule/Pages/Login/SignIn";
+// import HFDFSignIn from "./HospitalFDModule/Pages/Login/SignIn";
+import UnifiedSignIn from "./pages/UnifiedSignIn";
+// DocSignIn route intentionally not wired per requirement
 
 function App() {
   return (
@@ -66,7 +69,7 @@ function App() {
         <Route path="dashboard" element={<Dashboard />} />
         <Route path="doctor" element={<Doctor />} />
         <Route path="doctor/:id" element={<DoctorDetailsPage />} />
-  <Route path="hospitals" element={<Hospitals />} />
+        <Route path="hospitals" element={<Hospitals />} />
         <Route path="hospital/:id" element={<HospitalDetailsPage />} />
         <Route path="patients" element={<Patients />} />
         <Route path="settings" element={<Settings />} />
@@ -84,11 +87,16 @@ function App() {
         } />
       </Route>
 
-      <Route path="onboarding" element={<OnboardingFlow />} />
-      <Route path="fd/signin" element={<FDSignIn />} />
-      <Route path="fd/onboarding" element={<FDOnboardingFlow />} />
+  <Route path="onboarding" element={<OnboardingFlow />} />
+  {/* Unified sign-in for doctor / hospital / fd / hfd */}
+    <Route path="signin" element={<UnifiedSignIn />} />
+  {/* Back-compat redirects */}
+  <Route path="fd/signin" element={<Navigate to="/signin?variant=fd" replace />} />
+  <Route path="hfd/signin" element={<Navigate to="/signin?variant=hfd" replace />} />
+    {/* Keep existing onboarding routes */}
+    <Route path="fd/onboarding" element={<FDOnboardingFlow />} />
   <Route path="hospital/onboarding" element={<HOnboardingFlow />} />
-  <Route path="hfd/signin" element={<HFDFSignIn />} />
+  {/* Legacy: dedicated signin components removed in favor of /signin?variant=... */}
   <Route path="hfd/onboarding" element={<HFDOnboardingFlow />} />
 
       {/* Doctor Portal */}

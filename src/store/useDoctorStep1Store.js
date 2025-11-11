@@ -14,7 +14,7 @@ const initialState = {
     phone: true,
   },
   profilePhotoKey: '',
-  role: 'Doctor',
+  role: 'DOCTOR',
   loading: false,
   error: null,
   success: false,
@@ -46,7 +46,7 @@ const useDoctorStep1Store = create((set) => ({
         city,
         mfa,
         profilePhotoKey,
-        role,
+  role,
       } = useDoctorStep1Store.getState();
 
       const body = {
@@ -54,11 +54,11 @@ const useDoctorStep1Store = create((set) => ({
         lastName,
         emailId,
         phone,
-        gender,
+  gender: String(gender || '').toLowerCase(),
         city,
         mfa,
         profilePhotoKey,
-        role,
+        role: 'DOCTOR',
       };
 
       const res = await axios.post('/auth/register', body);

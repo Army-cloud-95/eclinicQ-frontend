@@ -68,27 +68,27 @@ const QueueTable = ({ onCheckIn, checkedInToken, checkedInTokens, items, removin
           <colgroup>
             <col style={{ width: COL_W.token }} />
             <col style={{ width: COL_W.patient }} />
+            <col style={{ width: 160 }} />
             <col style={{ width: 220 }} />
             <col style={{ width: 140 }} />
-            <col style={{ width: 160 }} />
             <col style={{ width: 260 }} />
             <col style={{ width: COL_W.actions }} />
           </colgroup>
 
           <thead className="bg-white border-b border-gray-200 sticky top-0 z-20">
             <tr>
-              <th className="px-3 py-2.5 text-center text-xs font-semibold text-gray-600 sticky left-0 z-30 bg-white border-r border-b border-gray-200" style={{ minWidth: COL_W.token, width: COL_W.token }}>Token</th>
+              <th className="px-3 py-2.5 text-center text-xs font-semibold text-gray-600 sticky left-0 z-30 bg-white border-r border-b border-gray-200" style={{ minWidth: COL_W.token, width: COL_W.token }}>T. No</th>
               <th className="px-3 py-2.5 text-left text-xs font-semibold text-gray-600 sticky z-20 bg-white border-r border-b border-gray-200" style={{ left: COL_W.token, minWidth: COL_W.patient, width: COL_W.patient }}>
                 <span className="inline-flex items-center gap-1">Patient <ChevronsUpDown className="w-3.5 h-3.5 text-gray-300" /></span>
+              </th>
+              <th className="px-3 py-2.5 text-left text-xs font-semibold text-gray-600 border-r border-b border-gray-200">
+                <span className="inline-flex items-center gap-1">Booking Type <ChevronsUpDown className="w-3.5 h-3.5 text-gray-300" /></span>
               </th>
               <th className="px-3 py-2.5 text-left text-xs font-semibold text-gray-600 border-r border-b border-gray-200">
                 <span className="inline-flex items-center gap-1">Appt. Type <ChevronsUpDown className="w-3.5 h-3.5 text-gray-300" /></span>
               </th>
               <th className="px-3 py-2.5 text-left text-xs font-semibold text-gray-600 border-r border-b border-gray-200">
                 <span className="inline-flex items-center gap-1">Expt. Time <ChevronsUpDown className="w-3.5 h-3.5 text-gray-300" /></span>
-              </th>
-              <th className="px-3 py-2.5 text-left text-xs font-semibold text-gray-600 border-r border-b border-gray-200">
-                <span className="inline-flex items-center gap-1">Booking Type <ChevronsUpDown className="w-3.5 h-3.5 text-gray-300" /></span>
               </th>
               <th className="px-3 py-2.5 text-left text-xs font-semibold text-gray-600 border-r border-b border-gray-200">Reason For Visit</th>
               <th className="px-3 py-2.5 text-left text-xs font-semibold text-gray-600 sticky right-0 z-30 bg-white border-l border-b border-gray-200" style={{ minWidth: COL_W.actions, width: COL_W.actions }}>Actions</th>
@@ -115,9 +115,9 @@ const QueueTable = ({ onCheckIn, checkedInToken, checkedInTokens, items, removin
                 </td>
 
                 {/* Middle scrollable columns */}
-        <td className="px-3 py-3 text-gray-900 border-r border-b border-gray-200">{row.apptType}</td>
-        <td className="px-3 py-3 text-gray-900 border-r border-b border-gray-200">{row.exptTime}</td>
-        <td className="px-3 py-3 text-gray-900 border-r border-b border-gray-200">{row.bookingType}</td>
+  <td className="px-3 py-3 text-gray-900 border-r border-b border-gray-200">{row.bookingType}</td>
+  <td className="px-3 py-3 text-gray-900 border-r border-b border-gray-200">{row.apptType}</td>
+  <td className="px-3 py-3 text-gray-900 border-r border-b border-gray-200">{row.exptTime}</td>
         <td className="px-3 py-3 text-gray-900 border-r border-b border-gray-200">{row.reason}</td>
 
                 {/* Actions (sticky right) */}

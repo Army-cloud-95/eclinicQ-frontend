@@ -8,6 +8,8 @@ const Upload = ({ label = "Upload File", className = "", compulsory = false, onU
   const [error, setError] = useState(null);
   const [previewUrl, setPreviewUrl] = useState(null);
   const getUploadUrl = useImageUploadStore((state) => state.getUploadUrl);
+  const storeError = useImageUploadStore((state) => state.error);
+  const storeLoading = useImageUploadStore((state) => state.isLoading);
 
   const handleButtonClick = () => {
     fileInputRef.current.click();
@@ -23,7 +25,9 @@ const Upload = ({ label = "Upload File", className = "", compulsory = false, onU
       
       const uploadData = await getUploadUrl(file.type, file);
       if (!uploadData || !uploadData.uploadUrl || !uploadData.key) {
-        setError("Failed to get upload URL");
+        const msg = storeError ? (typeof storeError === 'string' ? storeError : JSON.stringify(storeError)) : 'Failed to get upload URL';
+        console.error('Upload URL acquisition failed:', msg);
+        setError(msg);
         setUploading(false);
         return;
       }
@@ -69,10 +73,10 @@ const Upload = ({ label = "Upload File", className = "", compulsory = false, onU
       <button
         type="button"
         onClick={handleButtonClick}
-        className="w-full h-[32px] text-left text-blue-600 text-sm font-medium border border-dashed border-blue-400 rounded-lg px-4 hover:bg-blue-50"
-        disabled={uploading}
+  className="w-full h-[32px] text-left text-blue-600 text-sm font-medium border border-dashed border-blue-400 rounded-lg px-4 hover:bg-blue-50"
+  disabled={uploading || storeLoading}
       >
-        {uploading ? 'Uploading...' : 'Upload File'}
+  {uploading || storeLoading ? 'Uploading...' : 'Upload File'}
       </button>
 
       {previewUrl && (

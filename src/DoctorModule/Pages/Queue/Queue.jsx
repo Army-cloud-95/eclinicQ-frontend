@@ -467,7 +467,7 @@ const WalkInAppointmentDrawer = ({ show, onClose, timeSlots, slotValue, setSlotV
 
 import { appointement } from "../../../../public/index.js";
 const Queue = () => {
-  const [activeFilter, setActiveFilter] = useState("All");
+  const [activeFilter, setActiveFilter] = useState("Checked In");
   const [selectedTimeSlot] = useState("Morning (10:00 am - 12:30 pm)");
   const [slotValue, setSlotValue] = useState("morning");
   const [slotOpen, setSlotOpen] = useState(false);
@@ -514,7 +514,7 @@ const Queue = () => {
     { name: "Eshan Mehra",     gender: "M", age: "05/30/1988 (36Y)", date: "Friday, 16 June 2024",   time: "", secondary: "Reschedule" },
   ];
 
-  const filters = ["In Waiting", "Engaged", "No show", "Admitted", "All"];
+  const filters = ["Checked In", "Engaged", "No show", "Admitted", "All"];
 
   // Time slot options
   const timeSlots = [
@@ -544,7 +544,7 @@ const Queue = () => {
 
   const getFilterCount = (filter) => {
     if (filter === "All") return queueData.length;
-    if (filter === "In Waiting") return queueData.filter((p) => p.status === "Check-In").length;
+    if (filter === "Checked In") return queueData.filter((p) => p.status === "Check-In").length;
     if (filter === "Engaged") return 0;
     if (filter === "No show") return 0;
     if (filter === "Admitted") return 0;
