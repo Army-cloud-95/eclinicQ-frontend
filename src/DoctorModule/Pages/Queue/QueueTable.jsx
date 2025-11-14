@@ -38,7 +38,7 @@ const rows = [
   { token: 24, name: 'Ojasvi Rao', gender: 'F', dob: '14/02/1993', age: 32, apptType: 'Second Opinion', exptTime: '5:00 PM', bookingType: 'Online', reason: 'PCOD' },
 ];
 
-const QueueTable = ({ onCheckIn, checkedInToken, checkedInTokens, items, removingToken, incomingToken, onRevokeCheckIn, onMarkNoShow, allowSampleFallback = true }) => {
+const QueueTable = ({ onCheckIn, checkedInToken, checkedInTokens, items, removingToken, incomingToken, onRevokeCheckIn, onMarkNoShow, allowSampleFallback = true, prescreeningEnabled = true }) => {
   const [menuRow, setMenuRow] = useState(null);
   const [menuPos, setMenuPos] = useState({ top: 0, left: 0 });
   useEffect(() => {
@@ -49,6 +49,7 @@ const QueueTable = ({ onCheckIn, checkedInToken, checkedInTokens, items, removin
   // Normalize input rows: prefer items from parent (live queue), else fallback to local sample
   const data = Array.isArray(items) && items.length
     ? items.map((p) => ({
+        id: p.id || p.appointmentId,
         token: p.token,
         name: p.patientName,
         gender: p.gender,
@@ -120,34 +121,45 @@ const QueueTable = ({ onCheckIn, checkedInToken, checkedInTokens, items, removin
                 </td>
 
                 {/* Middle scrollable columns */}
-  <td className="px-3 py-3 text-gray-900 border-r border-b border-gray-200">{row.bookingType}</td>
-  <td className="px-3 py-3 text-gray-900 border-r border-b border-gray-200">{row.apptType}</td>
-  <td className="px-3 py-3 text-gray-900 border-r border-b border-gray-200">{row.exptTime}</td>
+  <td className="px-3 py-3 text-gray-900 border-r border-b border-gray-200">{row.bookingType || '—'}</td>
+  <td className="px-3 py-3 text-gray-900 border-r border-b border-gray-200">{row.apptType || '—'}</td>
+  <td className="px-3 py-3 text-gray-900 border-r border-b border-gray-200">{row.exptTime || '—'}</td>
         <td className="px-3 py-3 text-gray-900 border-r border-b border-gray-200">{row.reason}</td>
 
                 {/* Actions (sticky right) */}
                 <td className="px-3 py-3 sticky right-0 z-20 bg-white group-hover:bg-gray-50 transition-colors border-l border-b border-gray-200" style={{ minWidth: COL_W.actions, width: COL_W.actions }}>
                   <div className="relative flex items-center gap-3" onClick={(e) => e.stopPropagation()}>
-          {checkedInTokens && checkedInTokens.has?.(row.token) ? (
-                      <Button
-                        size="large"
-                        variant="primary"
-                        className="h-9 py-0 text-sm w-full flex-1 shadow-lg"
-                        style={{ boxShadow: '0 4px 24px 0 rgba(37, 99, 235, 0.15)' }}
-                        onClick={() => onCheckIn(row)}
-                      >
-                        Add Pre-screening
-                      </Button>
-                    ) : (
-                      <Button
-                        size="large"
-                        variant="secondary"
-                        className="h-9 py-0 px-4 text-sm w-full flex-1"
-            onClick={() => onCheckIn(row)}
-                      >
-                        Check-In
-                      </Button>
-                    )}
+          {prescreeningEnabled ? (
+            checkedInTokens && checkedInTokens.has?.(row.token) ? (
+              <Button
+                size="large"
+                variant="primary"
+                className="h-9 py-0 text-sm w-full flex-1 shadow-lg"
+                style={{ boxShadow: '0 4px 24px 0 rgba(37, 99, 235, 0.15)' }}
+                onClick={() => onCheckIn(row)}
+              >
+                Add Pre-screening
+              </Button>
+            ) : (
+              <Button
+                size="large"
+                variant="secondary"
+                className="h-9 py-0 px-4 text-sm w-full flex-1"
+                onClick={() => onCheckIn(row)}
+              >
+                Check-In
+              </Button>
+            )
+          ) : (
+            <Button
+              size="large"
+              variant="secondary"
+              className="h-9 py-0 px-4 text-sm w-full flex-1"
+              onClick={() => onCheckIn(row)}
+            >
+              Check-In
+            </Button>
+          )}
                     {/* 3-dots action */}
                     <button
                       type="button"
@@ -206,7 +218,7 @@ const QueueTable = ({ onCheckIn, checkedInToken, checkedInTokens, items, removin
                           <div className="h-px bg-gray-200" />
                           <ul className="py-1 text-sm">
                             <li>
-                              <button onClick={() => { onMarkNoShow?.(row.token); setMenuRow(null); }} className="w-full text-left px-3 py-2 hover:bg-red-50 text-red-600 inline-flex items-center gap-2">
+                              <button onClick={() => { onMarkNoShow?.(row); setMenuRow(null); }} className="w-full text-left px-3 py-2 hover:bg-red-50 text-red-600 inline-flex items-center gap-2">
                                 <UserX className="w-4 h-4" />
                                 Mark as No-Show
                               </button>

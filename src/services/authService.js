@@ -123,6 +123,55 @@ export const getAppointmentsForSlot = async (slotId) => {
   }
 };
 
+// Approve a pending appointment (moves it to In Waiting for the day)
+export const approveAppointment = async (appointmentId) => {
+  if (!appointmentId) throw new Error('appointmentId is required');
+  try {
+  // API requires PUT; send empty object as body
+  const response = await axiosInstance.put(`/appointments/approve/${encodeURIComponent(appointmentId)}`, {});
+    return response.data; // { success, data: { ...updatedAppointment } }
+  } catch (error) {
+    console.error('Approve appointment failed:', error?.response?.data || error.message);
+    throw error;
+  }
+};
+
+// Reject a pending appointment
+export const rejectAppointment = async (appointmentId) => {
+  if (!appointmentId) throw new Error('appointmentId is required');
+  try {
+    const response = await axiosInstance.put(`/appointments/reject/${encodeURIComponent(appointmentId)}`, {});
+    return response.data;
+  } catch (error) {
+    console.error('Reject appointment failed:', error?.response?.data || error.message);
+    throw error;
+  }
+};
+
+// Check-in an appointment
+export const checkInAppointment = async (appointmentId) => {
+  if (!appointmentId) throw new Error('appointmentId is required');
+  try {
+    const response = await axiosInstance.put(`/appointments/check-in/${encodeURIComponent(appointmentId)}`, {});
+    return response.data;
+  } catch (error) {
+    console.error('Check-in failed:', error?.response?.data || error.message);
+    throw error;
+  }
+};
+
+// Mark appointment as No-Show
+export const markNoShowAppointment = async (appointmentId) => {
+  if (!appointmentId) throw new Error('appointmentId is required');
+  try {
+    const response = await axiosInstance.put(`/appointments/no-show/${encodeURIComponent(appointmentId)}`, {});
+    return response.data;
+  } catch (error) {
+    console.error('Mark no-show failed:', error?.response?.data || error.message);
+    throw error;
+  }
+};
+
 // Walk-in appointment booking
 // payload shape differs by method: EXISTING vs NEW_USER
 export const bookWalkInAppointment = async (payload) => {

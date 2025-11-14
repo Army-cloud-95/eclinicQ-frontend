@@ -1,7 +1,7 @@
 // Front Desk Queue: full API-integrated version copied from original before doctor static simplification
 import React, { useEffect, useMemo, useState, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { getPendingAppointmentsForClinic, bookWalkInAppointment } from '../../../services/authService';
+import { getPendingAppointmentsForClinic, bookWalkInAppointment, approveAppointment, rejectAppointment, checkInAppointment, markNoShowAppointment } from '../../../services/authService';
 import { Clock, Calendar, ChevronDown, Sunrise, Sun, Sunset, Moon, X } from 'lucide-react';
 import QueueDatePicker from '../../../components/QueueDatePicker';
 import AvatarCircle from '../../../components/AvatarCircle';
@@ -92,7 +92,7 @@ const PreScreeningDrawer = ({ show, patient, onClose, onSave, initialVitals }) =
 	</>);
 };
 
-const WalkInAppointmentDrawer = ({ show, onClose, timeSlots, slotValue, setSlotValue, onAppointmentBooked, activeSlotId, onBookedRefresh }) => {
+const WalkInAppointmentDrawer = ({ show, onClose, timeSlots, slotValue, setSlotValue, activeSlotId, onBookedRefresh, groupedSlots, onSelectSlot }) => {
 	const [isExisting, setIsExisting] = useState(false);
 	const [apptType, setApptType] = useState('New Consultation');
 	const [reason, setReason] = useState('');
@@ -129,10 +129,8 @@ const WalkInAppointmentDrawer = ({ show, onClose, timeSlots, slotValue, setSlotV
 				payload = { method:'NEW_USER', firstName:firstName.trim(), lastName:lastName.trim(), phone:mobile.trim(), emailId: email.trim()||undefined, dob:dob.trim(), gender:gender.toLowerCase(), bloodGroup, reason:reason.trim(), slotId:activeSlotId, bookingType: apptType?.toUpperCase().includes('REVIEW')?'FOLLOW_UP':'NEW' };
 			}
 			// Call real API
-			const resp = await bookWalkInAppointment(payload);
-			const apptData = resp?.data || resp || {};
-			const requestItem = { id: apptData.id || Math.random().toString(36).slice(2), name: isExisting ? (mobile.trim().slice(0,8)+'…') : (firstName+' '+lastName), gender: isExisting?'—': gender.charAt(0).toUpperCase(), age:'', date:new Date().toDateString(), time:'', secondary:'Cancel', raw: apptData };
-			onAppointmentBooked(requestItem);
+			await bookWalkInAppointment(payload);
+			// Do not push into Appointment Requests; just refresh the queue and close
 			onBookedRefresh?.();
 			onClose();
 		} catch (e) { setErrorMsg('Booking failed'); } finally { setBooking(false); }
@@ -183,9 +181,28 @@ const WalkInAppointmentDrawer = ({ show, onClose, timeSlots, slotValue, setSlotV
 					<div className='grid grid-cols-1 sm:grid-cols-2 gap-4'>
 						<div><label className='block text-sm font-medium text-gray-700 mb-1'>Appointment Date <span className='text-red-500'>*</span></label><div className='relative'><input ref={apptDateRef} type='date' value={apptDate} onChange={e=>setApptDate(e.target.value)} className='w-full rounded-md border border-gray-300 px-3 py-2 text-sm pr-8 focus:outline-none focus:border-blue-500' /><button type='button' onClick={()=> (apptDateRef.current?.showPicker ? apptDateRef.current.showPicker() : apptDateRef.current?.focus())} className='absolute right-2 top-1/2 -translate-y-1/2 text-gray-500'><Calendar className='w-4 h-4' /></button></div></div>
 						<div>
-							<div className='flex items-center justify-between'><label className='block text-sm font-medium text-gray-700 mb-1'>Available Slot <span className='text-red-500'>*</span></label><span className='text-xs text-green-600'>5 Tokens available</span></div>
-							<select className='w-full rounded-md border border-gray-300 px-3 py-2 text-sm' value={slotValue} onChange={e=> setSlotValue(e.target.value)}>{timeSlots.map(t=> <option key={t.key} value={t.key}>{t.label} ({t.time})</option>)}</select>
-							{!activeSlotId && <div className='mt-2 text-xs text-amber-600'>Select a slot from the page header to enable booking.</div>}
+							{(() => { // compute dynamic tokens for current selected slot
+								const all = [...(groupedSlots?.morning||[]), ...(groupedSlots?.afternoon||[]), ...(groupedSlots?.evening||[]), ...(groupedSlots?.night||[])];
+								let current = null;
+								if (activeSlotId) {
+									current = all.find(s => (s.id||s.slotId||s._id) === activeSlotId) || null;
+								} else {
+									const g = (groupedSlots?.[slotValue] || []); current = g[0] || null;
+								}
+								const avail = current?.availableTokens ?? current?.tokensAvailable ?? current?.remainingTokens ?? current?.available ?? current?.tokensLeft;
+								const total = current?.totalTokens ?? current?.capacity ?? current?.maxTokens;
+								const label = (avail ?? '') !== '' ? `${avail}${total!=null?` of ${total}`:''} Tokens available` : 'Tokens info unavailable';
+								return (
+									<>
+										<div className='flex items-center justify-between'>
+											<label className='block text-sm font-medium text-gray-700 mb-1'>Available Slot <span className='text-red-500'>*</span></label>
+											<span className={`text-xs ${avail>0? 'text-green-600':'text-amber-600'}`}>{label}</span>
+										</div>
+									</>
+								);
+							})()}
+							<select className='w-full rounded-md border border-gray-300 px-3 py-2 text-sm' value={slotValue} onChange={e=> { const key=e.target.value; setSlotValue(key); const group=(groupedSlots?.[key]||[]); if(group.length){ const first=group[0]; const id= first.id||first.slotId||first._id; if(id && onSelectSlot){ onSelectSlot(id); } } }}>{timeSlots.map(t=> <option key={t.key} value={t.key}>{t.label} ({t.time})</option>)}</select>
+							{!activeSlotId && <div className='mt-2 text-xs text-amber-600'>Select a slot to enable booking.</div>}
 						</div>
 					</div>
 				</div>
@@ -222,6 +239,8 @@ export default function FDQueue() {
 	const [appointmentRequests, setAppointmentRequests] = useState([]);
 	const [apptLoading, setApptLoading] = useState(false);
 	const [apptError, setApptError] = useState('');
+	const [approvingId, setApprovingId] = useState(null);
+	const [rejectingId, setRejectingId] = useState(null);
 	// Pull doctor context from auth store; fetch if missing
 	const { doctorDetails, doctorLoading, fetchDoctorDetails } = useAuthStore();
 	useEffect(()=>{ if(!doctorDetails && !doctorLoading){ fetchDoctorDetails?.(getDoctorMe); } },[doctorDetails, doctorLoading, fetchDoctorDetails]);
@@ -265,7 +284,7 @@ export default function FDQueue() {
 		const expectedTime = formatExpectedTime(appt.expectedTime) || appt.expectedTimeLabel || '';
 		const bookingType = appt.bookingMode === 'ONLINE' ? 'Online' : appt.bookingMode === 'WALK_IN' ? 'Walk-In' : (appt.bookingType || '');
 		const reasonForVisit = appt.reason || appt.reasonForVisit || '';
-		return { token: appt.tokenNo || appt.token || (idx+1), patientName: fullName, gender, age: ageStr, appointmentType, expectedTime, bookingType, reasonForVisit, status: appt.status || 'Waiting' };
+		return { id: appt.id || appt.appointmentId, token: appt.tokenNo || appt.token || (idx+1), patientName: fullName, gender, age: ageStr, appointmentType, expectedTime, bookingType, reasonForVisit, status: appt.status || 'Waiting' };
 	};
 
 	// When appointments for slot or filter change: derive queueData from categorized response
@@ -337,12 +356,28 @@ export default function FDQueue() {
 	const completeCurrentPatient = () => { const ANIM_MS=300; const active=activePatient; if(!active) return; setRemovingToken(active.token); const activeCard=document.querySelector('#active-patient-card'); if(activeCard){ activeCard.classList.remove('active-card-enter'); activeCard.classList.add('active-card-exit'); } setTimeout(()=>{ setQueueData(prev=>{ const newArr= prev.filter((_,i)=> i!==currentIndex); const nextIdx=newArr.length===0?0: Math.min(currentIndex, newArr.length-1); setCurrentIndex(nextIdx); if(newArr.length>0){ const nextToken=newArr[nextIdx]?.token; setIncomingToken(nextToken); setPatientStartedAt(Date.now()); setElapsed(0);} else { setPatientStartedAt(null); setElapsed(0);} return newArr; }); setRemovingToken(null); setTimeout(()=>{ const card=document.querySelector('#active-patient-card'); if(card){ card.classList.remove('active-card-exit'); card.classList.add('active-card-enter'); } setIncomingToken(null); },30); }, ANIM_MS); };
 	const [checkedInTokens, setCheckedInTokens] = useState(new Set());
 	const [checkedInToken, setCheckedInToken] = useState(null);
-	const [showPreScreen, setShowPreScreen] = useState(false);
+	const [showPreScreen, setShowPreScreen] = useState(false); // kept for future, but not used now
 	const [rightDivPatient, setRightDivPatient] = useState(null);
 	const [preScreenData, setPreScreenData] = useState({});
 	const [showWalkIn, setShowWalkIn] = useState(false);
-	const handleCheckIn = row => { setCheckedInTokens(prev=> new Set(prev).add(row.token)); setCheckedInToken(row.token); setShowPreScreen(true); };
-	const handlePreScreenClose = () => { setShowPreScreen(false); const patient= queueData.find(p=> p.token===checkedInToken) || {}; setRightDivPatient(patient); };
+	// New: On check-in, call API and refresh; do not open pre-screening
+	const handleCheckIn = async (row) => {
+		try {
+			let id = row?.id;
+			if (!id) {
+				const found = queueData.find(p => p.token === row?.token);
+				id = found?.id;
+			}
+			if (!id) return;
+			setCheckedInTokens(prev=> new Set(prev).add(row.token));
+			setCheckedInToken(row.token);
+			await checkInAppointment(id);
+			if (selectedSlotId) { await loadAppointmentsForSelectedSlot(); }
+		} catch (e) {
+			console.error('Check-in API failed', e?.response?.data || e.message);
+		}
+	};
+	const handlePreScreenClose = () => { /* disabled current flow */ };
 	return (
 		<div className='h-screen overflow-hidden bg-gray-50'>
 			<div className='sticky top-0 z-10 bg-white border-b-[0.5px] border-gray-200 px-4 py-2'>
@@ -402,7 +437,8 @@ export default function FDQueue() {
 					</div>
 					<div className='w-full flex flex-col lg:flex-row gap-3 flex-1 min-h-0 overflow-hidden'>
 						<div className='flex-1 min-w-0 min-h-0 overflow-hidden flex flex-col'>
-							<QueueTable allowSampleFallback={false} onCheckIn={handleCheckIn} checkedInToken={checkedInToken} checkedInTokens={checkedInTokens} items={queueData} removingToken={removingToken} incomingToken={incomingToken} onRevokeCheckIn={token=>{ setCheckedInTokens(prev=>{ const n=new Set(prev); n.delete(token); return n; }); if(checkedInToken===token) setCheckedInToken(null); }} onMarkNoShow={token=> setQueueData(prev=> prev.filter(p=> p.token!== token))} />
+							<QueueTable prescreeningEnabled={false} allowSampleFallback={false} onCheckIn={handleCheckIn} checkedInToken={checkedInToken} checkedInTokens={checkedInTokens} items={queueData} removingToken={removingToken} incomingToken={incomingToken} onRevokeCheckIn={token=>{ setCheckedInTokens(prev=>{ const n=new Set(prev); n.delete(token); return n; }); if(checkedInToken===token) setCheckedInToken(null); }} onMarkNoShow={async (row)=> { try { let id=row?.id; if(!id){ const found=queueData.find(p=>p.token===row?.token); id=found?.id; }
+	            if (!id) return; await markNoShowAppointment(id); if (selectedSlotId) { await loadAppointmentsForSelectedSlot(); } } catch(e) { console.error('No-show failed', e?.response?.data || e.message); } }} />
 						</div>
 						<div className='shrink-0 w-[400px] bg-white rounded-[12px] border-[0.5px] border-[#D6D6D6] h-full overflow-y-auto'>
 							<div className=''>
@@ -431,8 +467,39 @@ export default function FDQueue() {
 														{request.time && (<div className='flex items-center'><Clock className='h-4 w-4 mr-2 text-gray-500' /><span>{request.time}</span></div>)}
 													</div>
 													<div className='flex justify-between gap-3'>
-														<Button size='large' variant='primary' className='w-full'>Accept</Button>
-														<Button size='large' variant='secondary' className='w-full'>{request.secondary || 'Reschedule'}</Button>
+														<Button size='large' variant='primary' className='w-full' onClick={async()=>{
+															try {
+																if (!request?.raw?.id) return;
+																setApprovingId(request.raw.id);
+																await approveAppointment(request.raw.id);
+																// Remove from requests panel
+																setAppointmentRequests(prev => prev.filter(r => r.raw?.id !== request.raw.id));
+																// Refresh current slot appointments so it moves into In Waiting/All
+																if (selectedSlotId) { await loadAppointmentsForSelectedSlot(); }
+															} catch (e) {
+																console.error('Approve failed', e?.response?.data || e.message);
+															} finally {
+																setApprovingId(null);
+															}
+													}} disabled={!!approvingId}>
+															{approvingId ? 'Approving…' : 'Accept'}
+														</Button>
+													<Button size='large' variant='secondary' className='w-full'>{request.secondary || 'Reschedule'}</Button>
+													<Button size='large' variant='error' className='w-full' onClick={async()=>{
+														try {
+															if (!request?.raw?.id) return;
+															setRejectingId(request.raw.id);
+															await rejectAppointment(request.raw.id);
+															setAppointmentRequests(prev => prev.filter(r => r.raw?.id !== request.raw.id));
+															// No need to refresh queue on reject; optional
+														} catch (e) {
+															console.error('Reject failed', e?.response?.data || e.message);
+														} finally {
+															setRejectingId(null);
+														}
+													}} disabled={!!rejectingId}>
+														{rejectingId ? 'Rejecting…' : 'Reject'}
+													</Button>
 													</div>
 												</div>
 											</div>
@@ -443,8 +510,8 @@ export default function FDQueue() {
 							</div>
 						</div>
 					</div>
-					<PreScreeningDrawer show={showPreScreen} patient={queueData.find(p=> p.token===checkedInToken)} onClose={handlePreScreenClose} onSave={({ token, vitals })=> setPreScreenData(s=> ({...s,[token]:vitals}))} initialVitals={checkedInToken? preScreenData[checkedInToken]: undefined} />
-					<WalkInAppointmentDrawer show={showWalkIn} onClose={()=> setShowWalkIn(false)} timeSlots={timeSlots} slotValue={slotValue} setSlotValue={setSlotValue} activeSlotId={selectedSlotId} onAppointmentBooked={item=> setAppointmentRequests(prev=> [item, ...prev])} onBookedRefresh={()=> { if(selectedSlotId){ loadAppointmentsForSelectedSlot(); } }} />
+						{/* PreScreeningDrawer disabled for now per requirement */}
+						<WalkInAppointmentDrawer show={showWalkIn} onClose={()=> setShowWalkIn(false)} timeSlots={timeSlots} slotValue={slotValue} setSlotValue={setSlotValue} activeSlotId={selectedSlotId} onBookedRefresh={()=> { if(selectedSlotId){ loadAppointmentsForSelectedSlot(); } }} groupedSlots={groupedSlots} onSelectSlot={selectSlot} />
 				</div>
 			</div>
 		</div>
