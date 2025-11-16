@@ -1,7 +1,7 @@
 // Front Desk Queue: full API-integrated version copied from original before doctor static simplification
 import React, { useEffect, useMemo, useState, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { getPendingAppointmentsForClinic, bookWalkInAppointment, approveAppointment, rejectAppointment, checkInAppointment, markNoShowAppointment } from '../../../services/authService';
+import { getPendingAppointmentsForClinic, bookWalkInAppointment, approveAppointment, rejectAppointment, checkInAppointment, markNoShowAppointment, startSlotEta, startPatientSessionEta, endPatientSessionEta } from '../../../services/authService';
 import { Clock, Calendar, ChevronDown, Sunrise, Sun, Sunset, Moon, X } from 'lucide-react';
 import QueueDatePicker from '../../../components/QueueDatePicker';
 import AvatarCircle from '../../../components/AvatarCircle';
@@ -230,8 +230,11 @@ export default function FDQueue() {
 	const [sessionStarted, setSessionStarted] = useState(false);
 	const [queuePaused, setQueuePaused] = useState(false);
 	const [currentIndex, setCurrentIndex] = useState(0);
-	const [patientStartedAt, setPatientStartedAt] = useState(null);
-	const [elapsed, setElapsed] = useState(0);
+	// Timer state similar to Doctor Queue
+	const [runStartAt, setRunStartAt] = useState(null); // ms when timer last started/resumed
+	const [baseElapsed, setBaseElapsed] = useState(0); // accumulated seconds while not running
+	const [elapsed, setElapsed] = useState(0); // display seconds
+	const wasRunningOnPauseRef = useRef(false);
 	const [removingToken, setRemovingToken] = useState(null);
 	const [incomingToken, setIncomingToken] = useState(null);
 	// Holds list currently shown in table (derived from active filter)
@@ -293,7 +296,8 @@ export default function FDQueue() {
 		// Shape: { counts: {...}, appointments: { checkedIn:[], inWaiting:[], engaged:[], noShow:[], admitted:[], all:[] } }
 		const categories = slotAppointments?.appointments;
 		if (!categories) return;
-		const key = FILTER_KEY_MAP[activeFilter] || 'all';
+		// If session is started, force data source from In Waiting list regardless of UI label
+		const key = sessionStarted ? 'inWaiting' : (FILTER_KEY_MAP[activeFilter] || 'all');
 		const rawList = categories[key] || categories.all || [];
 		const mapped = rawList.map(mapAppointment).filter(Boolean);
 		setQueueData(mapped);
@@ -340,6 +344,8 @@ export default function FDQueue() {
 		return arr;
 	}, [groupedSlots]);
 	useEffect(()=>{ const onClick=e=>{ const a=slotAnchorRef.current; const m=slotMenuRef.current; if(a&&a.contains(e.target)) return; if(m&&m.contains(e.target)) return; setSlotOpen(false); }; const onKey=e=>{ if(e.key==='Escape') setSlotOpen(false); }; window.addEventListener('mousedown',onClick); window.addEventListener('keydown',onKey); return ()=>{ window.removeEventListener('mousedown',onClick); window.removeEventListener('keydown',onKey); }; },[]);
+	// While a session is active, enforce the In Waiting filter
+	useEffect(()=>{ if (sessionStarted && activeFilter !== 'In Waiting') setActiveFilter('In Waiting'); }, [sessionStarted, activeFilter]);
 	// Counts direct from API (fallback to derived lengths)
 	const counts = slotAppointments?.counts || {};
 	const getFilterCount = f => {
@@ -350,10 +356,74 @@ export default function FDQueue() {
 		return queueData.length;
 	};
 	const activePatient = useMemo(()=> queueData[currentIndex] || null,[queueData,currentIndex]);
-	useEffect(()=>{ if(!sessionStarted || queuePaused || !patientStartedAt) return; const id=setInterval(()=>{ const now=Date.now(); setElapsed(Math.max(0,Math.floor((now-patientStartedAt)/1000))); },1000); return ()=> clearInterval(id); },[sessionStarted,queuePaused,patientStartedAt]);
+	// Timer effect: elapsed = baseElapsed + (now - runStartAt)
+	useEffect(()=>{
+		if(!sessionStarted || queuePaused || !runStartAt){ setElapsed(baseElapsed); return; }
+		const id=setInterval(()=>{ const now=Date.now(); setElapsed(baseElapsed + Math.max(0, Math.floor((now-runStartAt)/1000))); },1000);
+		// initial tick
+		const now=Date.now(); setElapsed(baseElapsed + Math.max(0, Math.floor((now-runStartAt)/1000)));
+		return ()=> clearInterval(id);
+	},[sessionStarted, queuePaused, runStartAt, baseElapsed]);
 	const formatTime = s => { const mm=String(Math.floor(s/60)).padStart(2,'0'); const ss=String(s%60).padStart(2,'0'); return `${mm}:${ss}`; };
-	const handleToggleSession = () => { if(sessionStarted){ setSessionStarted(false); setQueuePaused(false); setPatientStartedAt(null); setElapsed(0);} else { const firstIdx=Math.max(0, queueData.findIndex(p=>p.status==='Waiting')); setCurrentIndex(firstIdx===-1?0:firstIdx); setSessionStarted(true); setQueuePaused(false); setPatientStartedAt(Date.now()); setElapsed(0);} };
-	const completeCurrentPatient = () => { const ANIM_MS=300; const active=activePatient; if(!active) return; setRemovingToken(active.token); const activeCard=document.querySelector('#active-patient-card'); if(activeCard){ activeCard.classList.remove('active-card-enter'); activeCard.classList.add('active-card-exit'); } setTimeout(()=>{ setQueueData(prev=>{ const newArr= prev.filter((_,i)=> i!==currentIndex); const nextIdx=newArr.length===0?0: Math.min(currentIndex, newArr.length-1); setCurrentIndex(nextIdx); if(newArr.length>0){ const nextToken=newArr[nextIdx]?.token; setIncomingToken(nextToken); setPatientStartedAt(Date.now()); setElapsed(0);} else { setPatientStartedAt(null); setElapsed(0);} return newArr; }); setRemovingToken(null); setTimeout(()=>{ const card=document.querySelector('#active-patient-card'); if(card){ card.classList.remove('active-card-exit'); card.classList.add('active-card-enter'); } setIncomingToken(null); },30); }, ANIM_MS); };
+	const handleToggleSession = async () => {
+		if(sessionStarted){
+			// End overall session and reset timer state
+			setSessionStarted(false);
+			setQueuePaused(false);
+			setRunStartAt(null);
+			setBaseElapsed(0);
+			setElapsed(0);
+			wasRunningOnPauseRef.current = false;
+		} else {
+			// Always start from In Waiting list
+			setActiveFilter('In Waiting');
+			setCurrentIndex(0);
+			setSessionStarted(true);
+			setQueuePaused(false);
+			setRunStartAt(null);
+			setBaseElapsed(0);
+			setElapsed(0);
+			wasRunningOnPauseRef.current = false;
+			// Fire ETA start for slot if available
+			try {
+				if (selectedSlotId) {
+					await startSlotEta(selectedSlotId);
+				}
+			} catch (e) {
+				console.error('Failed to start slot ETA', e?.response?.data || e.message);
+			}
+		}
+	};
+	const completeCurrentPatient = async () => {
+		const ANIM_MS=300; const active=activePatient; if(!active) return; setRemovingToken(active.token);
+		// Fire per-patient ETA end before switching
+		try { 
+			if (selectedSlotId && active?.token != null) { 
+				await endPatientSessionEta(selectedSlotId, active.token); 
+				// Refresh current slot appointments so status updates are reflected
+				await loadAppointmentsForSelectedSlot();
+				// Move UI focus to Engaged after end
+				setActiveFilter('Engaged');
+			}
+		} catch(e) { console.error('Failed to end patient ETA', e?.response?.data || e.message); }
+		const activeCard=document.querySelector('#active-patient-card'); if(activeCard){ activeCard.classList.remove('active-card-enter'); activeCard.classList.add('active-card-exit'); }
+		setTimeout(()=>{
+			setQueueData(prev=>{
+				const newArr= prev.filter((_,i)=> i!==currentIndex);
+				const nextIdx=newArr.length===0?0: Math.min(currentIndex, newArr.length-1);
+				setCurrentIndex(nextIdx);
+				if(newArr.length>0){ const nextToken=newArr[nextIdx]?.token; setIncomingToken(nextToken); }
+				// Do NOT auto-start next patient
+				setRunStartAt(null);
+				setBaseElapsed(0);
+				setElapsed(0);
+				wasRunningOnPauseRef.current = false;
+				return newArr;
+			});
+			setRemovingToken(null);
+			setTimeout(()=>{ const card=document.querySelector('#active-patient-card'); if(card){ card.classList.remove('active-card-exit'); card.classList.add('active-card-enter'); } setIncomingToken(null); },30);
+		}, ANIM_MS);
+	};
 	const [checkedInTokens, setCheckedInTokens] = useState(new Set());
 	const [checkedInToken, setCheckedInToken] = useState(null);
 	const [showPreScreen, setShowPreScreen] = useState(false); // kept for future, but not used now
@@ -422,7 +492,41 @@ export default function FDQueue() {
 							</div>
 			{/* Overview + content */}
 			<div className='px-0 pt-0 pb-2 h-[calc(100vh-100px)] flex flex-col overflow-hidden'>
-				{sessionStarted && (<div className=''><div className='w-full bg-[#22C55E] h-[38px] flex items-center relative px-0 rounded-none'><div className='flex-1 flex items-center justify-center gap-3'><span className='text-white font-medium text-[16px]'>Current Token Number</span><span className='inline-flex items-center gap-2 font-bold text-white text-[18px]'><span className='inline-block w-3 h-3 rounded-full bg-[#D1FADF] border border-[#A7F3D0]'></span>{String(activePatient?.token ?? 0).padStart(2,'0')}</span></div><button className='absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-1 border border-red-200 bg-white text-red-600 text-xs font-semibold px-2 py-1 rounded transition hover:bg-red-50' onClick={()=> setQueuePaused(!queuePaused)}>{queuePaused?'Resume Queue':'Pause Queue'}</button></div></div>)}
+				{sessionStarted && (
+					<div className=''>
+						<div className='w-full bg-[#22C55E] h-[38px] flex items-center relative px-0 rounded-none'>
+							<div className='flex-1 flex items-center justify-center gap-3'>
+								<span className='text-white font-medium text-[16px]'>Current Token Number</span>
+								<span className='inline-flex items-center gap-2 font-bold text-white text-[18px]'>
+									<span className='inline-block w-3 h-3 rounded-full bg-[#D1FADF] border border-[#A7F3D0]'></span>
+									{String(activePatient?.token ?? 0).padStart(2,'0')}
+								</span>
+							</div>
+							<button
+								className='absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-1 border border-red-200 bg-white text-red-600 text-xs font-semibold px-2 py-1 rounded transition hover:bg-red-50'
+								onClick={() => {
+									if (!sessionStarted) return setQueuePaused(v=>!v);
+									if (!queuePaused) {
+										// Pause: roll running time into baseElapsed and stop run
+										if (runStartAt) {
+											const delta = Math.floor((Date.now() - runStartAt) / 1000);
+											setBaseElapsed(b => b + Math.max(0, delta));
+											setRunStartAt(null);
+										}
+										wasRunningOnPauseRef.current = !!runStartAt;
+										setQueuePaused(true);
+									} else {
+										// Resume: only if previously running
+										if (wasRunningOnPauseRef.current) setRunStartAt(Date.now());
+										setQueuePaused(false);
+									}
+								}}
+							>
+								{queuePaused?'Resume Queue':'Pause Queue'}
+							</button>
+						</div>
+					</div>
+				)}
 				<div className='p-2 flex flex-col flex-1 min-h-0'>
 					<div className='flex flex-col gap-2'><h3 className='text-[#424242] font-medium'>Overview</h3><div className='grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4'>
 						<OverviewStatCard title='All Appointments' value={counts.all ?? queueData.length} />
@@ -430,9 +534,60 @@ export default function FDQueue() {
 						<OverviewStatCard title='Engaged' value={counts.engaged ?? counts['engaged'] ?? 0} />
 						<OverviewStatCard title='No Show/Cancelled' value={(counts.noShow ?? counts['noShow'] ?? 0) + (counts.cancelled ?? 0)} />
 					</div></div>
-					{sessionStarted && activePatient && (<div className='mb-2 p-2'><h3 className='text-gray-800 font-semibold mb-2'>Active Patient</h3><div id='active-patient-card' className='bg-white rounded-lg border border-blue-200 px-4 py-3 flex items-center justify-between text-sm active-card-enter'><div className='flex items-center gap-4 min-w-0'><AvatarCircle name={activePatient.patientName} size='s' /><div className='flex items-center gap-4 min-w-0'><div className='min-w-0'><div className='flex items-center gap-1'><span className='font-semibold text-gray-900 truncate max-w-[160px]'>{activePatient.patientName}</span><span className='text-gray-400 text-xs leading-none'>↗</span></div><div className='text-[11px] text-gray-500 mt-0.5'>{activePatient.gender} | {activePatient.age}</div></div><div className='h-10 w-px bg-gray-200' /><div><div className='flex items-center gap-2 shrink-0'><span className='text-gray-500'>Token Number</span><span className='inline-flex items-center justify-center w-5 h-5 rounded border border-blue-300 bg-blue-50 text-[11px] font-medium text-blue-700'>{activePatient.token}</span></div><div className='flex items-center gap-1 text-gray-500'><span className=''>Reason for Visit :</span><span className='font-xs whitespace-nowrap text-gray-700'>{activePatient.reasonForVisit}</span></div></div></div></div><div className='flex items-center gap-3 shrink-0 pl-4'><div className='inline-flex items-center gap-1 rounded-md border border-green-200 bg-green-50 px-2 py-1 text-[12px] font-medium text-green-700'><span className='inline-block w-2 h-2 rounded-full bg-green-500' />{formatTime(elapsed)}</div><button onClick={completeCurrentPatient} className='inline-flex items-center rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors'>End Session</button><button className='text-gray-500 hover:text-gray-700 px-2 py-1'>⋯</button></div></div></div>)}
+					{sessionStarted && activePatient && (
+						<div className='mb-2 p-2'>
+							<h3 className='text-gray-800 font-semibold mb-2'>Active Patient</h3>
+							<div id='active-patient-card' className='bg-white rounded-lg border border-blue-200 px-4 py-3 flex items-center justify-between text-sm active-card-enter'>
+								<div className='flex items-center gap-4 min-w-0'>
+									<AvatarCircle name={activePatient.patientName} size='s' />
+									<div className='flex items-center gap-4 min-w-0'>
+										<div className='min-w-0'>
+											<div className='flex items-center gap-1'>
+												<span className='font-semibold text-gray-900 truncate max-w-[160px]'>{activePatient.patientName}</span>
+												<span className='text-gray-400 text-xs leading-none'>↗</span>
+											</div>
+											<div className='text-[11px] text-gray-500 mt-0.5'>{activePatient.gender} | {activePatient.age}</div>
+										</div>
+										<div className='h-10 w-px bg-gray-200' />
+										<div>
+											<div className='flex items-center gap-2 shrink-0'>
+												<span className='text-gray-500'>Token Number</span>
+												<span className='inline-flex items-center justify-center w-5 h-5 rounded border border-blue-300 bg-blue-50 text-[11px] font-medium text-blue-700'>{activePatient.token}</span>
+											</div>
+											<div className='flex items-center gap-1 text-gray-500'>
+												<span className=''>Reason for Visit :</span>
+												<span className='font-xs whitespace-nowrap text-gray-700'>{activePatient.reasonForVisit}</span>
+											</div>
+										</div>
+									</div>
+								</div>
+								<div className='flex items-center gap-3 shrink-0 pl-4'>
+									<div className='inline-flex items-center gap-1 rounded-md border border-green-200 bg-green-50 px-2 py-1 text-[12px] font-medium text-green-700'>
+										<span className='inline-block w-2 h-2 rounded-full bg-green-500' />
+										{formatTime(elapsed)}
+									</div>
+									{runStartAt ? (
+										<button onClick={completeCurrentPatient} className='inline-flex items-center rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors'>
+											End Session
+										</button>
+									) : (
+										<button onClick={async () => { 
+											// Start patient timer and fire per-patient ETA start
+											// Safety: ensure active patient is from In Waiting
+											if (activeFilter !== 'In Waiting') setActiveFilter('In Waiting');
+											setRunStartAt(Date.now());
+											try { if (selectedSlotId && activePatient?.token != null) { await startPatientSessionEta(selectedSlotId, activePatient.token); } } catch(e) { console.error('Failed to start patient ETA', e?.response?.data || e.message); }
+										}} className='inline-flex items-center rounded-md border border-blue-300 bg-blue-600 text-white px-3 py-1.5 text-sm font-medium hover:bg-blue-700 transition-colors'>
+											Start Session
+										</button>
+									)}
+									<button className='text-gray-500 hover:text-gray-700 px-2 py-1'>⋯</button>
+								</div>
+							</div>
+						</div>
+					)}
 					<div className='flex items-center justify-between px-1 py-3'>
-						<div className='flex gap-3'>{filters.map(f=> <button key={f} onClick={()=> setActiveFilter(f)} className={` px-[6px] py-1 rounded-lg font-medium text-sm transition-colors ${activeFilter===f? 'bg-white text-blue-600 shadow-sm':'text-gray-600 hover:text-gray-800'}`}>{f} <span className='ml-1 text-xs'>{getFilterCount(f)}</span></button>)}</div>
+						<div className='flex gap-3'>{filters.map(f=> <button key={f} onClick={()=> { if (!sessionStarted) setActiveFilter(f); }} disabled={sessionStarted} className={` px-[6px] py-1 rounded-lg font-medium text-sm transition-colors ${activeFilter===f? 'bg-white text-blue-600 shadow-sm':'text-gray-600 hover:text-gray-800'} ${sessionStarted? 'opacity-60 cursor-not-allowed':''}`}>{f} <span className='ml-1 text-xs'>{getFilterCount(f)}</span></button>)}</div>
 						<div className='flex items-center gap-6'><div className='flex items-center gap-2'><span className='text-gray-700 text-sm'>Start Session</span><Toggle checked={sessionStarted} onChange={handleToggleSession} /></div><div className='flex items-center space-x-2'><span className='text-gray-600 text-sm'>Tokens Available</span><Badge size='small' type='ghost' color='green' hover>5 Out of 100</Badge></div></div>
 					</div>
 					<div className='w-full flex flex-col lg:flex-row gap-3 flex-1 min-h-0 overflow-hidden'>
