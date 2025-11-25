@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom'
 import { bell } from '../../../public/index.js'
 import useAuthStore from '../../store/useAuthStore'
 import AvatarCircle from '../../components/AvatarCircle'
+import { getDoctorMe } from '../../services/authService'
 import { Mail, Phone, IdCard, User, Edit, HelpCircle, LogOut, ChevronRight } from 'lucide-react'
 
 const Partition = () => {
@@ -18,7 +19,7 @@ const Partition = () => {
 const DocNavbar = () => {
   const navigate = useNavigate();
   const searchRef = useRef(null);
-  const { doctorDetails, doctorLoading } = useAuthStore();
+  const { doctorDetails, doctorLoading, doctorError, fetchDoctorDetails, _doctorFetchPromise } = useAuthStore();
   const [showProfile, setShowProfile] = useState(false);
   const profileRef = useRef(null);
 
@@ -42,6 +43,13 @@ const DocNavbar = () => {
     window.addEventListener('keydown', onKey);
     return ()=>{ document.removeEventListener('mousedown', onClick); window.removeEventListener('keydown', onKey); };
   },[]);
+
+  // Ensure doctor details are loaded even if user hit /doc directly (bypassing SignIn component fetch)
+  useEffect(()=>{
+    if(!doctorDetails && !doctorLoading && !_doctorFetchPromise){
+      fetchDoctorDetails?.(getDoctorMe);
+    }
+  },[doctorDetails, doctorLoading, fetchDoctorDetails, _doctorFetchPromise]);
 
   return (
     <div className='w-full h-12 border-b-[0.5px] border-[#D6D6D6] flex items-center px-4 gap-3'>
@@ -87,19 +95,26 @@ const DocNavbar = () => {
         <Partition />
 
         <div className='relative flex items-center gap-2' ref={profileRef}>
-          <span className='font-semibold text-base text-[#424242]'>{doctorDetails?.name?.split(' ')?.[0] || 'Doctor'}</span>
+          <span className='font-semibold text-base text-[#424242]'>
+            { doctorLoading ? 'Loading…' : doctorError ? 'Error' : (doctorDetails?.name?.split(' ')?.[0] || '—') }
+          </span>
           <button type='button' onClick={()=>setShowProfile(v=>!v)} className='cursor-pointer'>
-            <AvatarCircle name={doctorDetails?.name || 'D'} size='s' color='orange' />
+            <AvatarCircle name={doctorLoading ? '?' : (doctorDetails?.name || (doctorError ? '!' : '?'))} size='s' color={doctorError ? 'grey' : 'orange'} />
           </button>
           {showProfile && (
             <div className='absolute top-10 right-0 w-72 bg-white border border-gray-200 rounded-lg shadow-lg overflow-hidden z-50'>
               <div className='p-4 flex items-start gap-3'>
-                <AvatarCircle name={doctorDetails?.name || 'D'} size='md' color='orange' />
+                <AvatarCircle name={doctorLoading ? '?' : (doctorDetails?.name || (doctorError ? '!' : '?'))} size='md' color={doctorError ? 'grey' : 'orange'} />
                 <div className='flex flex-col'>
-                  <div className='text-sm font-semibold text-gray-900'>{doctorDetails?.name || '—'}</div>
-                  <div className='text-xs text-gray-600'>{doctorDetails?.specializations?.[0] || 'Specialist'}</div>
+                  <div className='text-sm font-semibold text-gray-900'>
+                    { doctorLoading ? 'Loading…' : doctorError ? 'Failed to load profile' : (doctorDetails?.name || '—') }
+                  </div>
+                  <div className='text-xs text-gray-600'>
+                    { doctorLoading ? 'Please wait' : doctorError ? (doctorError || 'Error fetching doctor') : (doctorDetails?.specializations?.[0] || 'Specialist') }
+                  </div>
                 </div>
               </div>
+              {!doctorError && (
               <div className='px-4 pb-3 space-y-2 text-xs'>
                 <div className='flex items-center gap-2 text-gray-700'>
                   <Mail className='w-4 h-4 text-[#597DC3]' />
@@ -118,6 +133,17 @@ const DocNavbar = () => {
                   <span>{doctorDetails?.associatedWorkplaces?.clinic?.name || doctorDetails?.associatedWorkplaces?.hospitals?.[0]?.name || '—'}</span>
                 </div>
               </div>
+              )}
+              {doctorError && !doctorLoading && (
+                <div className='px-4 pb-3 text-xs text-red-600 space-y-2'>
+                  <div className='font-medium'>Profile load failed.</div>
+                  <div className='text-red-500'>{doctorError}</div>
+                  <button
+                    onClick={()=>fetchDoctorDetails?.(getDoctorMe,{ force: true })}
+                    className='h-8 px-3 rounded bg-red-50 border border-red-300 text-red-700 text-xs hover:bg-red-100'
+                  >Retry</button>
+                </div>
+              )}
               <div className='border-t border-gray-200 divide-y text-sm'>
                 <button className='w-full flex items-center justify-between px-4 h-10 hover:bg-gray-50 text-gray-700'>
                   <span className='flex items-center gap-2 text-[13px]'><Edit className='w-4 h-4 text-gray-500' /> Edit Profile</span>

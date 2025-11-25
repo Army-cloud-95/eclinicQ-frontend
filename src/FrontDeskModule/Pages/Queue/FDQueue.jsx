@@ -174,10 +174,19 @@ const WalkInAppointmentDrawer = ({ show, onClose, onBookedRefresh, doctorId, cli
 		setBooking(true); setErrorMsg('');
 		try {
 			let payload;
+			// Map blood group symbol to API enum format
+			const mapBloodGroup = (bg) => {
+				if (!bg) return undefined;
+				const base = bg.toUpperCase(); // e.g. 'O+' or 'AB-'
+				if (base.endsWith('+')) return base.replace('+','_POSITIVE');
+				if (base.endsWith('-')) return base.replace('-','_NEGATIVE');
+				return base; // fallback unchanged
+			};
+			const apiBloodGroup = mapBloodGroup(bloodGroup);
 			if (isExisting) {
 				payload = { method:'EXISTING', patientId: mobile.trim(), reason: reason.trim(), slotId: selectedSlotId, bookingType: apptType?.toLowerCase().includes('follow')?'FOLLOW_UP':'NEW' };
 			} else {
-				payload = { method:'NEW_USER', firstName:firstName.trim(), lastName:lastName.trim(), phone:mobile.trim(), emailId: email.trim()||undefined, dob:dob.trim(), gender:gender.toLowerCase(), bloodGroup, reason:reason.trim(), slotId:selectedSlotId, bookingType: apptType?.toUpperCase().includes('REVIEW')?'FOLLOW_UP':'NEW' };
+				payload = { method:'NEW_USER', firstName:firstName.trim(), lastName:lastName.trim(), phone:mobile.trim(), emailId: email.trim()||undefined, dob:dob.trim(), gender: (gender || '').toUpperCase(), bloodGroup: apiBloodGroup, reason:reason.trim(), slotId:selectedSlotId, bookingType: apptType?.toUpperCase().includes('REVIEW')?'FOLLOW_UP':'NEW' };
 			}
 			// Call real API
 			await bookWalkInAppointment(payload);
@@ -350,8 +359,17 @@ export default function FDQueue() {
 		const categories = slotAppointments?.appointments;
 		if (!categories) return;
 		// If session is started, force data source from In Waiting list regardless of UI label
-		const key = sessionStarted ? 'inWaiting' : (FILTER_KEY_MAP[activeFilter] || 'all');
-		const rawList = categories[key] || categories.all || [];
+		let rawList;
+		if(sessionStarted){
+			// Prefer checkedIn list; if empty fallback to inWaiting; else all
+			const checked = categories.checkedIn || [];
+			if(checked.length){ rawList = checked; }
+			else if(categories.inWaiting && categories.inWaiting.length){ rawList = categories.inWaiting; }
+			else { rawList = categories.all || []; }
+		} else {
+			const key = FILTER_KEY_MAP[activeFilter] || 'all';
+			rawList = categories[key] || categories.all || [];
+		}
 		const mapped = rawList.map(mapAppointment).filter(Boolean);
 		setQueueData(mapped);
 	}, [slotAppointments, activeFilter]);
@@ -397,8 +415,12 @@ export default function FDQueue() {
 		return arr;
 	}, [groupedSlots]);
 	useEffect(()=>{ const onClick=e=>{ const a=slotAnchorRef.current; const m=slotMenuRef.current; if(a&&a.contains(e.target)) return; if(m&&m.contains(e.target)) return; setSlotOpen(false); }; const onKey=e=>{ if(e.key==='Escape') setSlotOpen(false); }; window.addEventListener('mousedown',onClick); window.addEventListener('keydown',onKey); return ()=>{ window.removeEventListener('mousedown',onClick); window.removeEventListener('keydown',onKey); }; },[]);
-	// While a session is active, enforce the In Waiting filter
-	useEffect(()=>{ if (sessionStarted && activeFilter !== 'In Waiting') setActiveFilter('In Waiting'); }, [sessionStarted, activeFilter]);
+	// While a session is active, enforce the Checked In filter (fallback to In Waiting if no checked-in patients)
+	useEffect(()=>{
+		if(sessionStarted){
+			if(activeFilter !== 'Checked In') setActiveFilter('Checked In');
+		}
+	}, [sessionStarted, activeFilter]);
 	// Counts direct from API (fallback to derived lengths)
 	const counts = slotAppointments?.counts || {};
 	const getFilterCount = f => {
@@ -428,8 +450,8 @@ export default function FDQueue() {
 			setElapsed(0);
 			wasRunningOnPauseRef.current = false;
 		} else {
-			// Always start from In Waiting list
-			setActiveFilter('In Waiting');
+			// Start from Checked In list; if empty will fallback later
+			setActiveFilter('Checked In');
 			setCurrentIndex(0);
 			setSessionStarted(true);
 			setQueuePaused(false);
@@ -581,12 +603,7 @@ export default function FDQueue() {
 					</div>
 				)}
 				<div className='p-2 flex flex-col flex-1 min-h-0'>
-					<div className='flex flex-col gap-2'><h3 className='text-[#424242] font-medium'>Overview</h3><div className='grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4'>
-						<OverviewStatCard title='All Appointments' value={counts.all ?? queueData.length} />
-						<OverviewStatCard title='Checked In' value={counts.checkedIn ?? counts['checkedIn'] ?? 0} />
-						<OverviewStatCard title='Engaged' value={counts.engaged ?? counts['engaged'] ?? 0} />
-						<OverviewStatCard title='No Show/Cancelled' value={(counts.noShow ?? counts['noShow'] ?? 0) + (counts.cancelled ?? 0)} />
-					</div></div>
+					{/* Overview section removed for Front Desk queue per request */}
 					{sessionStarted && activePatient && (
 						<div className='mb-2 p-2'>
 							<h3 className='text-gray-800 font-semibold mb-2'>Active Patient</h3>
@@ -645,7 +662,7 @@ export default function FDQueue() {
 					</div>
 					<div className='w-full flex flex-col lg:flex-row gap-3 flex-1 min-h-0 overflow-hidden'>
 						<div className='flex-1 min-w-0 min-h-0 overflow-hidden flex flex-col'>
-							<QueueTable prescreeningEnabled={false} allowSampleFallback={false} onCheckIn={handleCheckIn} checkedInToken={checkedInToken} checkedInTokens={checkedInTokens} items={queueData} removingToken={removingToken} incomingToken={incomingToken} onRevokeCheckIn={token=>{ setCheckedInTokens(prev=>{ const n=new Set(prev); n.delete(token); return n; }); if(checkedInToken===token) setCheckedInToken(null); }} onMarkNoShow={async (row)=> { try { let id=row?.id; if(!id){ const found=queueData.find(p=>p.token===row?.token); id=found?.id; }
+							<QueueTable prescreeningEnabled={false} allowSampleFallback={false} hideCheckIn={activeFilter!=='In Waiting'} onCheckIn={handleCheckIn} checkedInToken={checkedInToken} checkedInTokens={checkedInTokens} items={queueData} removingToken={removingToken} incomingToken={incomingToken} onRevokeCheckIn={token=>{ setCheckedInTokens(prev=>{ const n=new Set(prev); n.delete(token); return n; }); if(checkedInToken===token) setCheckedInToken(null); }} onMarkNoShow={async (row)=> { try { let id=row?.id; if(!id){ const found=queueData.find(p=>p.token===row?.token); id=found?.id; }
 	            if (!id) return; await markNoShowAppointment(id); if (selectedSlotId) { await loadAppointmentsForSelectedSlot(); } } catch(e) { console.error('No-show failed', e?.response?.data || e.message); } }} />
 						</div>
 						<div className='shrink-0 w-[400px] bg-white rounded-[12px] border-[0.5px] border-[#D6D6D6] h-full overflow-y-auto'>
