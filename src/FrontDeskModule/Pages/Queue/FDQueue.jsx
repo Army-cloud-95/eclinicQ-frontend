@@ -1,5 +1,5 @@
-// Front Desk Queue: full API-integrated version copied from original before doctor static simplification
 import React, { useEffect, useMemo, useState, useRef } from 'react';
+// Front Desk Queue: full API-integrated version copied from original before doctor static simplification
 import { createPortal } from 'react-dom';
 import { getPendingAppointmentsForClinic, bookWalkInAppointment, approveAppointment, rejectAppointment, checkInAppointment, markNoShowAppointment, startSlotEta, endSlotEta, getSlotEtaStatus, startPatientSessionEta, endPatientSessionEta, findPatientSlots, pauseSlotEta, resumeSlotEta } from '../../../services/authService';
 import { Clock, Calendar, ChevronDown, Sunrise, Sun, Sunset, Moon, X } from 'lucide-react';
@@ -281,6 +281,7 @@ const WalkInAppointmentDrawer = ({ show, onClose, onBookedRefresh, doctorId, cli
 };
 
 export default function FDQueue() {
+	const [slotEnding, setSlotEnding] = useState(false);
 	const [activeFilter, setActiveFilter] = useState('In Waiting');
 	const [selectedTimeSlot] = useState('Morning (10:00 am - 12:30 pm)');
 	const [slotValue, setSlotValue] = useState('morning');
@@ -527,8 +528,9 @@ export default function FDQueue() {
 	const formatTime = s => { const mm=String(Math.floor(s/60)).padStart(2,'0'); const ss=String(s%60).padStart(2,'0'); return `${mm}:${ss}`; };
 	const handleToggleSession = async () => {
 		if(sessionStarted){
-			// End overall session and reset timer state
-			// If a patient session timer is running, end that patient's session ETA first (GET endpoint)
+			setSlotEnding(true);
+			// Keep toggle ON but disabled while ending
+			// Remove session only after API response
 			try {
 				if (runStartAt && selectedSlotId) {
 					const current = queueData[currentIndex];
@@ -543,19 +545,27 @@ export default function FDQueue() {
 			if (pauseTickerRef.current) { clearInterval(pauseTickerRef.current); pauseTickerRef.current = null; }
 			setPauseEndsAt(null); setPauseRemaining(0);
 			// Fire slot end ETA
-			try { if (selectedSlotId) { await endSlotEta(selectedSlotId); window.dispatchEvent(new CustomEvent('slot-session-status', { detail:{ slotId: selectedSlotId, started:false }})); } } catch(e){ console.error('Failed to end slot ETA', e?.response?.data || e.message); }
-			setSessionStarted(false);
-			setQueuePaused(false);
-			setRunStartAt(null);
-			setBaseElapsed(0);
-			setElapsed(0);
-			wasRunningOnPauseRef.current = false;
+			try {
+				if (selectedSlotId) {
+					await endSlotEta(selectedSlotId);
+					window.dispatchEvent(new CustomEvent('slot-session-status', { detail:{ slotId: selectedSlotId, started:false }}));
+				}
+				setSessionStarted(false);
+				setQueuePaused(false);
+				setRunStartAt(null);
+				setBaseElapsed(0);
+				setElapsed(0);
+				wasRunningOnPauseRef.current = false;
+			} catch(e){
+				console.error('Failed to end slot ETA', e?.response?.data || e.message);
+				// Optionally show error and keep sessionStarted true
+			} finally {
+				setSlotEnding(false);
+			}
 		} else {
 			// Smooth start: show loading, then transition
 			setSlotStarting(true);
 			setStartError(null);
-			// Optimistically set running state
-			setSessionStarted(true);
 			setActiveFilter('Checked In');
 			setCurrentIndex(0);
 			setQueuePaused(false);
@@ -564,7 +574,11 @@ export default function FDQueue() {
 			setElapsed(0);
 			wasRunningOnPauseRef.current = false;
 			try {
-				if (selectedSlotId) { await startSlotEta(selectedSlotId); window.dispatchEvent(new CustomEvent('slot-session-status', { detail:{ slotId: selectedSlotId, started:true }})); }
+				if (selectedSlotId) {
+					await startSlotEta(selectedSlotId);
+					setSessionStarted(true);
+					window.dispatchEvent(new CustomEvent('slot-session-status', { detail:{ slotId: selectedSlotId, started:true }}));
+				}
 				// After slot session start, attempt auto-start of first patient if available
 				// Prefer checked-in patient list already mapped into queueData; fallback to current derived activePatient after small delay
 				setTimeout(async () => {
@@ -824,8 +838,9 @@ export default function FDQueue() {
 						<div className='flex items-center gap-6'>
 							<div className='flex items-center gap-2'>
 								<span className='text-gray-700 text-sm'>Start Session</span>
-								<Toggle checked={sessionStarted} disabled={slotStarting} onChange={handleToggleSession} />
+								<Toggle checked={sessionStarted} disabled={slotStarting || slotEnding} onChange={handleToggleSession} />
 								{slotStarting && <span className='text-xs text-blue-600 animate-pulse'>Starting…</span>}
+								{slotEnding && <span className='text-xs text-orange-600 animate-pulse'>Ending…</span>}
 								{startError && !slotStarting && !sessionStarted && <span className='text-xs text-red-600'>Retry</span>}
 							</div>
 							<div className='flex items-center space-x-2'>

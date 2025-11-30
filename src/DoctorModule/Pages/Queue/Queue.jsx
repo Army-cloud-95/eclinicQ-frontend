@@ -69,6 +69,7 @@ const WalkInAppointmentDrawer = ({ show, onClose, timeSlots, slotValue, setSlotV
 };
 
 const Queue = () => {
+  const [slotEnding, setSlotEnding] = useState(false);
   const [activeFilter, setActiveFilter] = useState('Checked In');
   const [currentDate, setCurrentDate] = useState(new Date());
   // Auth
@@ -235,13 +236,47 @@ const Queue = () => {
 
   const handleToggleSession = async () => {
     if(sessionStarted){ // end
-      try { if(runStartAt && activePatient && selectedSlotId && activePatient.token!=null){ await endPatientSessionEta(selectedSlotId, activePatient.token); } } catch(e){ console.error('End patient ETA failed', e?.response?.data || e.message); }
-      try { if(selectedSlotId){ await endSlotEta(selectedSlotId); } } catch(e){ console.error('End slot ETA failed', e?.response?.data || e.message); }
-      setSessionStarted(false); setQueuePaused(false); setRunStartAt(null); setBaseElapsed(0); setElapsed(0); wasRunningOnPauseRef.current=false; setCurrentIndex(0); return;
+      setSlotEnding(true);
+      // Keep toggle ON but disabled while ending
+      // Remove session only after API response
+      try {
+        if(runStartAt && activePatient && selectedSlotId && activePatient.token!=null){
+          await endPatientSessionEta(selectedSlotId, activePatient.token);
+        }
+      } catch(e){
+        console.error('End patient ETA failed', e?.response?.data || e.message);
+      }
+      try {
+        if(selectedSlotId){
+          await endSlotEta(selectedSlotId);
+        }
+        setSessionStarted(false);
+        setQueuePaused(false);
+        setRunStartAt(null);
+        setBaseElapsed(0);
+        setElapsed(0);
+        wasRunningOnPauseRef.current=false;
+        setCurrentIndex(0);
+      } catch(e){
+        console.error('End slot ETA failed', e?.response?.data || e.message);
+        // Optionally show error and keep sessionStarted true
+      } finally {
+        setSlotEnding(false);
+      }
+      return;
     }
     if(!selectedSlotId){ setStartError('Select a slot first'); return; }
-    setSlotStarting(true); setStartError(null); setSessionStarted(true); setQueuePaused(false); setRunStartAt(null); setBaseElapsed(0); setElapsed(0); wasRunningOnPauseRef.current=false; setCurrentIndex(0);
-    try { await startSlotEta(selectedSlotId); } catch(e){ console.error('Start slot failed', e?.response?.data || e.message); setStartError('Failed to start'); setSessionStarted(false); } finally { setSlotStarting(false); }
+    setSlotStarting(true); setStartError(null); setQueuePaused(false); setRunStartAt(null); setBaseElapsed(0); setElapsed(0); wasRunningOnPauseRef.current=false; setCurrentIndex(0);
+    try {
+      await startSlotEta(selectedSlotId);
+      setSessionStarted(true);
+    } catch(e){
+      console.error('Start slot failed', e?.response?.data || e.message);
+      setStartError('Failed to start');
+      setSessionStarted(false);
+    } finally {
+      setSlotStarting(false);
+    }
   };
 
   const completeCurrentPatient = async () => { const active=activePatient; if(!active || !selectedSlotId) return; try { await endPatientSessionEta(selectedSlotId, active.token); } catch(e){ console.error('End patient ETA failed', e?.response?.data || e.message); } try { await loadAppointmentsForSelectedSlot(); } catch{} setRunStartAt(null); setBaseElapsed(0); setElapsed(0); wasRunningOnPauseRef.current=false; setCurrentIndex(0); };
@@ -400,8 +435,9 @@ const Queue = () => {
             <div className='flex items-center gap-6'>
               <div className='flex items-center gap-2'>
                 <span className='text-gray-700 text-sm'>Start Session</span>
-                <Toggle checked={sessionStarted} disabled={slotStarting} onChange={handleToggleSession} />
-                {slotStarting && <span className='text-xs text-blue-600 animate-pulse'>Starting…</span>}
+                <Toggle checked={sessionStarted} disabled={slotStarting || slotEnding} onChange={handleToggleSession} />
+                {slotStarting && <span className='text-xs text-blue-600 animate-pulse'>Starting</span>}
+                {slotEnding && <span className='text-xs text-orange-600 animate-pulse'>Ending</span>}
                 {startError && !slotStarting && !sessionStarted && <span className='text-xs text-red-600'>{startError}</span>}
               </div>
               <div className='flex items-center space-x-2'>
