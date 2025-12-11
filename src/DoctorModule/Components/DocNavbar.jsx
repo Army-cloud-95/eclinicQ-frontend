@@ -1,11 +1,14 @@
 import { Search } from 'lucide-react'
 import React, { useRef, useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { bell } from '../../../public/index.js'
+import { bell, hospitalIcon, stethoscopeBlue } from '../../../public/index.js'
 import useAuthStore from '../../store/useAuthStore'
 import AvatarCircle from '../../components/AvatarCircle'
 import { getDoctorMe } from '../../services/authService'
-import { Mail, Phone, IdCard, User, Edit, HelpCircle, LogOut, ChevronRight } from 'lucide-react'
+import { Mail, Phone, IdCard, User, Edit, HelpCircle, LogOut, ChevronRight, ChevronDown, UserPlus, Users, GitBranch, CalendarPlus } from 'lucide-react'
+import NotificationDrawer from '../../components/NotificationDrawer.jsx'
+import AddPatientDrawer from '../../components/PatientList/AddPatientDrawer.jsx'
+import BookAppointmentDrawer from '../../components/Appointment/BookAppointmentDrawer.jsx'
 
 const Partition = () => {
   return (
@@ -16,12 +19,27 @@ const Partition = () => {
   )
 }
 
-const DocNavbar = () => {
+const DocNavbar = ({ moduleSwitcher }) => {
   const navigate = useNavigate();
   const searchRef = useRef(null);
+  // default switcher state if none provided
+  const [activeModule, setActiveModule] = useState('doctor');
+  useEffect(() => {
+    const path = window.location.pathname.toLowerCase();
+    if (path.includes('hospital')) setActiveModule('hospital');
+    else setActiveModule('doctor');
+  }, []);
+
+  const switchToHospital = () => { setActiveModule('hospital'); navigate('/hospital'); };
+  const switchToDoctor = () => { setActiveModule('doctor'); navigate('/doc'); };
   const { doctorDetails, doctorLoading, doctorError, fetchDoctorDetails, _doctorFetchPromise } = useAuthStore();
   const [showProfile, setShowProfile] = useState(false);
+  const [showNotifications, setShowNotifications] = useState(false);
   const profileRef = useRef(null);
+  const addMenuRef = useRef(null);
+  const [showAddMenu, setShowAddMenu] = useState(false);
+  const [addPatientOpen, setAddPatientOpen] = useState(false);
+  const [bookApptOpen, setBookApptOpen] = useState(false);
 
   // Focus search when pressing Ctrl+/
   useEffect(() => {
@@ -37,8 +55,11 @@ const DocNavbar = () => {
 
   // Close on outside click / Escape
   useEffect(()=>{
-    const onClick = (e)=>{ if(profileRef.current && !profileRef.current.contains(e.target)) setShowProfile(false) };
-    const onKey = (e)=>{ if(e.key==='Escape') setShowProfile(false) };
+    const onClick = (e)=>{
+      if(profileRef.current && !profileRef.current.contains(e.target)) setShowProfile(false);
+      if(addMenuRef.current && !addMenuRef.current.contains(e.target)) setShowAddMenu(false);
+    };
+    const onKey = (e)=>{ if(e.key==='Escape') { setShowProfile(false); setShowAddMenu(false); } };
     document.addEventListener('mousedown', onClick);
     window.addEventListener('keydown', onKey);
     return ()=>{ document.removeEventListener('mousedown', onClick); window.removeEventListener('keydown', onKey); };
@@ -76,12 +97,86 @@ const DocNavbar = () => {
 
       {/* Right: Actions */}
       <div className='flex items-center gap-2'>
-        <button
-          onClick={() => navigate('/register/patient')}
-          className='flex items-center bg-[#2372EC] px-3 h-8 rounded-[4px] gap-2 hover:bg-blue-600 transition-colors'
-        >
-          <span className='text-white text-sm font-medium'>Add New Patient</span>
-        </button>
+        {/* Optional Hospital/Doctor module switcher injected by Hospital header */}
+        {(moduleSwitcher || true) && (
+          <>
+            {moduleSwitcher ? (
+              moduleSwitcher
+            ) : (
+              <div className='flex items-center gap-1'>
+                <button
+                  type='button'
+                  onClick={switchToHospital}
+                  className={`flex items-center justify-center h-8 w-8 rounded-[6px] border ${activeModule==='hospital' ? 'bg-[#2372EC] border-[#2372EC]' : 'bg-white border-[#D6D6D6]'} hover:bg-blue-50 transition-colors`}
+                  aria-label='Hospital Module'
+                  title='Hospital'
+                >
+                  <img src={hospitalIcon} alt='Hospital' className='w-4 h-4' />
+                </button>
+                <button
+                  type='button'
+                  onClick={switchToDoctor}
+                  className={`flex items-center justify-center h-8 w-8 rounded-[6px] border ${activeModule==='doctor' ? 'bg-[#2372EC] border-[#2372EC]' : 'bg-white border-[#D6D6D6]'} hover:bg-blue-50 transition-colors`}
+                  aria-label='Doctor Module'
+                  title='Doctor'
+                >
+                  <img src={stethoscopeBlue} alt='Doctor' className='w-4 h-4' />
+                </button>
+              </div>
+            )}
+            <Partition />
+          </>
+        )}
+        {/* Add New dropdown */}
+        <div className='relative' ref={addMenuRef}>
+          <button
+            type='button'
+            onClick={() => setShowAddMenu(v=>!v)}
+            className='inline-flex items-center bg-[#2372EC] text-white px-3 h-8 rounded-[6px] gap-2 hover:bg-[#1f62c9] transition-colors shadow-sm'
+            aria-haspopup='true'
+            aria-expanded={showAddMenu}
+          >
+            <span className='text-sm font-medium'>Add New</span>
+            <ChevronDown className={`w-4 h-4 text-white transition-transform ${showAddMenu ? 'rotate-180' : ''}`} />
+          </button>
+          {showAddMenu && (
+            <div className='absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded-md shadow-lg py-1 z-50'>
+              <button
+                onClick={() => { setShowAddMenu(false); setAddPatientOpen(true); }}
+                className='w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-800 hover:bg-gray-50'
+              >
+                <UserPlus className='w-4 h-4 text-[#597DC3]' />
+                <span>Patient</span>
+              </button>
+              <button
+                onClick={() => { setShowAddMenu(false); }}
+                className='w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-800 hover:bg-gray-50'
+              >
+                <Users className='w-4 h-4 text-[#597DC3]' />
+                <span>Staff</span>
+              </button>
+              <button
+                onClick={() => { setShowAddMenu(false); }}
+                className='w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-800 hover:bg-gray-50'
+              >
+                <GitBranch className='w-4 h-4 text-[#597DC3]' />
+                <span>Branch</span>
+              </button>
+              <button
+                onClick={() => { setShowAddMenu(false); setBookApptOpen(true); }}
+                className='w-full flex items-center justify-between px-3 py-2 text-sm text-gray-800 hover:bg-gray-50'
+              >
+                <span className='inline-flex items-center gap-2'>
+                  <CalendarPlus className='w-4 h-4 text-[#597DC3]' />
+                  Appointment
+                </span>
+                <ChevronRight className='w-4 h-4 text-gray-400' />
+              </button>
+            </div>
+          )}
+        </div>
+
+  {/* Walk-In Appointment button removed as requested */}
 
         <Partition />
 
@@ -89,7 +184,9 @@ const DocNavbar = () => {
           <div className='absolute -top-1 -right-1 flex items-center justify-center rounded-full w-[14px] h-[14px] bg-[#F04248]'>
             <span className='font-medium text-[10px] text-white'>8</span>
           </div>
-          <img src={bell} alt='Notifications' className='w-5 h-5' />
+          <button onClick={()=>setShowNotifications(true)} style={{background:'none',border:'none',padding:0}}>
+            <img src={bell} alt='Notifications' className='w-5 h-5' />
+          </button>
         </div>
 
         <Partition />
@@ -162,7 +259,10 @@ const DocNavbar = () => {
             </div>
           )}
         </div>
-      </div>
+  </div>
+  <NotificationDrawer show={showNotifications} onClose={()=>setShowNotifications(false)} />
+  <AddPatientDrawer open={addPatientOpen} onClose={()=>setAddPatientOpen(false)} onSave={()=>setAddPatientOpen(false)} />
+  <BookAppointmentDrawer open={bookApptOpen} onClose={()=>setBookApptOpen(false)} />
   </div>
   )
 }

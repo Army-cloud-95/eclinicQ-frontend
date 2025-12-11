@@ -179,7 +179,25 @@ export const bookWalkInAppointment = async (payload) => {
     const response = await axiosInstance.post('/appointments/walk-in', payload);
     return response.data; // expecting { success, data: {...} }
   } catch (error) {
+    if (error?.response?.status === 404) {
+      try {
+        const response = await axiosInstance.post('/appointments/walk-in/', payload);
+        return response.data;
+      } catch (e2) {
+        console.error('Walk-in booking fallback failed:', e2?.response?.data || e2.message);
+        // Attach details for UI
+        if (e2 && e2.response) {
+          e2.validation = e2.response.data?.errors || e2.response.data?.details || null;
+          e2.message = e2.response.data?.message || e2.message;
+        }
+        throw e2;
+      }
+    }
     console.error('Walk-in booking failed:', error?.response?.data || error.message);
+    if (error && error.response) {
+      error.validation = error.response.data?.errors || error.response.data?.details || null;
+      error.message = error.response.data?.message || error.message;
+    }
     throw error;
   }
 };

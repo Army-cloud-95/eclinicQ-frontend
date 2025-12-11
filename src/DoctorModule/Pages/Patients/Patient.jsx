@@ -1,6 +1,7 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import PatientHeader from '../../../components/PatientList/Header';
 import PatientTable from '../../../components/PatientList/Table';
+import AddPatientDrawer from '../../../components/PatientList/AddPatientDrawer';
 import useDoctorPatientListStore from '../../../store/useDoctorPatientListStore';
 
 const demoPatients = [
@@ -11,6 +12,7 @@ const demoPatients = [
 
 export default function Patient() {
   const [selected, setSelected] = useState('all');
+  const [addOpen, setAddOpen] = useState(false);
   const { patients, loading, error, fetchPatients, clearPatientsStore } = useDoctorPatientListStore();
 
   useEffect(() => {
@@ -37,7 +39,7 @@ export default function Patient() {
 
   return (
     <div className="flex flex-col gap-2">
-      <PatientHeader counts={counts} selected={selected} onChange={setSelected} />
+  <PatientHeader counts={counts} selected={selected} onChange={setSelected} addLabel="Add New Patient" addPath={() => setAddOpen(true)} />
       {loading ? (
         <div className="flex items-center justify-center py-16">
           <div className="flex items-center gap-3">
@@ -48,6 +50,8 @@ export default function Patient() {
       ) : (
         <PatientTable patients={displayPatients} />
       )}
+      <AddPatientDrawer open={addOpen} onClose={() => setAddOpen(false)} onSave={(data)=>{ /* TODO: hook API */ setAddOpen(false); }} />
+      
     </div>
   );
 }

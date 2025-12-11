@@ -1,6 +1,8 @@
 import React, { useEffect, useMemo, useState, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { Calendar, ChevronDown, Sunrise, Sun, Sunset, Moon, X, Clock } from 'lucide-react';
+import { bookWalkInAppointment, findPatientSlots } from '../../../services/authService';
+import { classifyISTDayPart, buildISTRangeLabel } from '../../../lib/timeUtils';
 import QueueDatePicker from '../../../components/QueueDatePicker';
 import AvatarCircle from '../../../components/AvatarCircle';
 import Button from '../../../components/Button';
@@ -13,59 +15,188 @@ import useSlotStore from '../../../store/useSlotStore';
 import { getDoctorMe, startSlotEta, endSlotEta, getSlotEtaStatus, startPatientSessionEta, endPatientSessionEta, pauseSlotEta, resumeSlotEta } from '../../../services/authService';
 import { appointement } from '../../../../public/index.js';
 
-// Walk-in Appointment Drawer (simplified retained)
-const WalkInAppointmentDrawer = ({ show, onClose, timeSlots, slotValue, setSlotValue, onAppointmentBooked, activeSlotId }) => {
+// Walk-in Appointment Drawer (full version replicated from Front Desk)
+const WalkInAppointmentDrawer = ({ show, onClose, doctorId, clinicId, hospitalId, onBookedRefresh }) => {
   const [isExisting, setIsExisting] = useState(false);
+  const [apptType, setApptType] = useState('New Consultation');
   const [reason, setReason] = useState('');
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
-  const [booking, setBooking] = useState(false);
-  const canBook = () => {
-    if (booking) return false;
-    if (!activeSlotId) return false;
-    if (isExisting) return reason.length > 2;
-    return firstName && lastName && reason;
+  const [dob, setDob] = useState('');
+  const [gender, setGender] = useState('');
+  const [bloodGroup, setBloodGroup] = useState('');
+  const [mobile, setMobile] = useState('');
+  const [email, setEmail] = useState('');
+  const dobRef = useRef(null);
+  const [apptDate, setApptDate] = useState(()=> new Date().toISOString().slice(0,10));
+  const apptDateRef = useRef(null);
+  const suggestions = ['New Consultation','Follow-up Consultation','Review Visit'];
+  const reasonSuggestions = ['Cough','Cold','Headache','Nausea','Dizziness','Muscle Pain','Sore Throat'];
+  const genders = ['Male','Female','Other'];
+  const bloodGroups = ['A+','A-','B+','B-','AB+','AB-','O+','O-'];
+  const [booking,setBooking] = useState(false);
+  const [errorMsg,setErrorMsg] = useState('');
+  const [fieldErrors, setFieldErrors] = useState({});
+  // Local slots state
+  const [grouped, setGrouped] = useState({ morning:[], afternoon:[], evening:[], night:[] });
+  const [timeBuckets, setTimeBuckets] = useState([]);
+  const [bucketKey, setBucketKey] = useState('morning');
+  const [selectedSlotId, setSelectedSlotId] = useState(null);
+  const [loadingSlots, setLoadingSlots] = useState(false);
+  const [slotsError, setSlotsError] = useState('');
+  useEffect(()=>{
+    let ignore=false; const load= async()=>{ if(!show) return; if(!doctorId || (!clinicId && !hospitalId)) return; setSelectedSlotId(null); setGrouped({ morning:[], afternoon:[], evening:[], night:[] }); setTimeBuckets([]); setLoadingSlots(true); setSlotsError('');
+      try {
+        const resp = await findPatientSlots({ doctorId, date: apptDate, clinicId, hospitalId });
+        const arr = Array.isArray(resp)? resp : (resp?.data || resp?.slots || []);
+        if(ignore) return;
+        const grp = (arr||[]).reduce((acc,s)=>{ const part=classifyISTDayPart(s.startTime); if(!acc[part]) acc[part]=[]; acc[part].push(s); return acc; }, { morning:[], afternoon:[], evening:[], night:[] });
+        setGrouped(grp);
+        const tb=[];
+        if(grp.morning.length){ const f=grp.morning[0], l=grp.morning[grp.morning.length-1]; tb.push({ key:'morning', label:'Morning', time: buildISTRangeLabel(f.startTime,l.endTime), Icon:Sunrise }); }
+        if(grp.afternoon.length){ const f=grp.afternoon[0], l=grp.afternoon[grp.afternoon.length-1]; tb.push({ key:'afternoon', label:'Afternoon', time: buildISTRangeLabel(f.startTime,l.endTime), Icon:Sun }); }
+        if(grp.evening.length){ const f=grp.evening[0], l=grp.evening[grp.evening.length-1]; tb.push({ key:'evening', label:'Evening', time: buildISTRangeLabel(f.startTime,l.endTime), Icon:Sunset }); }
+        if(grp.night.length){ const f=grp.night[0], l=grp.night[grp.night.length-1]; tb.push({ key:'night', label:'Night', time: buildISTRangeLabel(f.startTime,l.endTime), Icon:Moon }); }
+        setTimeBuckets(tb);
+        const firstNonEmpty = tb[0]?.key || 'morning'; setBucketKey(firstNonEmpty); const firstSlot = (grp[firstNonEmpty]||[])[0] || null; setSelectedSlotId(firstSlot ? (firstSlot.id||firstSlot.slotId||firstSlot._id) : null);
+      } catch(e){ if(!ignore) setSlotsError(e?.response?.data?.message || e.message || 'Failed to load slots'); } finally { if(!ignore) setLoadingSlots(false); }
+    }; load(); return ()=>{ ignore=true; };
+  },[show, apptDate, doctorId, clinicId, hospitalId]);
+  const canBook = () => !booking;
+  const handleBook = async () => {
+    if(!canBook()) return; setBooking(true); setErrorMsg(''); setFieldErrors({});
+    try {
+      const mapBloodGroup = bg => { if(!bg) return undefined; const base=bg.toUpperCase(); if(base.endsWith('+')) return base.replace('+','_POSITIVE'); if(base.endsWith('-')) return base.replace('-','_NEGATIVE'); return base; };
+      const apiBloodGroup = mapBloodGroup(bloodGroup);
+      let payload;
+      if(isExisting){
+        payload={ method:'EXISTING', bookingMode:'WALK_IN', patientId: mobile.trim(), reason: reason.trim(), slotId: selectedSlotId, bookingType: apptType?.toLowerCase().includes('follow')?'FOLLOW_UP':'NEW', doctorId, clinicId, hospitalId, date: apptDate };
+      } else {
+        payload={ method:'NEW_USER', bookingMode:'WALK_IN', firstName:firstName.trim(), lastName:lastName.trim(), phone:mobile.trim(), emailId: email.trim()||undefined, dob:dob.trim(), gender:(gender||'').toUpperCase(), bloodGroup: apiBloodGroup, reason:reason.trim(), slotId:selectedSlotId, bookingType: apptType?.toUpperCase().includes('REVIEW')?'FOLLOW_UP':'NEW', doctorId, clinicId, hospitalId, date: apptDate };
+      }
+      try { console.debug('[Doctor] walk-in booking payload:', payload); } catch{}
+      await bookWalkInAppointment(payload); onBookedRefresh?.(); onClose();
+    } catch(e){ const msg = e?.message || 'Booking failed'; const errs = e?.validation || e?.response?.data?.errors || null; if(errs && typeof errs==='object') setFieldErrors(errs); setErrorMsg(String(msg)); } finally { setBooking(false); }
   };
-  const handleBook = () => {
-    if (!canBook()) return;
-    setBooking(true);
-    setTimeout(() => {
-      onAppointmentBooked({ id: Math.random().toString(36).slice(2), name: isExisting ? 'Existing' : `${firstName} ${lastName}`, gender: '—', age: '', date: new Date().toDateString(), time: '', secondary: 'Cancel' });
-      setBooking(false);
-      onClose();
-    }, 600);
-  };
-  return (
-    <>
-      <div className={`fixed inset-0 bg-black/30 z-40 transition-opacity duration-300 ${show? 'opacity-100 pointer-events-auto':'opacity-0 pointer-events-none'}`} onClick={onClose} />
-      <div className={`fixed top-24 right-0 bottom-24 w-[380px] bg-white border-l border-gray-200 shadow-xl z-50 transition-transform duration-500 ${show? 'translate-x-0':'translate-x-full'}`}>
-        <div className='p-4 flex flex-col h-full'>
-          <div className='flex items-center justify-between mb-2'>
-            <h2 className='text-[16px] font-semibold'>Walk-In Appointment</h2>
-            <button onClick={onClose} className='text-gray-500 hover:text-gray-700'><X className='w-4 h-4'/></button>
+  return (<>
+    <div className={`fixed inset-0 bg-black bg-opacity-30 z-40 transition-opacity duration-300 ${show?'opacity-100 pointer-events-auto':'opacity-0 pointer-events-none'}`} onClick={onClose} />
+    <div className={`fixed z-50 transition-transform duration-500 ${show?'translate-x-0':'translate-x-full'}`} style={{top:24,right:show?24:0,bottom:24,width:520,maxWidth:'100vw',background:'white',borderTopLeftRadius:14,borderBottomLeftRadius:14,boxShadow:'0 8px 32px 0 rgba(0,0,0,0.18)',display:'flex',flexDirection:'column'}}>
+      <div className='p-4 flex flex-col h-full'>
+        <div className='flex items-center justify-between mb-2'>
+          <h2 className='text-[18px] font-semibold'>Book Walk-In Appointment</h2>
+          <div className='flex items-center gap-2'>
+            <button onClick={handleBook} disabled={!canBook()} className={`text-sm font-medium rounded px-3 py-1.5 border ${canBook()? 'bg-blue-600 text-white border-blue-600 hover:bg-blue-700':'text-gray-400 bg-gray-100 border-gray-200 cursor-not-allowed'}`}>{booking? 'Booking...':'Book Appointment'}</button>
+            <button className='text-gray-500 hover:text-gray-700' onClick={onClose}><X className='w-5 h-5'/></button>
           </div>
-          <div className='flex items-center gap-4 text-sm mb-3'>
-            <label className='inline-flex items-center gap-2'><input type='radio' checked={isExisting} onChange={()=> setIsExisting(true)} /> Existing</label>
-            <label className='inline-flex items-center gap-2'><input type='radio' checked={!isExisting} onChange={()=> setIsExisting(false)} /> New</label>
+        </div>
+        <div className='flex items-center gap-6 mt-2 mb-4'>
+          <label className='inline-flex items-center gap-2 text-sm'><input type='radio' name='pt' checked={isExisting} onChange={()=>setIsExisting(true)} /> Existing Patients</label>
+          <label className='inline-flex items-center gap-2 text-sm'><input type='radio' name='pt' checked={!isExisting} onChange={()=>setIsExisting(false)} /> New Patient</label>
+        </div>
+        {errorMsg && <div className='mb-3 p-2 rounded border border-red-200 bg-red-50 text-[12px] text-red-700'>{errorMsg}</div>}
+        <div className='flex-1 min-h-0 overflow-y-auto pr-1'>
+          {isExisting ? (
+            <div className='mb-3'>
+              <label className='block text-sm font-medium text-gray-700 mb-1'>Patient <span className='text-red-500'>*</span></label>
+              <input type='text' value={mobile} onChange={e=>setMobile(e.target.value)} className='w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:border-blue-500' placeholder='Search Patient by name, Abha id, Patient ID or Contact Number' />
+            </div>
+          ) : (<>
+            <div className='grid grid-cols-1 sm:grid-cols-2 gap-3'>
+              <div>
+                <label className='block text-sm font-medium text-gray-700 mb-1'>First Name <span className='text-red-500'>*</span></label>
+                <input value={firstName} onChange={e=>setFirstName(e.target.value)} type='text' className={`w-full rounded-md border px-3 py-2 text-sm focus:outline-none ${fieldErrors.firstName? 'border-red-400 focus:border-red-500':'border-gray-300 focus:border-blue-500'}`} placeholder='Enter First Name' />
+                {fieldErrors.firstName && <div className='text-[11px] text-red-600 mt-1'>{String(fieldErrors.firstName)}</div>}
+              </div>
+              <div>
+                <label className='block text-sm font-medium text-gray-700 mb-1'>Last Name <span className='text-red-500'>*</span></label>
+                <input value={lastName} onChange={e=>setLastName(e.target.value)} type='text' className={`w-full rounded-md border px-3 py-2 text-sm focus:outline-none ${fieldErrors.lastName? 'border-red-400 focus:border-red-500':'border-gray-300 focus:border-blue-500'}`} placeholder='Enter Last Name' />
+                {fieldErrors.lastName && <div className='text-[11px] text-red-600 mt-1'>{String(fieldErrors.lastName)}</div>}
+              </div>
+            </div>
+            <div className='grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3'>
+              <div>
+                <label className='block text-sm font-medium text-gray-700 mb-1'>Date of Birth <span className='text-red-500'>*</span></label>
+                <div className='relative'>
+                  <input ref={dobRef} value={dob} onChange={e=>setDob(e.target.value)} type='date' className={`w-full rounded-md border px-3 py-2 text-sm pr-8 focus:outline-none ${fieldErrors.dob? 'border-red-400 focus:border-red-500':'border-gray-300 focus:border-blue-500'}`} />
+                  <button type='button' onClick={()=> (dobRef.current?.showPicker ? dobRef.current.showPicker() : dobRef.current?.focus())} className='absolute right-2 top-1/2 -translate-y-1/2 text-gray-500'><Calendar className='w-4 h-4'/></button>
+                </div>
+                {fieldErrors.dob && <div className='text-[11px] text-red-600 mt-1'>{String(fieldErrors.dob)}</div>}
+              </div>
+              <div>
+                <label className='block text-sm font-medium text-gray-700 mb-1'>Gender <span className='text-red-500'>*</span></label>
+                <select value={gender} onChange={e=>setGender(e.target.value)} className={`w-full rounded-md border px-3 py-2 text-sm focus:outline-none ${fieldErrors.gender? 'border-red-400 focus:border-red-500':'border-gray-300 focus:border-blue-500'}`}>
+                  <option value='' disabled>Select Gender</option>
+                  {genders.map(g=> <option key={g} value={g}>{g}</option>)}
+                </select>
+                {fieldErrors.gender && <div className='text-[11px] text-red-600 mt-1'>{String(fieldErrors.gender)}</div>}
+              </div>
+            </div>
+            <div className='grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3'>
+              <div>
+                <label className='block text-sm font-medium text-gray-700 mb-1'>Blood Group <span className='text-red-500'>*</span></label>
+                <select value={bloodGroup} onChange={e=>setBloodGroup(e.target.value)} className={`w-full rounded-md border px-3 py-2 text-sm focus:outline-none ${fieldErrors.bloodGroup? 'border-red-400 focus:border-red-500':'border-gray-300 focus:border-blue-500'}`}>
+                  <option value='' disabled>Select Blood Group</option>{bloodGroups.map(bg=> <option key={bg} value={bg}>{bg}</option>)}
+                </select>
+                {fieldErrors.bloodGroup && <div className='text-[11px] text-red-600 mt-1'>{String(fieldErrors.bloodGroup)}</div>}
+              </div>
+              <div>
+                <label className='block text-sm font-medium text-gray-700 mb-1'>Mobile Number <span className='text-red-500'>*</span></label>
+                <input value={mobile} onChange={e=>setMobile(e.target.value)} type='tel' className={`w-full rounded-md border px-3 py-2 text-sm focus:outline-none ${fieldErrors.phone||fieldErrors.mobile? 'border-red-400 focus:border-red-500':'border-gray-300 focus:border-blue-500'}`} placeholder='Enter Mobile Number' />
+                {(fieldErrors.phone||fieldErrors.mobile) && <div className='text-[11px] text-red-600 mt-1'>{String(fieldErrors.phone||fieldErrors.mobile)}</div>}
+              </div>
+            </div>
+            <div className='mt-3'>
+              <label className='block text-sm font-medium text-gray-700 mb-1'>Email ID</label>
+              <input value={email} onChange={e=>setEmail(e.target.value)} type='email' className={`w-full rounded-md border px-3 py-2 text-sm focus:outline-none ${fieldErrors.email||fieldErrors.emailId? 'border-red-400 focus:border-red-500':'border-gray-300 focus:border-blue-500'}`} placeholder='Enter Email' />
+              {(fieldErrors.email||fieldErrors.emailId) && <div className='text-[11px] text-red-600 mt-1'>{String(fieldErrors.email||fieldErrors.emailId)}</div>}
+            </div>
+          </>)}
+          <div className='mb-3 mt-3'>
+            <label className='block text-sm font-medium text-gray-700 mb-1'>Appointment Type <span className='text-red-500'>*</span></label>
+            <select value={apptType} onChange={e=>setApptType(e.target.value)} className='w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:border-blue-500'>{suggestions.map(s=> <option key={s} value={s}>{s}</option>)}</select>
+            <div className='mt-2 flex flex-wrap gap-2 text-xs'>{suggestions.map(s=> <button key={s} type='button' className='px-2 py-1 rounded border border-gray-200 text-gray-700 hover:bg-gray-50' onClick={()=> setApptType(s)}>{s}</button>)}</div>
           </div>
-          <div className='flex-1 overflow-y-auto space-y-3'>
-            {!isExisting && (
-              <>
-                <input value={firstName} onChange={e=> setFirstName(e.target.value)} placeholder='First Name' className='w-full border border-gray-300 rounded px-3 py-2 text-sm'/>
-                <input value={lastName} onChange={e=> setLastName(e.target.value)} placeholder='Last Name' className='w-full border border-gray-300 rounded px-3 py-2 text-sm'/>
-              </>
-            )}
-            <input value={reason} onChange={e=> setReason(e.target.value)} placeholder='Reason for visit' className='w-full border border-gray-300 rounded px-3 py-2 text-sm'/>
-            {!activeSlotId && <div className='text-xs text-amber-600'>Select a slot above to enable booking.</div>}
+          <div className='mb-3'>
+            <label className='block text-sm font-medium text-gray-700 mb-1'>Reason for Visit <span className='text-red-500'>*</span></label>
+            <input value={reason} onChange={e=>setReason(e.target.value)} type='text' className={`w-full rounded-md border px-3 py-2 text-sm focus:outline-none ${fieldErrors.reason||fieldErrors.reasonForVisit? 'border-red-400 focus:border-red-500':'border-gray-300 focus:border-blue-500'}`} placeholder='Enter Reason for Visit' />
+            {(fieldErrors.reason||fieldErrors.reasonForVisit) && <div className='text-[11px] text-red-600 mt-1'>{String(fieldErrors.reason||fieldErrors.reasonForVisit)}</div>}
+            <div className='mt-2 flex flex-wrap gap-2 text-xs'>{reasonSuggestions.map(s=> <button key={s} type='button' className='px-2 py-1 rounded border border-gray-200 text-gray-700 hover:bg-gray-50' onClick={()=> setReason(s)}>{s}</button>)}</div>
           </div>
-          <div className='pt-3 mt-2 border-t border-gray-200 flex justify-end gap-3'>
-            <button onClick={onClose} className='px-3 py-1.5 border border-gray-300 rounded text-sm text-gray-700 hover:bg-gray-50'>Cancel</button>
-            <button disabled={!canBook()} onClick={handleBook} className={`px-3 py-1.5 rounded text-sm ${canBook()? 'bg-blue-600 text-white hover:bg-blue-700':'bg-gray-200 text-gray-500 cursor-not-allowed'}`}>{booking? 'Booking…':'Book'}</button>
+          <div className='grid grid-cols-1 sm:grid-cols-2 gap-4'>
+            <div>
+              <label className='block text-sm font-medium text-gray-700 mb-1'>Appointment Date <span className='text-red-500'>*</span></label>
+              <div className='relative'>
+                <input ref={apptDateRef} type='date' value={apptDate} onChange={e=>setApptDate(e.target.value)} className='w-full rounded-md border border-gray-300 px-3 py-2 text-sm pr-8 focus:outline-none focus:border-blue-500' />
+                <button type='button' onClick={()=> (apptDateRef.current?.showPicker ? apptDateRef.current.showPicker() : apptDateRef.current?.focus())} className='absolute right-2 top-1/2 -translate-y-1/2 text-gray-500'><Calendar className='w-4 h-4'/></button>
+              </div>
+            </div>
+            <div>
+              {(() => {
+                const all=[...(grouped.morning||[]),...(grouped.afternoon||[]),...(grouped.evening||[]),...(grouped.night||[])];
+                let current=null; if(selectedSlotId){ current=all.find(s=> (s.id||s.slotId||s._id)===selectedSlotId) || null; } else { const g=(grouped[bucketKey]||[]); current=g[0]||null; }
+                const avail=current?.availableTokens ?? current?.tokensAvailable ?? current?.remainingTokens ?? current?.available ?? current?.tokensLeft;
+                const total=current?.totalTokens ?? current?.capacity ?? current?.maxTokens;
+                const label=(avail??'')!==''? `${avail}${total!=null?` of ${total}`:''} Tokens available` : (loadingSlots? 'Loading slots…': (slotsError? 'Slots unavailable':'Tokens info unavailable'));
+                return <div className='flex items-center justify-between'><label className='block text-sm font-medium text-gray-700 mb-1'>Available Slot <span className='text-red-500'>*</span></label><span className={`text-xs ${avail>0? 'text-green-600':'text-amber-600'}`}>{label}</span></div>;
+              })()}
+              <select className={`w-full rounded-md border px-3 py-2 text-sm ${fieldErrors.slotId? 'border-red-400 focus:border-red-500':'border-gray-300 focus:border-blue-500'}`} value={bucketKey} onChange={e=>{ const key=e.target.value; setBucketKey(key); const group=(grouped[key]||[]); if(group.length){ const first=group[0]; const id=first.id||first.slotId||first._id; setSelectedSlotId(id||null); } else { setSelectedSlotId(null); } }}>
+                {timeBuckets.map(t=> <option key={t.key} value={t.key}>{t.label} ({t.time})</option>)}
+              </select>
+              {fieldErrors.slotId && <div className='mt-1 text-[11px] text-red-600'>{String(fieldErrors.slotId)}</div>}
+              {!selectedSlotId && <div className='mt-2 text-xs text-amber-600'>{loadingSlots? 'Loading slots for date…':'Select a slot to enable booking.'}</div>}
+            </div>
+          </div>
+        </div>
+        <div className='pt-3 mt-2 border-t border-gray-200'>
+          <div className='flex justify-end gap-3'>
+            <button className='px-4 py-2 rounded border border-gray-300 text-sm text-gray-700 hover:bg-gray-50' onClick={onClose}>Cancel</button>
+            {errorMsg && <div className='mr-auto text-xs text-red-600 px-2 py-1'>{errorMsg}</div>}
+            <button disabled={!canBook()} onClick={handleBook} className={`px-4 py-2 rounded text-sm ${canBook()? 'bg-blue-600 text-white hover:bg-blue-700':'bg-gray-200 text-gray-500 cursor-not-allowed'}`}>{booking? 'Booking...':'Book Appointment'}</button>
           </div>
         </div>
       </div>
-    </>
-  );
+    </div>
+  </>);
 };
 
 const Queue = () => {
@@ -297,9 +428,11 @@ const Queue = () => {
 
   // Slot dropdown UI from slots
   const [slotOpen, setSlotOpen] = useState(false); const slotAnchorRef=useRef(null); const slotMenuRef=useRef(null); const [slotPos,setSlotPos]=useState({top:0,left:0,width:360});
+  const [showWalkIn, setShowWalkIn] = useState(false);
   useEffect(()=>{ const onClick=e=>{ if(slotAnchorRef.current?.contains(e.target) || slotMenuRef.current?.contains(e.target)) return; setSlotOpen(false); }; const onKey=e=>{ if(e.key==='Escape') setSlotOpen(false); }; window.addEventListener('mousedown',onClick); window.addEventListener('keydown',onKey); return ()=>{ window.removeEventListener('mousedown',onClick); window.removeEventListener('keydown',onKey); }; },[]);
 
   return (
+    <>
     <div className='h-screen overflow-hidden bg-gray-50'>
       <div className='sticky top-0 z-10 bg-white border-b border-gray-200 px-4 py-2 flex items-center'>
         <div className='relative mr-6' ref={slotAnchorRef}>
@@ -338,7 +471,7 @@ const Queue = () => {
         </div>
         <div className='flex-1 flex justify-center'><QueueDatePicker date={currentDate} onChange={setCurrentDate} /></div>
         <div className='ml-auto'>
-          <Badge size='large' type='solid' color='blue' hover className='cursor-pointer select-none' onClick={()=>{}}>
+          <Badge size='large' type='solid' color='blue' hover className='cursor-pointer select-none' onClick={()=> setShowWalkIn(true)}>
             Walk-in Appointment
           </Badge>
         </div>
@@ -520,7 +653,9 @@ const Queue = () => {
               {pauseError && <div className='mt-2 text-[12px] text-red-600 text-center'>{pauseError}</div>}
             </div>
         </div>, document.body)}
-    </div>
+  </div>
+  <WalkInAppointmentDrawer show={showWalkIn} onClose={()=> setShowWalkIn(false)} doctorId={doctorId} clinicId={clinicId} hospitalId={hospitalId} onBookedRefresh={()=>{ if(selectedSlotId){ try { loadAppointmentsForSelectedSlot(); } catch{} } }} />
+  </>
   );
 };
 

@@ -111,7 +111,8 @@ const WalkInAppointmentDrawer = ({ show, onClose, onBookedRefresh, doctorId, cli
 	const genders = ['Male','Female','Other'];
 	const bloodGroups = ['A+','A-','B+','B-','AB+','AB-','O+','O-'];
 	const [booking,setBooking] = useState(false);
-	const [errorMsg,setErrorMsg] = useState('');
+		const [errorMsg,setErrorMsg] = useState('');
+		const [fieldErrors, setFieldErrors] = useState({});
 
 	// Local slots state for the selected appointment date
 	const [localSlots, setLocalSlots] = useState([]);
@@ -163,16 +164,14 @@ const WalkInAppointmentDrawer = ({ show, onClose, onBookedRefresh, doctorId, cli
 		load();
 		return ()=>{ ignore=true; };
 	}, [show, apptDate, doctorId, clinicId, hospitalId]);
-	const canBook = () => {
-		if (booking) return false;
-		if (!reason || !selectedSlotId) return false;
-		if (isExisting) return mobile.trim().length > 3;
-		return firstName && lastName && dob && gender && bloodGroup && mobile;
-	};
+			const canBook = () => {
+				// Allow submission to hit backend and surface real validation errors
+				return !booking;
+			};
 	const handleBook = async () => {
 		if (!canBook()) return;
-		setBooking(true); setErrorMsg('');
-		try {
+			setBooking(true); setErrorMsg(''); setFieldErrors({});
+			try {
 			let payload;
 			// Map blood group symbol to API enum format
 			const mapBloodGroup = (bg) => {
@@ -184,16 +183,51 @@ const WalkInAppointmentDrawer = ({ show, onClose, onBookedRefresh, doctorId, cli
 			};
 			const apiBloodGroup = mapBloodGroup(bloodGroup);
 			if (isExisting) {
-				payload = { method:'EXISTING', patientId: mobile.trim(), reason: reason.trim(), slotId: selectedSlotId, bookingType: apptType?.toLowerCase().includes('follow')?'FOLLOW_UP':'NEW' };
+					payload = {
+						method:'EXISTING',
+						bookingMode:'WALK_IN',
+						patientId: mobile.trim(),
+						reason: reason.trim(),
+						slotId: selectedSlotId,
+						bookingType: apptType?.toLowerCase().includes('follow')?'FOLLOW_UP':'NEW',
+						doctorId,
+						clinicId,
+						hospitalId,
+						date: apptDate,
+					};
 			} else {
-				payload = { method:'NEW_USER', firstName:firstName.trim(), lastName:lastName.trim(), phone:mobile.trim(), emailId: email.trim()||undefined, dob:dob.trim(), gender: (gender || '').toUpperCase(), bloodGroup: apiBloodGroup, reason:reason.trim(), slotId:selectedSlotId, bookingType: apptType?.toUpperCase().includes('REVIEW')?'FOLLOW_UP':'NEW' };
+					payload = {
+						method:'NEW_USER',
+						bookingMode:'WALK_IN',
+						firstName:firstName.trim(),
+						lastName:lastName.trim(),
+						phone:mobile.trim(),
+						emailId: email.trim()||undefined,
+						dob:dob.trim(),
+						gender: (gender || '').toUpperCase(),
+						bloodGroup: apiBloodGroup,
+						reason:reason.trim(),
+						slotId:selectedSlotId,
+						bookingType: apptType?.toUpperCase().includes('REVIEW')?'FOLLOW_UP':'NEW',
+						doctorId,
+						clinicId,
+						hospitalId,
+						date: apptDate,
+					};
 			}
-			// Call real API
-			await bookWalkInAppointment(payload);
+				// Log for debugging
+				try { console.debug('[FD] walk-in booking payload:', payload); } catch {}
+				// Call real API
+					await bookWalkInAppointment(payload);
 			// Do not push into Appointment Requests; just refresh the queue and close
 			onBookedRefresh?.();
 			onClose();
-		} catch (e) { setErrorMsg('Booking failed'); } finally { setBooking(false); }
+				} catch (e) {
+					const msg = e?.message || 'Booking failed';
+					const errs = e?.validation || e?.response?.data?.errors || null;
+					if (errs && typeof errs === 'object') setFieldErrors(errs);
+					setErrorMsg(String(msg));
+			} finally { setBooking(false); }
 	};
 	return (<>
 		<div className={`fixed inset-0 bg-black bg-opacity-30 z-40 transition-opacity duration-300 ${show?'opacity-100 pointer-events-auto':'opacity-0 pointer-events-none'}`} onClick={onClose} />
@@ -210,23 +244,63 @@ const WalkInAppointmentDrawer = ({ show, onClose, onBookedRefresh, doctorId, cli
 					<label className='inline-flex items-center gap-2 text-sm'><input type='radio' name='pt' checked={isExisting} onChange={()=>setIsExisting(true)} /> Existing Patients</label>
 					<label className='inline-flex items-center gap-2 text-sm'><input type='radio' name='pt' checked={!isExisting} onChange={()=>setIsExisting(false)} /> New Patient</label>
 				</div>
-				<div className='flex-1 min-h-0 overflow-y-auto pr-1'>
+								{errorMsg && (
+									<div className='mb-3 p-2 rounded border border-red-200 bg-red-50 text-[12px] text-red-700'>
+										{errorMsg}
+									</div>
+								)}
+								<div className='flex-1 min-h-0 overflow-y-auto pr-1'>
 					{isExisting ? (
 						<div className='mb-3'><label className='block text-sm font-medium text-gray-700 mb-1'>Patient <span className='text-red-500'>*</span></label><input type='text' value={mobile} onChange={e=>setMobile(e.target.value)} className='w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:border-blue-500' placeholder='Search Patient by name, Abha id, Patient ID or Contact Number' /></div>
 					) : (<>
-						<div className='grid grid-cols-1 sm:grid-cols-2 gap-3'>
-							<div><label className='block text-sm font-medium text-gray-700 mb-1'>First Name <span className='text-red-500'>*</span></label><input value={firstName} onChange={e=>setFirstName(e.target.value)} type='text' className='w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:border-blue-500' placeholder='Enter First Name' /></div>
-							<div><label className='block text-sm font-medium text-gray-700 mb-1'>Last Name <span className='text-red-500'>*</span></label><input value={lastName} onChange={e=>setLastName(e.target.value)} type='text' className='w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:border-blue-500' placeholder='Enter Last Name' /></div>
+												<div className='grid grid-cols-1 sm:grid-cols-2 gap-3'>
+														<div>
+															<label className='block text-sm font-medium text-gray-700 mb-1'>First Name <span className='text-red-500'>*</span></label>
+															<input value={firstName} onChange={e=>setFirstName(e.target.value)} type='text' className={`w-full rounded-md border px-3 py-2 text-sm focus:outline-none ${fieldErrors.firstName? 'border-red-400 focus:border-red-500':'border-gray-300 focus:border-blue-500'}`} placeholder='Enter First Name' />
+															{fieldErrors.firstName && <div className='text-[11px] text-red-600 mt-1'>{String(fieldErrors.firstName)}</div>}
+														</div>
+														<div>
+															<label className='block text-sm font-medium text-gray-700 mb-1'>Last Name <span className='text-red-500'>*</span></label>
+															<input value={lastName} onChange={e=>setLastName(e.target.value)} type='text' className={`w-full rounded-md border px-3 py-2 text-sm focus:outline-none ${fieldErrors.lastName? 'border-red-400 focus:border-red-500':'border-gray-300 focus:border-blue-500'}`} placeholder='Enter Last Name' />
+															{fieldErrors.lastName && <div className='text-[11px] text-red-600 mt-1'>{String(fieldErrors.lastName)}</div>}
+														</div>
 						</div>
 						<div className='grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3'>
-							<div><label className='block text-sm font-medium text-gray-700 mb-1'>Date of Birth <span className='text-red-500'>*</span></label><div className='relative'><input ref={dobRef} value={dob} onChange={e=>setDob(e.target.value)} type='date' className='w-full rounded-md border border-gray-300 px-3 py-2 text-sm pr-8 focus:outline-none focus:border-blue-500' /><button type='button' onClick={()=> (dobRef.current?.showPicker ? dobRef.current.showPicker() : dobRef.current?.focus())} className='absolute right-2 top-1/2 -translate-y-1/2 text-gray-500'><Calendar className='w-4 h-4' /></button></div></div>
-							<div><label className='block text-sm font-medium text-gray-700 mb-1'>Gender <span className='text-red-500'>*</span></label><select value={gender} onChange={e=>setGender(e.target.value)} className='w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:border-blue-500'><option value='' disabled>Select Gender</option>{genders.map(g=> <option key={g} value={g}>{g}</option>)}</select></div>
+														<div>
+															<label className='block text-sm font-medium text-gray-700 mb-1'>Date of Birth <span className='text-red-500'>*</span></label>
+															<div className='relative'>
+																<input ref={dobRef} value={dob} onChange={e=>setDob(e.target.value)} type='date' className={`w-full rounded-md border px-3 py-2 text-sm pr-8 focus:outline-none ${fieldErrors.dob? 'border-red-400 focus:border-red-500':'border-gray-300 focus:border-blue-500'}`} />
+																<button type='button' onClick={()=> (dobRef.current?.showPicker ? dobRef.current.showPicker() : dobRef.current?.focus())} className='absolute right-2 top-1/2 -translate-y-1/2 text-gray-500'><Calendar className='w-4 h-4' /></button>
+															</div>
+															{fieldErrors.dob && <div className='text-[11px] text-red-600 mt-1'>{String(fieldErrors.dob)}</div>}
+														</div>
+														<div>
+															<label className='block text-sm font-medium text-gray-700 mb-1'>Gender <span className='text-red-500'>*</span></label>
+															<select value={gender} onChange={e=>setGender(e.target.value)} className={`w-full rounded-md border px-3 py-2 text-sm focus:outline-none ${fieldErrors.gender? 'border-red-400 focus:border-red-500':'border-gray-300 focus:border-blue-500'}`}>
+																<option value='' disabled>Select Gender</option>{genders.map(g=> <option key={g} value={g}>{g}</option>)}
+															</select>
+															{fieldErrors.gender && <div className='text-[11px] text-red-600 mt-1'>{String(fieldErrors.gender)}</div>}
+														</div>
 						</div>
 						<div className='grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3'>
-							<div><label className='block text-sm font-medium text-gray-700 mb-1'>Blood Group <span className='text-red-500'>*</span></label><select value={bloodGroup} onChange={e=>setBloodGroup(e.target.value)} className='w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:border-blue-500'><option value='' disabled>Select Blood Group</option>{bloodGroups.map(bg=> <option key={bg} value={bg}>{bg}</option>)}</select></div>
-							<div><label className='block text-sm font-medium text-gray-700 mb-1'>Mobile Number <span className='text-red-500'>*</span></label><input value={mobile} onChange={e=>setMobile(e.target.value)} type='tel' className='w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:border-blue-500' placeholder='Enter Mobile Number' /></div>
+														<div>
+															<label className='block text-sm font-medium text-gray-700 mb-1'>Blood Group <span className='text-red-500'>*</span></label>
+															<select value={bloodGroup} onChange={e=>setBloodGroup(e.target.value)} className={`w-full rounded-md border px-3 py-2 text-sm focus:outline-none ${fieldErrors.bloodGroup? 'border-red-400 focus:border-red-500':'border-gray-300 focus:border-blue-500'}`}>
+																<option value='' disabled>Select Blood Group</option>{bloodGroups.map(bg=> <option key={bg} value={bg}>{bg}</option>)}
+															</select>
+															{fieldErrors.bloodGroup && <div className='text-[11px] text-red-600 mt-1'>{String(fieldErrors.bloodGroup)}</div>}
+														</div>
+														<div>
+															<label className='block text-sm font-medium text-gray-700 mb-1'>Mobile Number <span className='text-red-500'>*</span></label>
+															<input value={mobile} onChange={e=>setMobile(e.target.value)} type='tel' className={`w-full rounded-md border px-3 py-2 text-sm focus:outline-none ${fieldErrors.phone||fieldErrors.mobile? 'border-red-400 focus:border-red-500':'border-gray-300 focus:border-blue-500'}`} placeholder='Enter Mobile Number' />
+															{(fieldErrors.phone||fieldErrors.mobile) && <div className='text-[11px] text-red-600 mt-1'>{String(fieldErrors.phone||fieldErrors.mobile)}</div>}
+														</div>
 						</div>
-						<div className='mt-3'><label className='block text-sm font-medium text-gray-700 mb-1'>Email ID</label><input value={email} onChange={e=>setEmail(e.target.value)} type='email' className='w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:border-blue-500' placeholder='Enter Email' /></div>
+												<div className='mt-3'>
+													<label className='block text-sm font-medium text-gray-700 mb-1'>Email ID</label>
+													<input value={email} onChange={e=>setEmail(e.target.value)} type='email' className={`w-full rounded-md border px-3 py-2 text-sm focus:outline-none ${fieldErrors.email||fieldErrors.emailId? 'border-red-400 focus:border-red-500':'border-gray-300 focus:border-blue-500'}`} placeholder='Enter Email' />
+													{(fieldErrors.email||fieldErrors.emailId) && <div className='text-[11px] text-red-600 mt-1'>{String(fieldErrors.email||fieldErrors.emailId)}</div>}
+												</div>
 					</>)}
 					<div className='mb-3 mt-3'>
 						<label className='block text-sm font-medium text-gray-700 mb-1'>Appointment Type <span className='text-red-500'>*</span></label>
@@ -235,7 +309,8 @@ const WalkInAppointmentDrawer = ({ show, onClose, onBookedRefresh, doctorId, cli
 					</div>
 					<div className='mb-3'>
 						<label className='block text-sm font-medium text-gray-700 mb-1'>Reason for Visit <span className='text-red-500'>*</span></label>
-						<input value={reason} onChange={e=>setReason(e.target.value)} type='text' className='w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:border-blue-500' placeholder='Enter Reason for Visit' />
+						<input value={reason} onChange={e=>setReason(e.target.value)} type='text' className={`w-full rounded-md border px-3 py-2 text-sm focus:outline-none ${fieldErrors.reason||fieldErrors.reasonForVisit? 'border-red-400 focus:border-red-500':'border-gray-300 focus:border-blue-500'}`} placeholder='Enter Reason for Visit' />
+						{(fieldErrors.reason||fieldErrors.reasonForVisit) && <div className='text-[11px] text-red-600 mt-1'>{String(fieldErrors.reason||fieldErrors.reasonForVisit)}</div>}
 						<div className='mt-2 flex flex-wrap gap-2 text-xs'>{reasonSuggestions.map(s=> <button key={s} type='button' className='px-2 py-1 rounded border border-gray-200 text-gray-700 hover:bg-gray-50' onClick={()=> setReason(s)}>{s}</button>)}</div>
 					</div>
 					<div className='grid grid-cols-1 sm:grid-cols-2 gap-4'>
@@ -261,9 +336,10 @@ const WalkInAppointmentDrawer = ({ show, onClose, onBookedRefresh, doctorId, cli
 									</>
 								);
 							})()}
-							<select className='w-full rounded-md border border-gray-300 px-3 py-2 text-sm' value={bucketKey} onChange={e=> { const key=e.target.value; setBucketKey(key); const group=(grouped?.[key]||[]); if(group.length){ const first=group[0]; const id= first.id||first.slotId||first._id; setSelectedSlotId(id||null); } else { setSelectedSlotId(null); } }}>
+							<select className={`w-full rounded-md border px-3 py-2 text-sm ${fieldErrors.slotId? 'border-red-400 focus:border-red-500':'border-gray-300 focus:border-blue-500'}`} value={bucketKey} onChange={e=> { const key=e.target.value; setBucketKey(key); const group=(grouped?.[key]||[]); if(group.length){ const first=group[0]; const id= first.id||first.slotId||first._id; setSelectedSlotId(id||null); } else { setSelectedSlotId(null); } }}>
 								{timeBuckets.map(t=> <option key={t.key} value={t.key}>{t.label} ({t.time})</option>)}
 							</select>
+							{fieldErrors.slotId && <div className='mt-1 text-[11px] text-red-600'>{String(fieldErrors.slotId)}</div>}
 							{!selectedSlotId && <div className='mt-2 text-xs text-amber-600'>{loadingSlots ? 'Loading slots for date…' : 'Select a slot to enable booking.'}</div>}
 						</div>
 					</div>
