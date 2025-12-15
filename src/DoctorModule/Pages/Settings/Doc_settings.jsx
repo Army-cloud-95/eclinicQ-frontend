@@ -1263,6 +1263,8 @@ const StaffTab = () => {
 }
 
 import { useLocation, useNavigate } from 'react-router-dom'
+import { getDoctorConsultationDetails } from '../../../services/doctorConsultationService'
+import { toISTDate } from '../../../lib/timeUtils'
 
 const Doc_settings = () => {
   const location = useLocation()
@@ -1383,6 +1385,10 @@ const Doc_settings = () => {
   const [profOpen, setProfOpen] = useState(false)
   const [practiceOpen, setPracticeOpen] = useState(false)
   const [clinicEditMode, setClinicEditMode] = useState(false)
+  // Consultation details state
+  const [consultationLoading, setConsultationLoading] = useState(false)
+  const [consultationError, setConsultationError] = useState('')
+  const [consultationDetails, setConsultationDetails] = useState(null)
 
   // Clinic form state
   const [clinicForm, setClinicForm] = useState({
@@ -1446,6 +1452,25 @@ const Doc_settings = () => {
       console.log("Error in fetch clinic info");
     });
   }, [fetchBasicInfo, fetchEducation, fetchExperiences, fetchAwardsAndPublications, fetchProfessionalDetails, fetchClinicInfo]);
+
+  // Fetch consultation details when consultation tab is active
+  useEffect(() => {
+    if (activeTab !== 'consultation') return;
+    // Prefer hospital id from auth doctorDetails; fallback could be from clinic store if needed
+    const hospitalId = doctorDetails?.associatedWorkplaces?.clinic?.id || doctorDetails?.associatedWorkplaces?.hospitals?.[0]?.id;
+    if (!hospitalId) return;
+    setConsultationLoading(true);
+    setConsultationError('');
+    getDoctorConsultationDetails(hospitalId)
+      .then((resp) => {
+        setConsultationDetails(resp?.data || null)
+        setConsultationLoading(false)
+      })
+      .catch((e) => {
+        setConsultationError(e?.response?.data?.message || e.message || 'Failed to load consultation details')
+        setConsultationLoading(false)
+      })
+  }, [activeTab, doctorDetails])
 
   if (!profile) {
   return (
@@ -1788,17 +1813,17 @@ const Doc_settings = () => {
             <div className="grid md:grid-cols-2 gap-6">
               <div className="grid grid-cols-12 gap-2 items-end">
                 <div className="col-span-8">
-                  <Input label="First Time Consultation Fees:" placeholder="Value" icon={<span className='text-xs text-gray-500'>Rupees</span>} />
+                  <Input label="First Time Consultation Fees:" placeholder="Value" value={consultationDetails?.consultationFees?.[0]?.consultationFee || ''} icon={<span className='text-xs text-gray-500'>Rupees</span>} />
                 </div>
               </div>
               <div className="grid grid-cols-12 gap-2 items-end">
                 <div className="col-span-8">
-                  <Input label="Follow-up Consultation Fees:" placeholder="Value" icon={<span className='text-xs text-gray-500'>Rupees</span>} />
+                  <Input label="Follow-up Consultation Fees:" placeholder="Value" value={consultationDetails?.consultationFees?.[0]?.followUpFee || ''} icon={<span className='text-xs text-gray-500'>Rupees</span>} />
                 </div>
               </div>
             </div>
             <div className="mt-3 flex items-center justify-end gap-2 text-sm">
-              <input id="autoApprove" type="checkbox" className="h-4 w-4" />
+              <input id="autoApprove" type="checkbox" className="h-4 w-4" checked={Boolean(consultationDetails?.consultationFees?.[0]?.autoApprove)} readOnly />
               <label htmlFor="autoApprove" className="text-gray-700">Auto Approve Requested Appointment</label>
             </div>
           </SectionCard>
@@ -1812,37 +1837,72 @@ const Doc_settings = () => {
           >
             <div className="grid grid-cols-12 gap-3 items-end">
               <div className="col-span-6 md:col-span-4 lg:col-span-3">
-                <Input label="Average Consultation Min per Patient :" placeholder="Value" icon={<span className='text-xs text-gray-500'>Mins</span>} />
+                <Input label="Average Consultation Min per Patient :" placeholder="Value" value={(consultationDetails?.consultationFees?.[0]?.avgDurationMinutes ?? consultationDetails?.slotTemplates?.avgDurationMinutes ?? '')} icon={<span className='text-xs text-gray-500'>Mins</span>} />
+              </div>
+              <div className="col-span-6 md:col-span-4 lg:col-span-3">
+                <div className="text-[12px] text-gray-600 mb-1">Set Availability Duration</div>
+                <select className="h-8 w-full text-xs border border-gray-300 rounded px-2 bg-white" value={consultationDetails?.consultationFees?.[0]?.availabilityDurationDays || ''} disabled>
+                  <option value="">Select</option>
+                  <option value={1}>1 Day</option>
+                  <option value={3}>3 Days</option>
+                  <option value={7}>7 Days</option>
+                  <option value={14}>14 Days</option>
+                  <option value={30}>30 Days</option>
+                </select>
               </div>
             </div>
+            {consultationLoading && <div className='text-xs text-gray-500 mt-2'>Loading consultation details…</div>}
+            {consultationError && <div className='text-xs text-red-600 mt-2'>{consultationError}</div>}
 
-            {/* Days grid */}
+            {/* Days grid (from API schedule) */}
             <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-4">
-              {['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'].map((day, idx) => (
-                <div key={day} className="bg-white border border-gray-200 rounded-lg p-3">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium text-gray-700">{day}</span>
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs text-gray-500">Available</span>
-                      <Toggle checked={idx===0} onChange={()=>{}} />
-                    </div>
-                  </div>
-
-                  <div className="mt-3 space-y-2">
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs text-gray-600">Session 1:</span>
-                      <TimeInput value={idx===0? '09:00' : ''} onChange={()=>{}} />
-                      <span className="text-xs text-gray-400">-</span>
-                      <TimeInput value={idx===0? '13:00' : ''} onChange={()=>{}} />
-                      <span className="ml-2 text-xs text-gray-600 whitespace-nowrap">Token Available:</span>
-                      <div className="w-24">
-                        <input className="h-8 w-full text-xs border border-gray-300 rounded px-2" placeholder={idx===0? '25' : 'Value'} defaultValue={idx===0? '25' : ''} />
+              {(consultationDetails?.slotTemplates?.schedule || []).map((d) => {
+                const toHM = (iso) => {
+                  if (!iso) return '';
+                  const dt = toISTDate(iso);
+                  const hh = String(dt.getHours()).padStart(2, '0');
+                  const mm = String(dt.getMinutes()).padStart(2, '0');
+                  return `${hh}:${mm}`;
+                };
+                const disabledCls = d.available ? '' : 'opacity-50 pointer-events-none';
+                return (
+                  <div key={d.day} className="bg-white border border-gray-200 rounded-lg p-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-medium text-gray-700">{d.day}</span>
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs text-gray-500">Available</span>
+                        <Toggle checked={Boolean(d.available)} onChange={()=>{}} />
                       </div>
                     </div>
-                    <button className="text-xs text-blue-600">+ Add More</button>
+
+                    <div className="mt-3 space-y-2">
+                      {Array.isArray(d.sessions) && d.sessions.length > 0 ? (
+                        d.sessions.map((s) => (
+                          <div key={s.id || s.sessionNumber} className={`flex items-center flex-wrap gap-2 ${disabledCls}`}>
+                            <span className="text-xs text-gray-600">Session {s.sessionNumber}:</span>
+                            <TimeInput value={toHM(s.startTime)} onChange={()=>{}} />
+                            <span className="text-xs text-gray-400">-</span>
+                            <TimeInput value={toHM(s.endTime)} onChange={()=>{}} />
+                            <span className="ml-2 text-xs text-gray-600 whitespace-nowrap">Token Available:</span>
+                            <div className="w-24">
+                              <input className="h-8 w-full text-xs border border-gray-300 rounded px-2" placeholder="Value" value={s.maxTokens ?? ''} readOnly />
+                            </div>
+                          </div>
+                        ))
+                      ) : (
+                        <div className="text-xs text-gray-500">No sessions configured</div>
+                      )}
+                      <div className="mt-2 flex items-center justify-between text-xs">
+                        <button className={`text-blue-600 ${disabledCls}`}>+ Add More (Max 6 Slots)</button>
+                        <label className={`inline-flex items-center gap-2 text-gray-600 ${disabledCls}`}>
+                          <input type="checkbox" disabled={!d.available} />
+                          <span>Apply to All Days</span>
+                        </label>
+                      </div>
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </SectionCard>
 
