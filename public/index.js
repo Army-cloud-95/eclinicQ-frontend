@@ -73,6 +73,14 @@ import queue_download from './Doctor_module/patient/queue_download.png'
 import refresh from './Doctor_module/patient/refresh.png'
 import terminate from './Doctor_module/patient/terminate.png'
 import cap from './Doctor_module/settings/cap.png'
+// Doctor module sidebar icons
+import calendarWhite from './Doctor_module/sidebar/calendar_white.png';
+import dashboardWhite from './Doctor_module/sidebar/dashboard_white.png';
+import patientBlue from './Doctor_module/sidebar/patient_blue.png';
+import patientWhite from './Doctor_module/sidebar/patient_white.png';
+import queueBlue from './Doctor_module/sidebar/queue_blue.png';
+import queueWhite from './Doctor_module/sidebar/queue_white.png';
+import settingBlue from './Doctor_module/sidebar/setting_blue.png';
 // Doctor info icons
 import blueBag from './doctor_info/bluebag.png';
 import docIcon from './doctor_info/doc.png';
@@ -151,7 +159,15 @@ export {
   cap,
   queue_download,
   refresh,
-  terminate
+  terminate,
+  // Doctor module sidebar icons
+  calendarWhite,
+  dashboardWhite,
+  patientBlue,
+  patientWhite,
+  queueBlue,
+  queueWhite,
+  settingBlue
 };
 
 

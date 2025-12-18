@@ -202,14 +202,7 @@ const WalkInAppointmentDrawer = ({ show, onClose, doctorId, clinicId, hospitalId
               {!selectedSlotId && <div className='mt-2 text-xs text-amber-600'>{loadingSlots? 'Loading slots for date…':'Select a slot to enable booking.'}</div>}
             </div>
           </div>
-        </div>
-        <div className='pt-3 mt-2 border-t border-gray-200'>
-          <div className='flex justify-end gap-3'>
-            <button className='px-4 py-2 rounded border border-gray-300 text-sm text-gray-700 hover:bg-gray-50' onClick={onClose}>Cancel</button>
-            {errorMsg && <div className='mr-auto text-xs text-red-600 px-2 py-1'>{errorMsg}</div>}
-            <button disabled={!canBook()} onClick={handleBook} className={`px-4 py-2 rounded text-sm ${canBook()? 'bg-blue-600 text-white hover:bg-blue-700':'bg-gray-200 text-gray-500 cursor-not-allowed'}`}>{booking? 'Booking...':'Book Appointment'}</button>
-          </div>
-        </div>
+  </div>
       </div>
     </div>
   </>);

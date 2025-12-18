@@ -1,9 +1,10 @@
 import React, { useEffect, useState, useRef } from "react";
 import { NavLink, useLocation } from "react-router-dom";
 import { HelpCircle, ArrowRight, ChevronDown, ChevronUp, Building2, Circle, CircleDot, Plus } from "lucide-react";
-// Use icons from public/index.js (MainSidebar icons)
+// Use icons from public/index.js (MainSidebar + Doctor module sidebar icons)
 import {
   logo,
+  // existing main sidebar icons (may still be used elsewhere)
   dashboardSelected,
   dashboardUnselect,
   doctorSelect,
@@ -12,6 +13,14 @@ import {
   hospitalUnselect,
   patientUnselect,
   settingUnselect,
+  // Doctor module sidebar icons (white/blue variants)
+  calendarWhite,
+  dashboardWhite,
+  patientBlue,
+  patientWhite,
+  queueBlue,
+  queueWhite,
+  settingBlue,
 } from "../../../public/index.js";
 import AvatarCircle from "../../components/AvatarCircle";
 
@@ -88,39 +97,41 @@ const DocSidebar = () => {
     }
   }, [showSwitch]);
 
+  // Sidebar menu items using blue icon when active, white otherwise
   const menuItems = [
     {
       name: "Dashboard",
       iconSelected: dashboardSelected,
-      iconUnselected: dashboardUnselect,
+      iconUnselected: dashboardWhite,
       path: "/doc",
       alt: "Dashboard",
     },
     {
       name: "Queue",
-      iconSelected: patientUnselect, // Using patient icon for queue (will need to find a better selected version)
-      iconUnselected: patientUnselect,
+      iconSelected: queueBlue,
+      iconUnselected: queueWhite,
       path: "/doc/queue",
       alt: "Queue",
     },
     {
       name: "Patients",
-      iconSelected: doctorSelect, // Swapping to use doctor icons for patients
-      iconUnselected: doctorUnselect,
+      iconSelected: patientBlue,
+      iconUnselected: patientWhite,
       path: "/doc/patients",
       alt: "Patients",
     },
     {
       name: "Calendar",
-      iconSelected: hospitalSelected,
-      iconUnselected: hospitalUnselect,
+      // Only white provided; use white for both states
+      iconSelected: calendarWhite,
+      iconUnselected: calendarWhite,
       path: "/doc/calendar",
       alt: "Calendar",
     },
     {
       name: "Settings",
-      iconSelected: settingUnselect,
-      iconUnselected: settingUnselect,
+      iconSelected: settingBlue,
+      iconUnselected: settingUnselect, // fallback white/grey from previous set
       path: "/doc/settings",
       alt: "Settings",
     },
@@ -257,7 +268,7 @@ const DocSidebar = () => {
                   }`}
                 >
                   <span className="inline-flex items-center gap-[6px]">
-                    <img src={settingUnselect} alt="Settings" className="w-5 h-5" />
+                    <img src={isSettingsRoute ? settingBlue : settingUnselect} alt="Settings" className="w-5 h-5" />
                     <span className="font-normal text-sm">Settings</span>
                   </span>
                   {openSettings ? (
@@ -268,7 +279,7 @@ const DocSidebar = () => {
                 </button>
 
                 {openSettings && (
-                  <div className="ml-5 pl-3 border-l border-gray-200">
+                  <div className="ml-5 pl-2 border-l border-gray-200">
                     {settingsSubItems.map((s) => (
                       s.subItems ? (
                         <div key={s.to}>
@@ -320,8 +331,6 @@ const DocSidebar = () => {
         </nav>
       
       </div>
-
-    
 
       {/* Bottom Section */}
       <div className="px-4 py-3 border-t border-[#D6D6D6] flex justify-between items-center text-[#626060]">

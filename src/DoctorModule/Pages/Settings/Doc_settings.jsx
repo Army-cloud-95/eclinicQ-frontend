@@ -1952,7 +1952,7 @@ const Doc_settings = () => {
 
           <SectionCard
   title={
-    <div className="flex gap-[1100px] justify-between w-full">
+    <div className="flex gap-[900px] justify-between w-full">
       <div className="text-sm ">
         Set Your Consultation Hours
       </div>
