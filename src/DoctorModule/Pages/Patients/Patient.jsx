@@ -84,7 +84,7 @@ export default function Patient() {
       ),
     },
     { key: 'lastVisit', header: 'Last Visit' ,width:200},
-  { key: 'reason', header: 'Reason',width:720, cellClass: 'w-[720px] whitespace-normal break-words' },
+  { key: 'reason', header: 'Reason',width:450, cellClass: 'w-[720px] whitespace-normal break-words' },
     {
       key: 'actions',
   header: 'Actions',
@@ -107,9 +107,9 @@ export default function Patient() {
 
   return (
     <>
-    <div className="">
+  <div className="px-3">
 
-      <div className='px-4 py-[12px]'>
+  <div className='pt-2 pb-1'>
           <PatientHeader counts={counts} selected={selected} onChange={setSelected} addLabel="Add New Patient" addPath={() => setAddOpen(true)} />
       </div>
 
@@ -121,7 +121,7 @@ export default function Patient() {
           </div>
         </div>
       ) : (
-        <div className='pr-2 pb-2 pl-2'>
+  <div className=''>
         <SampleTable
           columns={columns}
           data={pageRows}

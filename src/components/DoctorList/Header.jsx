@@ -1,6 +1,7 @@
 import { Search, Filter } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import Badge from "../Badge";
+import { vertical } from "../../../public";
 
 const fmt = (n) => {
   if (typeof n !== 'number') return String(n ?? 0);
@@ -85,10 +86,11 @@ export default function Header({
         <button className="p-1.5 rounded hover:bg-gray-100 text-gray-600" aria-label="Search">
           <Search className="h-5 w-5" />
         </button>
+        <img src={vertical} alt="" className="mx-2 h-5"/>
         <button className="p-1.5 rounded hover:bg-gray-100 text-gray-600" aria-label="Filter">
           <Filter className="h-5 w-5" />
         </button>
-        <span className="mx-2 h-5 w-px bg-gray-200" aria-hidden="true" />
+        <span className="mx-2 h-5 w-px bg-gray-400" aria-hidden="true" />
         {/* Blue ghost-style button */}
   <Badge type="ghost" color="blue" size="l" className="!rounded-md" onClick={() => { if (typeof (/** @type any */addPath) === 'function') { (addPath)(); } else if (addPath) { navigate(addPath); } }}>
           {addLabel}

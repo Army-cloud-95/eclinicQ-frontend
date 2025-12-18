@@ -69,6 +69,9 @@ import table_white from './Doctor_module/patient/table_white.png'
 import action_calendar from './Doctor_module/patient/action_calendar.png'
 import action_dot from './Doctor_module/patient/action_dot.png'
 import action_heart from './Doctor_module/patient/action_heart.png'
+import queue_download from './Doctor_module/patient/queue_download.png'
+import refresh from './Doctor_module/patient/refresh.png'
+import terminate from './Doctor_module/patient/terminate.png'
 import cap from './Doctor_module/settings/cap.png'
 // Doctor info icons
 import blueBag from './doctor_info/bluebag.png';
@@ -146,6 +149,9 @@ export {
   action_dot,
   action_heart,
   cap,
+  queue_download,
+  refresh,
+  terminate
 };
 
 

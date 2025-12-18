@@ -2,6 +2,7 @@ import React, { useMemo } from "react";
 import TableHeader from "../components/TableHeader";
 import { MoreVertical, Calendar, Heart } from "lucide-react";
 import { action_calendar, action_dot, action_heart } from "../../public";
+import TablePagination from "./TablePagination";
 
 // Default column definition array to generalize headers and cell rendering
 const defaultColumns = [
@@ -136,9 +137,9 @@ export default function SampleTable({
     };
 
 	return (
-		<div className="relative h-[90vh] z-10 rounded-xl border-[0.5px] border-secondary-grey100 bg-white">
-			{/* Scroll Area */}
-			<div className="h-full overflow-auto">
+		<div className="relative h-[calc(100vh-140px)] z-10 rounded-xl border-[0.5px] border-secondary-grey100 bg-white">
+			{/* Scroll Area: leave space for sticky footer */}
+			<div className="h-full overflow-auto pb-16">
 				<table
 					className={`w-full border-collapse text-sm table-auto`}
 					style={{ minWidth }}
@@ -182,6 +183,19 @@ export default function SampleTable({
 											<span
 												className="pointer-events-none absolute left-0 w-px bg-secondary-grey100"
 												style={{ top: "-1px", height: "calc(100% + 1px)" }}
+											></span>
+										)}
+										{/* Edge shadows for sticky columns */}
+										{col.sticky === "left" && (
+											<span
+												className="pointer-events-none absolute right-0 top-0 h-full w-2"
+												style={{ boxShadow: "inset -6px 0 6px -6px rgba(0,0,0,0.08)" }}
+											></span>
+										)}
+										{col.sticky === "right" && (
+											<span
+												className="pointer-events-none absolute left-0 top-0 h-full w-2"
+												style={{ boxShadow: "inset 6px 0 6px -6px rgba(0,0,0,0.08)" }}
 											></span>
 										)}
 									</th>
@@ -233,6 +247,19 @@ export default function SampleTable({
 													style={{ top: 0, height: "calc(100% + 1px)" }}
 												></span>
 											)}
+											{/* Edge shadows for sticky columns */}
+											{col.sticky === "left" && (
+												<span
+													className="pointer-events-none absolute right-0 top-0 h-full w-2"
+													style={{ boxShadow: "inset -6px 0 6px -6px rgba(0,0,0,0.08)" }}
+												></span>
+											)}
+											{col.sticky === "right" && (
+												<span
+													className="pointer-events-none absolute left-0 top-0 h-full w-2"
+													style={{ boxShadow: "inset 6px 0 6px -6px rgba(0,0,0,0.08)" }}
+												></span>
+											)}
 										</td>
 									);
 								})}
@@ -242,41 +269,21 @@ export default function SampleTable({
 				</table>
 			</div>
 
-			{/* Fixed Pagination at the bottom of the viewport */}
-			<div className="fixed bottom-0 left-0 right-0 z-50 flex items-center justify-between border-t bg-white px-4 py-2 text-sm shadow-[0_-2px_6px_rgba(0,0,0,0.04)]">
-				<span>
-					{start}–{end} of {total}
-				</span>
-				<div className="flex items-center gap-2">
-					<button
-						className="rounded border px-2 py-1 disabled:opacity-50"
-						disabled={!canPrev}
-						onClick={() => goto(page - 1)}
-					>
-						‹
-					</button>
-					<button className="rounded border bg-gray-100 px-2 py-1" onClick={() => goto(page)}>
-						{page}
-					</button>
-					{page + 1 <= totalPages && (
-						<button className="rounded border px-2 py-1" onClick={() => goto(page + 1)}>
-							{page + 1}
-						</button>
-					)}
-					{page + 2 <= totalPages && (
-						<button className="rounded border px-2 py-1" onClick={() => goto(page + 2)}>
-							{page + 2}
-						</button>
-					)}
-					<button
-						className="rounded border px-2 py-1 disabled:opacity-50"
-						disabled={!canNext}
-						onClick={() => goto(page + 1)}
-					>
-						›
-					</button>
-				</div>
+			{/* Sticky pagination footer */}
+			<div className="sticky bottom-0 left-0 right-0 z-50 bg-white border-t">
+				<TablePagination
+					page={page}
+					pageSize={pageSize}
+					total={total}
+					start={start}
+					end={end}
+					canPrev={page > 1}
+					canNext={page < totalPages}
+					goto={goto}
+				/>
 			</div>
 		</div>
+
+		
 	);
 }

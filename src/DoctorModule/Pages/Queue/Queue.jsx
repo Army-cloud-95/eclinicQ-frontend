@@ -13,7 +13,7 @@ import QueueTable from './QueueTable';
 import useAuthStore from '../../../store/useAuthStore';
 import useSlotStore from '../../../store/useSlotStore';
 import { getDoctorMe, startSlotEta, endSlotEta, getSlotEtaStatus, startPatientSessionEta, endPatientSessionEta, pauseSlotEta, resumeSlotEta, markNoShowAppointment } from '../../../services/authService';
-import { appointement } from '../../../../public/index.js';
+import { action_dot, appointement, queue_download, refresh, terminate, vertical } from '../../../../public/index.js';
 
 // Walk-in Appointment Drawer (full version replicated from Front Desk)
 const WalkInAppointmentDrawer = ({ show, onClose, doctorId, clinicId, hospitalId, onBookedRefresh }) => {
@@ -521,6 +521,8 @@ const Queue = () => {
 
   // Slot dropdown UI from slots
   const [slotOpen, setSlotOpen] = useState(false); const slotAnchorRef=useRef(null); const slotMenuRef=useRef(null); const [slotPos,setSlotPos]=useState({top:0,left:0,width:360});
+  // Topbar actions (three-dot) dropdown
+  const [actionMenuOpen, setActionMenuOpen] = useState(false); const actionAnchorRef = useRef(null); const actionMenuRef = useRef(null); const [actionPos, setActionPos] = useState({top:0,left:0,width:220});
   // Group slots into day parts similar to FD
   const groupedSlots = useMemo(()=>{
     const groups = { morning:[], afternoon:[], evening:[], night:[] };
@@ -540,7 +542,7 @@ const Queue = () => {
   }, [groupedSlots]);
   const [slotValue, setSlotValue] = useState('morning');
   const [showWalkIn, setShowWalkIn] = useState(false);
-  useEffect(()=>{ const onClick=e=>{ if(slotAnchorRef.current?.contains(e.target) || slotMenuRef.current?.contains(e.target)) return; setSlotOpen(false); }; const onKey=e=>{ if(e.key==='Escape') setSlotOpen(false); }; window.addEventListener('mousedown',onClick); window.addEventListener('keydown',onKey); return ()=>{ window.removeEventListener('mousedown',onClick); window.removeEventListener('keydown',onKey); }; },[]);
+  useEffect(()=>{ const onClick=e=>{ if(slotAnchorRef.current?.contains(e.target) || slotMenuRef.current?.contains(e.target)) return; if(actionAnchorRef.current?.contains(e.target) || actionMenuRef.current?.contains(e.target)) return; setSlotOpen(false); setActionMenuOpen(false); }; const onKey=e=>{ if(e.key==='Escape'){ setSlotOpen(false); setActionMenuOpen(false); } }; window.addEventListener('mousedown',onClick); window.addEventListener('keydown',onKey); return ()=>{ window.removeEventListener('mousedown',onClick); window.removeEventListener('keydown',onKey); }; },[]);
 
   return (
     <>
@@ -573,10 +575,42 @@ const Queue = () => {
             </div>, document.body)}
         </div>
         <div className='flex-1 flex justify-center'><QueueDatePicker date={currentDate} onChange={setCurrentDate} /></div>
-        <div className='ml-auto'>
-          <Badge size='large' type='solid' color='blue' hover className='cursor-pointer select-none' onClick={()=> setShowWalkIn(true)}>
-            Walk-in Appointment
-          </Badge>
+        <div className='flex ml-auto items-center gap-4'>
+          <div className='flex gap-2 items-center'>
+            <span className='text-sm text-secondary-grey400'>Tokens available</span>
+            <Badge size='small' type='ghost' color='green' hover>10 out of 100</Badge>
+          </div>
+          <img src={vertical} alt="" className='h-6'/>
+          <div className='flex items-center gap-2'>
+            <Toggle checked={sessionStarted} disabled={slotStarting || slotEnding} onChange={handleToggleSession} />
+                <span className='text-gray-700 text-sm'>Start Session</span>
+                {slotStarting && <span className='text-xs text-blue-600 animate-pulse'>Starting</span>}
+                {slotEnding && <span className='text-xs text-orange-600 animate-pulse'>Ending</span>}
+                {startError && !slotStarting && !sessionStarted && <span className='text-xs text-red-600'>{startError}</span>}
+              </div>
+          <img src={vertical} alt="" className='h-6'/>
+          <button type='button' ref={actionAnchorRef} className='relative w-6 h-6 flex items-center justify-center rounded hover:bg-gray-100' onClick={e=>{ setActionMenuOpen(v=>!v); const r=e.currentTarget.getBoundingClientRect(); const width=220; const left=Math.max(8, Math.min(r.left-width+24, window.innerWidth-width-8)); const top=Math.min(r.bottom+8, window.innerHeight-8-4); setActionPos({top,left,width}); }}>
+            <img src={action_dot} alt="Actions" className='w-4' />
+          </button>
+          {actionMenuOpen && createPortal(
+            <div ref={actionMenuRef} className='fixed z-[9999]' style={{top:actionPos.top,left:actionPos.left,width:actionPos.width}}>
+              <div className='bg-white rounded-lg border border-gray-200 shadow-xl overflow-hidden p-2'>
+                <ul className='flex flex-col gap-2'>
+                  <li>
+                    <button type='button' onClick={()=>{ try{ if(selectedSlotId){ loadAppointmentsForSelectedSlot(); } } finally { setActionMenuOpen(false); } }} className='w-full rounded-sm text-left px-2 py-1 flex items-center gap-3 hover:bg-gray-50'>
+                      <img src={refresh} alt="Refresh Queue" className='w-4 ' />
+                      <span className='text-[14px] text-gray-800'>Refresh Queue</span>
+                    </button>
+                  </li>
+                  <li>
+                    <button type='button' onClick={()=>{ try{ if(sessionStarted){ handleToggleSession(); } } finally { setActionMenuOpen(false); } }} className='w-full text-left px-2 py-1 flex items-center gap-3 hover:bg-red-50'>
+                      <img src={terminate} alt="Terminate Queue" className='w-4' />
+                      <span className='text-[14px] text-red-600 font-medium'>Terminate Queue</span>
+                    </button>
+                  </li>
+                </ul>
+              </div>
+            </div>, document.body)}
         </div>
       </div>
 
@@ -681,17 +715,16 @@ const Queue = () => {
               ))}
             </div>
             <div className='flex items-center gap-6'>
-              <div className='flex items-center gap-2'>
-                <span className='text-gray-700 text-sm'>Start Session</span>
-                <Toggle checked={sessionStarted} disabled={slotStarting || slotEnding} onChange={handleToggleSession} />
-                {slotStarting && <span className='text-xs text-blue-600 animate-pulse'>Starting</span>}
-                {slotEnding && <span className='text-xs text-orange-600 animate-pulse'>Ending</span>}
-                {startError && !slotStarting && !sessionStarted && <span className='text-xs text-red-600'>{startError}</span>}
-              </div>
-              <div className='flex items-center space-x-2'>
+              
+              {/* <div className='flex items-center space-x-2'>
                 <span className='text-gray-600 text-sm'>Tokens</span>
                 <Badge size='small' type='ghost' color='green' hover>{queueData.length}</Badge>
-              </div>
+              </div> */}
+              <img src={queue_download} alt="" className='w-4' />
+              <img src={vertical} alt="" className='h-6' />
+              <Badge size='large' type='ghost' color='blue' hover className='cursor-pointer select-none' onClick={()=> setShowWalkIn(true)}>
+            Walk-in Appointment
+          </Badge>
             </div>
           </div>
 

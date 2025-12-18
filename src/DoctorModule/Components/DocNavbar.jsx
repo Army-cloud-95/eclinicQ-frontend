@@ -112,6 +112,30 @@ const DocNavbar = ({ moduleSwitcher }) => {
     }
   };
 
+  // Derive displayable doctor name without the 'Dr.' prefix
+  const getDoctorDisplayName = (details) => {
+    if (!details) return '';
+    const nameFromFields = [details?.firstName, details?.lastName].filter(Boolean).join(' ').trim();
+    const raw = String((details?.name || nameFromFields || '')).trim();
+    if (!raw) return '';
+    // Remove leading titles like Dr, Dr., Doctor (case-insensitive)
+    const cleaned = raw.replace(/^(?:dr\.?|doctor)\s+/i, '').trim();
+    return cleaned || nameFromFields || '';
+  };
+  const displayName = doctorLoading ? '' : getDoctorDisplayName(doctorDetails);
+
+  // For dropdown: ensure a visible title 'Dr.' precedes the full name
+  const getDoctorNameWithTitle = (details) => {
+    if (!details) return '';
+    const nameFromFields = [details?.firstName, details?.lastName].filter(Boolean).join(' ').trim();
+    const raw = String((details?.name || nameFromFields || '')).trim();
+    if (!raw) return '';
+    // If already has a leading Dr/Dr./Doctor keep it; else prefix 'Dr.'
+    if (/^(?:dr\.?|doctor)\s+/i.test(raw)) return raw;
+    return `Dr. ${raw}`;
+  };
+  const titledName = doctorLoading ? '' : getDoctorNameWithTitle(doctorDetails);
+
 
   return (
     <div className='w-full h-12 border-b-[0.5px] border-[#D6D6D6] flex items-center py-2 px-4 gap-3'>
@@ -142,7 +166,7 @@ const DocNavbar = ({ moduleSwitcher }) => {
       {/* Right: Actions */}
       <div className='flex items-center gap-2'>
         {/* Optional Hospital/Doctor module switcher injected by Hospital header */}
-        {(moduleSwitcher || true) && (
+        {/* {(moduleSwitcher || true) && (
           <>
             {moduleSwitcher ? (
               moduleSwitcher
@@ -170,7 +194,7 @@ const DocNavbar = ({ moduleSwitcher }) => {
             )}
             <Partition />
           </>
-        )}
+        )} */}
         {/* Add New dropdown */}
         <div className='relative' ref={addMenuRef}>
           <button
@@ -237,20 +261,20 @@ const DocNavbar = ({ moduleSwitcher }) => {
 
         <div className='relative flex items-center gap-2' ref={profileRef}>
           <span className='font-semibold text-base text-[#424242]'>
-            { doctorLoading ? 'Loading…' : doctorError ? 'Error' : (doctorDetails?.name?.split(' ')?.[0] || '—') }
+            { doctorLoading ? 'Loading…' : doctorError ? 'Error' : (displayName || '—') }
           </span>
           <button type='button' onClick={()=>setShowProfile(v=>!v)} className='cursor-pointer'>
-            <AvatarCircle name={doctorLoading ? '?' : (doctorDetails?.name || (doctorError ? '!' : '?'))} size='s' color={doctorError ? 'grey' : 'orange'} />
+            <AvatarCircle name={doctorLoading ? '?' : (displayName || (doctorError ? '!' : '?'))} size='s' color={doctorError ? 'grey' : 'orange'} />
           </button>
           {showProfile && (
             <div className='absolute top-9 right-0 w-[326px] bg-white border border-gray-200 rounded-lg shadow-lg overflow-hidden z-50'>
               {/* Header */}
               <div className='p-4 flex flex-col items-start gap-[10px] border-b border-gray-200'>
                 <div className='flex gap-3'>
-                    <AvatarCircle name={doctorLoading ? '?' : (doctorDetails?.name || (doctorError ? '!' : '?'))} size='xl' color={doctorError ? 'grey' : 'orange'} />
+                    <AvatarCircle name={doctorLoading ? '?' : (displayName || (doctorError ? '!' : '?'))} size='xl' color={doctorError ? 'grey' : 'orange'} />
                 <div className='flex flex-col'>
                   <div className='text-[16px] leading-[22px] font-semibold text-secondary-grey400'>
-                    { doctorLoading ? 'Loading…' : doctorError ? 'Failed to load' : (doctorDetails?.name || '—') }
+                    { doctorLoading ? 'Loading…' : doctorError ? 'Failed to load' : (titledName || '—') }
                   </div>
                   <div className='text-[14px] leading-[18px] text-secondary-grey300'>
                     { doctorLoading ? 'Please wait' : (doctorDetails?.designation || doctorDetails?.specializations?.[0] || '—') }
