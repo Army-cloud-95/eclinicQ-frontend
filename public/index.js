@@ -81,6 +81,8 @@ import patientWhite from './Doctor_module/sidebar/patient_white.png';
 import queueBlue from './Doctor_module/sidebar/queue_blue.png';
 import queueWhite from './Doctor_module/sidebar/queue_white.png';
 import settingBlue from './Doctor_module/sidebar/setting_blue.png';
+import helpWhite from './Doctor_module/sidebar/help_white.png';
+
 // Doctor info icons
 import blueBag from './doctor_info/bluebag.png';
 import docIcon from './doctor_info/doc.png';
@@ -167,7 +169,8 @@ export {
   patientWhite,
   queueBlue,
   queueWhite,
-  settingBlue
+  settingBlue, 
+  helpWhite
 };
 
 

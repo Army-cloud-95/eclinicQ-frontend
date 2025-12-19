@@ -8,6 +8,9 @@ export default {
   theme: {
     extend: {
       colors: {
+        green : { 
+          primary100: '3EAF3F',
+        },
         blue: {
           primary400: '#1E3A8A',
           primary300: '#0D47A1',

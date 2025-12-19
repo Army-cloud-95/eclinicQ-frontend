@@ -46,3 +46,12 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 input[type="date"] {
   -webkit-appearance: none;
 }
+
+/* hide scrollbar but keep scroll */
+.no-scrollbar {
+  -ms-overflow-style: none;  /* IE & Edge */
+  scrollbar-width: none;     /* Firefox */
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;             /* Chrome, Safari */
+}
