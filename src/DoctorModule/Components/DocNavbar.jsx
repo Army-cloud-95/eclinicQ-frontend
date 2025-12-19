@@ -169,6 +169,7 @@ const DocNavbar = ({ moduleSwitcher }) => {
           </div>
         </div>
       </div>
+        <Partition />
 
       {/* Right: Actions */}
       <div className='flex items-center gap-2'>

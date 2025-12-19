@@ -543,7 +543,7 @@ const Queue = () => {
       <div className='sticky top-0 z-10 bg-white border-b border-gray-200 px-4 py-2 flex items-center'>
         <div className='relative mr-6' ref={slotAnchorRef}>
           <button type='button' className='flex items-center bg-white rounded-md px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-50' onClick={e=>{ setSlotOpen(v=>!v); const r=e.currentTarget.getBoundingClientRect(); const width=360; const left=Math.max(8, Math.min(r.left, window.innerWidth-width-8)); const top=Math.min(r.bottom+8, window.innerHeight-8-4); setSlotPos({top,left,width}); }}>
-            <span className='font-medium mr-1'>{timeSlots.find(t=> t.key===slotValue)?.label || 'Morning'}</span>
+            <span className='font-medium mr-1 '>{timeSlots.find(t=> t.key===slotValue)?.label || 'Morning'}</span>
             <span className='text-gray-500 p-2 border-r border-gray-300'>({timeSlots.find(t=> t.key===slotValue)?.time || ''})</span>
             <ChevronDown className='ml-2 h-4 w-4   text-gray-500'/>
           </button>
@@ -704,7 +704,7 @@ const Queue = () => {
           <div className='flex items-center justify-between px-1 py-3'>
             <div className='flex gap-3'>
               {filters.map(f => (
-                <button key={f} onClick={()=> setActiveFilter(f)} className={`px-[6px] py-1 rounded-lg font-medium text-sm transition-colors ${activeFilter===f? 'bg-blue-primary50 border border-blue-primary150 text-blue-primary250 shadow-sm':'text-gray-600 hover:text-gray-800'}`}>{f} <span className='ml-1 border px-[.25rem] text-xs'>{getFilterCount(f)}</span></button>
+                <button key={f} onClick={()=> setActiveFilter(f)} className={`px-[6px] py-1 rounded-lg font-medium text-sm transition-colors ${activeFilter===f? 'bg-blue-primary50 border border-blue-primary150 text-blue-primary250 shadow-sm':'text-gray-600 hover:text-gray-800'}`}>{f} <span className={`ml-1 ${activeFilter === f ? 'border-blue-primary150' : 'border-gray-200'} border  px-[.25rem] bg-white rounded-md text-xs`}>{getFilterCount(f)}</span></button>
               ))}
             </div>
             <div className='flex items-center gap-6'>
@@ -715,7 +715,7 @@ const Queue = () => {
               </div> */}
               <img src={queue_download} alt="" className='w-4' />
               <img src={vertical} alt="" className='h-6' />
-              <Badge size='large' type='ghost' color='blue' hover className='cursor-pointer select-none' onClick={()=> setShowWalkIn(true)}>
+              <Badge size='large' type='ghost' color='blue' hover className='cursor-pointer hover:bg-blue-primary250 hover:text-white select-none' onClick={()=> setShowWalkIn(true)}>
             Walk-in Appointment
           </Badge>
             </div>
