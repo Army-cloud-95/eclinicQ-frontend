@@ -137,9 +137,9 @@ export default function SampleTable({
     };
 
 	return (
-		<div className="relative h-[calc(100vh-140px)] z-10 rounded-xl border-[0.5px] border-secondary-grey100 bg-white">
+		<div className="relative h-[calc(100vh-140px)] z-10 rounded-xl border-[0.5px] no-scrollbar  border-secondary-grey100 bg-white">
 			{/* Scroll Area: leave space for sticky footer */}
-			<div className="h-full overflow-auto pb-16">
+			<div className="h-full no-scrollbar overflow-auto pb-16">
 				<table
 					className={`w-full border-collapse text-sm table-auto`}
 					style={{ minWidth }}

@@ -12,8 +12,8 @@ export default defineConfig({
   },
   server: {
     proxy: {
-      "/api": {
-        target: "https://api.upcharq.com", // backend origin
+      '/api': {
+        target:'https://api.upcharq.com' , // backend origin
         changeOrigin: true,
         secure: false,
       },

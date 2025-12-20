@@ -92,7 +92,7 @@ export default function Header({
         </button>
         <span className="mx-2 h-5 w-px bg-gray-400" aria-hidden="true" />
         {/* Blue ghost-style button */}
-  <Badge type="ghost" color="blue" size="l" className="!rounded-md" onClick={() => { if (typeof (/** @type any */addPath) === 'function') { (addPath)(); } else if (addPath) { navigate(addPath); } }}>
+  <Badge type="ghost" color="blue" size="l" className="!rounded-md hover:bg-blue-primary250 hover:text-white" onClick={() => { if (typeof (/** @type any */addPath) === 'function') { (addPath)(); } else if (addPath) { navigate(addPath); } }}>
           {addLabel}
         </Badge>
       </div>

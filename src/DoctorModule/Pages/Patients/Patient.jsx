@@ -121,7 +121,7 @@ export default function Patient() {
           </div>
         </div>
       ) : (
-  <div className=''>
+  <div className='overflow-y-hidden'>
         <SampleTable
           columns={columns}
           data={pageRows}

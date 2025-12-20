@@ -21,6 +21,7 @@ import {
   queueBlue,
   queueWhite,
   settingBlue,
+  helpWhite,
 } from "../../../public/index.js";
 import AvatarCircle from "../../components/AvatarCircle";
 
@@ -164,7 +165,7 @@ const DocSidebar = () => {
             aria-haspopup="true"
             aria-expanded={showSwitch}
           >
-            <AvatarCircle name="Manipal Hospital" size="s" color="orange" className="shrink-0" />
+            <AvatarCircle name="Manipal Hospital" size="s" color="orange" icon={<Building2 size={14} />} className="shrink-0" />
             <div className="flex-1 min-w-0 text-left">
               <div className="text-[13px] font-medium text-gray-900 truncate">Manipal Hospit...</div>
               <div className="text-[11px] text-gray-500 leading-tight">Hospital</div>
@@ -190,21 +191,21 @@ const DocSidebar = () => {
                     <button
                       type="button"
                       onClick={() => setSelectedAccount(acc.id)}
-                      className={`w-full flex items-center gap-2 px-2 py-2 rounded text-left ${selectedAccount === acc.id ? 'bg-[#F7FAFF]' : 'hover:bg-gray-50'}`}
+                      className={`w-full flex items-center gap-3 px-2 py-2 border border-blue-200 rounded text-left ${selectedAccount === acc.id ? 'bg-[#F7FAFF]' : 'hover:bg-gray-50'}`}
                     >
                       {/* custom radio */}
                       <span className={`shrink-0 w-4 h-4 rounded-full border flex items-center justify-center ${selectedAccount === acc.id ? 'border-[#2372EC] bg-[#2372EC]' : 'border-gray-400 bg-white'}`}>
                         {selectedAccount === acc.id && <span className="w-1.5 h-1.5 rounded-full bg-white" />}
                       </span>
                       <span className="shrink-0 w-5 h-5 rounded-sm bg-[#F3F8FF] border border-[#BFD6FF] flex items-center justify-center">
-                        <Building2 size={14} className="text-[#2372EC]" />
+                        <AvatarCircle name="Manipal Hospital" size="s" color="orange" icon={<Building2 size={14} />} className="shrink-0" />
                       </span>
                       <div className="flex-1 min-w-0">
-                        <div className="text-[13px] font-medium text-gray-900 truncate">{acc.name}</div>
+                        <div className="text-[13px] font-medium text-gray-700 truncate">{acc.name}</div>
                         <div className="text-[11px] text-gray-500 truncate">{acc.type}{acc.location ? ` | ${acc.location}` : ''}</div>
                       </div>
                       {acc.isSelf && (
-                        <span className="ml-2 text-[10px] px-1.5 py-0.5 rounded border border-green-300 bg-green-50 text-green-700 font-medium">Self</span>
+                        <span className="ml-2 text-[14px]  px-1.5 py-0.5 rounded border border-green-300 bg-green-50 text-green-500 font-light">Self</span>
                       )}
                     </button>
                     {i === 0 && (
@@ -234,10 +235,9 @@ const DocSidebar = () => {
                   to={item.path}
                   end={item.path === "/doc"}
                   className={({ isActive }) =>
-                    `flex items-center gap-[6px] py-3 px-4 h-[44px] w-full text-left transition-colors ${
-                      isActive
-                        ? "bg-[#2372EC] text-white border-l-[3px] border-[#96BFFF] "
-                        : "text-gray-800 hover:bg-gray-100"
+                    `flex items-center gap-[6px] py-3 px-4 h-[44px] w-full text-left transition-colors ${isActive
+                      ? "  bg-gradient-to-r from-[#2372EC] via-[#68A3FF] to-[#2373EC] hover:from-[#1760cd] hover:via-[#1760cd] hover:to-[#1760cd] text-white border-l-[3px] border-[#96BFFF] "
+                      : "text-gray-800 hover:bg-gray-100"
                     }`
                   }
                 >
@@ -261,11 +261,10 @@ const DocSidebar = () => {
                 <button
                   type="button"
                   onClick={() => setOpenSettings((v) => !v)}
-                  className={`w-full flex items-center justify-between py-3 px-4 h-[44px] transition-colors ${
-                    isSettingsRoute
-                      ? "bg-[#2372EC] text-white border-l-[3px] border-[#96BFFF]"
-                      : "text-gray-800 hover:bg-gray-100"
-                  }`}
+                  className={`w-full flex items-center justify-between py-3 px-4 h-[44px] transition-colors ${isSettingsRoute
+                    ? "bg-[#2372EC] text-white border-l-[3px] border-[#96BFFF]"
+                    : "text-gray-800 hover:bg-gray-100"
+                    }`}
                 >
                   <span className="inline-flex items-center gap-[6px]">
                     <img src={isSettingsRoute ? settingBlue : settingUnselect} alt="Settings" className="w-5 h-5" />
@@ -286,8 +285,7 @@ const DocSidebar = () => {
                           <NavLink
                             to={s.to}
                             className={({ isActive }) =>
-                              `block text-sm px-3 py-2 my-[2px] rounded-sm ${
-                                isActive ? "bg-blue-50 text-gray-900" : "text-gray-700 hover:bg-gray-50"
+                              `block text-sm px-3 py-2 my-[2px] rounded-sm ${isActive ? "bg-blue-50 text-gray-900" : "text-gray-700 hover:bg-gray-50"
                               }`
                             }
                           >
@@ -299,8 +297,7 @@ const DocSidebar = () => {
                                 key={sub.to}
                                 to={sub.to}
                                 className={({ isActive }) =>
-                                  `block text-xs px-3 py-1 my-[2px] rounded-sm ${
-                                    isActive ? "bg-blue-100 text-gray-900" : "text-gray-700 hover:bg-gray-50"
+                                  `block text-xs px-3 py-1 my-[2px] rounded-sm ${isActive ? "bg-blue-100 text-gray-900" : "text-gray-700 hover:bg-gray-50"
                                   }`
                                 }
                               >
@@ -314,8 +311,7 @@ const DocSidebar = () => {
                           key={s.to}
                           to={s.to}
                           className={({ isActive }) =>
-                            `block text-sm px-3 py-2 my-[2px] rounded-sm ${
-                              isActive ? "bg-blue-50 text-gray-900" : "text-gray-700 hover:bg-gray-50"
+                            `block text-sm px-3 py-2 my-[2px] rounded-sm ${isActive ? "bg-blue-50 text-gray-900" : "text-gray-700 hover:bg-gray-50"
                             }`
                           }
                         >
@@ -329,7 +325,7 @@ const DocSidebar = () => {
             );
           })}
         </nav>
-      
+
       </div>
 
       {/* Bottom Section */}
@@ -337,14 +333,14 @@ const DocSidebar = () => {
         <div
           className={`flex items-center gap-[6px] w-full text-left `}
         >
-          <HelpCircle size={18} /> Help & Support
+          <img src={helpWhite} alt="Help & Support" className="w-5 h-5" /> Help & Support
         </div>
 
         <div>
-            <ArrowRight size={18}/>
+          <ArrowRight size={18} />
         </div>
       </div>
-    </div>
+    </div >
   );
 };
 

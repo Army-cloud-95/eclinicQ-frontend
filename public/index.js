@@ -56,6 +56,11 @@ import whiteSubscription from './Doctor_module/navbar/avatar/white_subscription.
 import collapse_white from './Doctor_module/navbar/header/collapse_white.png';
 import vertical from './Doctor_module/vertical.png';
 // Doctor module dashboard icons
+import arrowRightNav from './Doctor_module/dashboard/arrowRightNav.svg';
+import appointementNav from './Doctor_module/dashboard/appointementNav.svg'; 
+import mapPoint from './Doctor_module/dashboard/mapPoint.svg';
+import staff from './Doctor_module/dashboard/staff.svg';
+import vector from './Doctor_module/dashboard/vector.svg';
 import admitWhite from './Doctor_module/dashboard/admit_white.png';
 import appointementWhite from './Doctor_module/dashboard/appointement_white.png';
 import avgTimeWhite from './Doctor_module/dashboard/avg_time_white.png';
@@ -81,11 +86,17 @@ import patientWhite from './Doctor_module/sidebar/patient_white.png';
 import queueBlue from './Doctor_module/sidebar/queue_blue.png';
 import queueWhite from './Doctor_module/sidebar/queue_white.png';
 import settingBlue from './Doctor_module/sidebar/setting_blue.png';
+import helpWhite from './Doctor_module/sidebar/help_white.png';
+
 // Doctor info icons
 import blueBag from './doctor_info/bluebag.png';
 import docIcon from './doctor_info/doc.png';
 import whiteBag from './doctor_info/whitebag.png';
 
+import morningQueue from "/public/Doctor_module/queue/morningQueuee.svg";
+import eveningQueue from './Doctor_module/queue/eveningQueue.svg';
+import nightQueue from './Doctor_module/queue/nightQueue.svg';
+import afternoonQueue from './Doctor_module/queue/afternoonQueue.svg';  
 
 export {
   // Root PNGs
@@ -149,6 +160,11 @@ export {
   downloadWhite,
   engageWhite,
   newPatientWhite,
+  vector,
+  staff, 
+  mapPoint,
+  arrowRightNav,
+  appointementNav,
   tokenWhite,
   waitingWhite,
   walkInBlue,
@@ -167,7 +183,13 @@ export {
   patientWhite,
   queueBlue,
   queueWhite,
-  settingBlue
+  settingBlue, 
+  helpWhite, 
+  //queue icons
+  morningQueue,
+  eveningQueue,
+  nightQueue,
+  afternoonQueue,
 };
 
 

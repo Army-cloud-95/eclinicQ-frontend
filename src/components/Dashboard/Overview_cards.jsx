@@ -54,8 +54,8 @@ const Overview_cards = ({
         className="absolute inset-0 rounded-[12px]"
         style={{
           background: isProfit
-            ? "linear-gradient(95deg, #FFFFFF 0%, rgba(255, 255, 255, 0.565446) 76.8%, rgba(109, 219, 114, 0.15) 100%)"
-            : "linear-gradient(95deg, #FFFFFF 0%, rgba(255, 255, 255, 0.565446) 76.8%, rgba(254, 112, 112, 0.12) 100%)",
+            ? 'linear-gradient(45deg, rgba(255,255,255,1) 0%, rgba(255,255,255,1) 65.54%, rgba(109,219,114,0.25) 100%)'
+            : 'linear-gradient(45deg, rgba(255,255,255,1) 0%, rgba(255,255,255,1) 65.54%, rgba(240,68,56,0.25) 100%)',
         }}
       ></div>
       <div className="relative z-10 flex items-stretch justify-between gap-6">

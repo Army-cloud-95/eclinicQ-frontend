@@ -9,15 +9,15 @@ import { Mail, Phone, IdCard, User, LogOut, ChevronRight, ChevronDown, UserPlus,
 import NotificationDrawer from '../../components/NotificationDrawer.jsx'
 import AddPatientDrawer from '../../components/PatientList/AddPatientDrawer.jsx'
 import BookAppointmentDrawer from '../../components/Appointment/BookAppointmentDrawer.jsx'
-import { vertical ,whiteProfile, blueId, blueMail, blueCall } from '../../../public/index.js'
+import { vertical, whiteProfile, blueId, mapPoint, appointementNav,arrowRightNav, staff, vector, blueMail, blueCall } from '../../../public/index.js'
 
 
 
 const Partition = () => {
   return (
     <div className='w-[8.5px] h-[20px] flex gap-[10px] items-center justify-center'>
-        <div className='w-[0.5px] h-full bg-[#B8B8B8]'>
-        </div>
+      <div className='w-[0.5px] h-full bg-[#B8B8B8]'>
+      </div>
     </div>
   )
 }
@@ -89,23 +89,23 @@ const DocNavbar = ({ moduleSwitcher }) => {
   }, []);
 
   // Close on outside click / Escape
-  useEffect(()=>{
-    const onClick = (e)=>{
-      if(profileRef.current && !profileRef.current.contains(e.target)) setShowProfile(false);
-      if(addMenuRef.current && !addMenuRef.current.contains(e.target)) setShowAddMenu(false);
+  useEffect(() => {
+    const onClick = (e) => {
+      if (profileRef.current && !profileRef.current.contains(e.target)) setShowProfile(false);
+      if (addMenuRef.current && !addMenuRef.current.contains(e.target)) setShowAddMenu(false);
     };
-    const onKey = (e)=>{ if(e.key==='Escape') { setShowProfile(false); setShowAddMenu(false); } };
+    const onKey = (e) => { if (e.key === 'Escape') { setShowProfile(false); setShowAddMenu(false); } };
     document.addEventListener('mousedown', onClick);
     window.addEventListener('keydown', onKey);
-    return ()=>{ document.removeEventListener('mousedown', onClick); window.removeEventListener('keydown', onKey); };
-  },[]);
+    return () => { document.removeEventListener('mousedown', onClick); window.removeEventListener('keydown', onKey); };
+  }, []);
 
   // Ensure doctor details are loaded even if user hit /doc directly (bypassing SignIn component fetch)
-  useEffect(()=>{
-    if(!doctorDetails && !doctorLoading && !_doctorFetchPromise){
+  useEffect(() => {
+    if (!doctorDetails && !doctorLoading && !_doctorFetchPromise) {
       fetchDoctorDetails?.(getDoctorMe);
     }
-  },[doctorDetails, doctorLoading, fetchDoctorDetails, _doctorFetchPromise]);
+  }, [doctorDetails, doctorLoading, fetchDoctorDetails, _doctorFetchPromise]);
 
   const handleCopyProfileLink = async () => {
     try {
@@ -113,7 +113,7 @@ const DocNavbar = ({ moduleSwitcher }) => {
       const url = code ? `${window.location.origin}/doctor/${code}` : window.location.origin;
       await navigator.clipboard.writeText(url);
       setCopied(true);
-      setTimeout(()=>setCopied(false), 1500);
+      setTimeout(() => setCopied(false), 1500);
     } catch (e) {
       // no-op
     }
@@ -148,10 +148,10 @@ const DocNavbar = ({ moduleSwitcher }) => {
     <div className='w-full h-12 border-b-[0.5px] border-[#D6D6D6] flex items-center py-2 px-4 gap-3'>
       {/* Left: Title */}
       <div className='flex items-center gap-4 '>
-          <img src={collapse_white} alt='Collapse' className='w-4 h-4' />
-          <img src={vertical} alt="" className='h-5' />
+        <img src={collapse_white} alt='Collapse' className='w-4 h-4' />
+        <img src={vertical} alt="" className='h-5' />
         <span className='text-2xl font-medium text-secondary-grey400'>Dashboard</span>
-        
+
       </div>
 
       {/* Center: Search (right-aligned, fixed width) */}
@@ -169,6 +169,7 @@ const DocNavbar = ({ moduleSwitcher }) => {
           </div>
         </div>
       </div>
+        <Partition />
 
       {/* Right: Actions */}
       <div className='flex items-center gap-2'>
@@ -206,7 +207,7 @@ const DocNavbar = ({ moduleSwitcher }) => {
         <div className='relative' ref={addMenuRef}>
           <button
             type='button'
-            onClick={() => setShowAddMenu(v=>!v)}
+            onClick={() => setShowAddMenu(v => !v)}
             className='inline-flex items-center bg-[#2372EC] text-white px-3 h-8 rounded-[6px] gap-2 hover:bg-[#1f62c9] transition-colors shadow-sm'
             aria-haspopup='true'
             aria-expanded={showAddMenu}
@@ -215,43 +216,57 @@ const DocNavbar = ({ moduleSwitcher }) => {
             <ChevronDown className={`w-4 h-4 text-white transition-transform ${showAddMenu ? 'rotate-180' : ''}`} />
           </button>
           {showAddMenu && (
-            <div className='absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded-md shadow-lg py-1 z-50'>
+            <div className='absolute right-0 mt-1 w-48 px-2 bg-white border border-gray-200 rounded-md shadow-lg py-1 z-50'>
               <button
                 onClick={() => { setShowAddMenu(false); setAddPatientOpen(true); }}
-                className='w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-800 hover:bg-gray-50'
+                className='w-full flex items-center justify-between gap-2 px-3 py-2 text-sm text-gray-800 hover:rounded-md  hover:bg-gray-50'
               >
-                <UserPlus className='w-4 h-4 text-[#597DC3]' />
+                <span className='flex gap-2'>
+                <img src={vector} alt="" className='w-4 h-4 text-[#597DC3]' />
                 <span>Patient</span>
+                </span>
+                <img src={arrowRightNav} alt="" className='w-1.5 h-1.5 text-gray-900' />
+
               </button>
               <button
                 onClick={() => { setShowAddMenu(false); }}
-                className='w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-800 hover:bg-gray-50'
+                className='w-full flex items-center justify-between gap-2 px-3 py-2 text-sm text-gray-800 hover:rounded-md hover:bg-gray-50'
               >
-                <Users className='w-4 h-4 text-[#597DC3]' />
+                <span className='flex gap-2'>
+
+                <img src={staff} alt="" className='w-4 h-4 text-[#597DC3]' />
                 <span>Staff</span>
+                </span>
+                <img src={arrowRightNav} alt="" className='w-1.5 h-1.5 text-gray-900' />
+
               </button>
               <button
                 onClick={() => { setShowAddMenu(false); }}
-                className='w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-800 hover:bg-gray-50'
+                className='w-full flex items-center justify-between gap-2 px-3 py-2 text-sm text-gray-800 hover:rounded-md hover:bg-gray-50'
               >
-                <GitBranch className='w-4 h-4 text-[#597DC3]' />
-                <span>Branch</span>
+                <span className='flex gap-2'>
+                <img src={mapPoint} alt="" className='w-4 h-4 text-[#597DC3]' />
+                  <span>Branch</span>
+                </span>
+                <img src={arrowRightNav} alt="" className='w-1.5 h-1.5 text-gray-900' />
               </button>
               <button
                 onClick={() => { setShowAddMenu(false); setBookApptOpen(true); }}
-                className='w-full flex items-center justify-between px-3 py-2 text-sm text-gray-800 hover:bg-gray-50'
+                className='w-full flex items-center justify-between px-3 py-2 text-sm text-gray-800 hover:rounded-md hover:bg-gray-50'
               >
+                <span className='flex gap-2'>
+                <img src={appointementNav} alt="" className='w-4 h-4 text-[#597DC3]' />
                 <span className='inline-flex items-center gap-2'>
-                  <CalendarPlus className='w-4 h-4 text-[#597DC3]' />
                   Appointment
                 </span>
-                <ChevronRight className='w-4 h-4 text-gray-400' />
+                </span>
+                <img src={arrowRightNav} alt="" className='w-1.5 h-1.5 text-gray-900' />
               </button>
             </div>
           )}
         </div>
 
-  {/* Walk-In Appointment button removed as requested */}
+        {/* Walk-In Appointment button removed as requested */}
 
         <Partition />
 
@@ -259,7 +274,7 @@ const DocNavbar = ({ moduleSwitcher }) => {
           <div className='absolute -top-1 -right-1 flex items-center justify-center rounded-full w-[14px] h-[14px] bg-[#F04248]'>
             <span className='font-medium text-[10px] text-white'>8</span>
           </div>
-          <button onClick={()=>setShowNotifications(true)} style={{background:'none',border:'none',padding:0}}>
+          <button onClick={() => setShowNotifications(true)} style={{ background: 'none', border: 'none', padding: 0 }}>
             <img src={bell} alt='Notifications' className='w-5 h-5' />
           </button>
         </div>
@@ -268,9 +283,9 @@ const DocNavbar = ({ moduleSwitcher }) => {
 
         <div className='relative flex items-center gap-2' ref={profileRef}>
           <span className='font-semibold text-base text-[#424242]'>
-            { doctorLoading ? 'Loading…' : doctorError ? 'Error' : (displayName || '—') }
+            {doctorLoading ? 'Loading…' : doctorError ? 'Error' : (displayName || '—')}
           </span>
-          <button type='button' onClick={()=>setShowProfile(v=>!v)} className='cursor-pointer'>
+          <button type='button' onClick={() => setShowProfile(v => !v)} className='cursor-pointer'>
             <AvatarCircle name={doctorLoading ? '?' : (displayName || (doctorError ? '!' : '?'))} size='s' color={doctorError ? 'grey' : 'orange'} />
           </button>
           {showProfile && (
@@ -278,106 +293,106 @@ const DocNavbar = ({ moduleSwitcher }) => {
               {/* Header */}
               <div className='p-4 flex flex-col items-start gap-[10px] border-b border-gray-200'>
                 <div className='flex gap-3'>
-                    <AvatarCircle name={doctorLoading ? '?' : (displayName || (doctorError ? '!' : '?'))} size='xl' color={doctorError ? 'grey' : 'orange'} />
-                <div className='flex flex-col'>
-                  <div className='text-[16px] leading-[22px] font-semibold text-secondary-grey400'>
-                    { doctorLoading ? 'Loading…' : doctorError ? 'Failed to load' : (titledName || '—') }
+                  <AvatarCircle name={doctorLoading ? '?' : (displayName || (doctorError ? '!' : '?'))} size='xl' color={doctorError ? 'grey' : 'orange'} />
+                  <div className='flex flex-col'>
+                    <div className='text-[16px] leading-[22px] font-semibold text-secondary-grey400'>
+                      {doctorLoading ? 'Loading…' : doctorError ? 'Failed to load' : (titledName || '—')}
+                    </div>
+                    <div className='text-[14px] leading-[18px] text-secondary-grey300'>
+                      {doctorLoading ? 'Please wait' : (doctorDetails?.designation || doctorDetails?.specializations?.[0] || '—')}
+                    </div>
+                    <div className='text-[14px] leading-[19px] text-secondary-grey300'>
+                      {doctorLoading ? '' : (doctorDetails?.education.join(' - ') || '—')}
+                    </div>
                   </div>
-                  <div className='text-[14px] leading-[18px] text-secondary-grey300'>
-                    { doctorLoading ? 'Please wait' : (doctorDetails?.designation || doctorDetails?.specializations?.[0] || '—') }
-                  </div>
-                  <div className='text-[14px] leading-[19px] text-secondary-grey300'>
-                    { doctorLoading ? '' : (doctorDetails?.education.join(' - ') || '—') }
-                  </div>
-                </div>  
                 </div>
 
-                    {!doctorError && (
-                <div className='flex flex-col gap-1 text-[14px] leading-[22px] border-gray-200'>
-                  <div className='flex items-center gap-2 text-gray-700'>
-                    <img src={blueMail} className='w-4' alt='' />
-                    <span className=''>{doctorDetails?.emailId || '—'}</span>
+                {!doctorError && (
+                  <div className='flex flex-col gap-1 text-[14px] leading-[22px] border-gray-200'>
+                    <div className='flex items-center gap-2 text-gray-700'>
+                      <img src={blueMail} className='w-4' alt='' />
+                      <span className=''>{doctorDetails?.emailId || '—'}</span>
+                    </div>
+                    <div className='flex items-center gap-2 text-gray-700'>
+                      <img src={blueCall} className='w-4' alt='' />
+                      <span>{doctorDetails?.contactNumber || '—'}</span>
+                    </div>
+                    <div className='flex items-center gap-2 text-gray-700'>
+                      <img src={blueId} className='w-4' alt='' />
+                      <span>{doctorDetails?.doctorCode || doctorDetails?.userId?.slice(0, 8) + '…' || '—'}</span>
+                    </div>
                   </div>
-                  <div className='flex items-center gap-2 text-gray-700'>
-                    <img src={blueCall} className='w-4' alt='' />
-                    <span>{doctorDetails?.contactNumber || '—'}</span>
-                  </div>
-                  <div className='flex items-center gap-2 text-gray-700'>
-                    <img src={blueId} className='w-4' alt='' />
-                    <span>{doctorDetails?.doctorCode || doctorDetails?.userId?.slice(0,8)+'…' || '—'}</span>
-                  </div>
-                </div>
-              )}
+                )}
               </div>
 
               {/* Contact block */}
-              
+
 
               {doctorError && !doctorLoading && (
                 <div className='px-4 pb-3 text-xs text-red-600 space-y-2 border-b border-gray-200'>
                   <div className='font-medium'>Profile load failed.</div>
                   <div className='text-red-500'>{doctorError}</div>
                   <button
-                    onClick={()=>fetchDoctorDetails?.(getDoctorMe,{ force: true })}
+                    onClick={() => fetchDoctorDetails?.(getDoctorMe, { force: true })}
                     className='h-8 px-3 rounded bg-red-50 border border-red-300 text-red-700 text-xs hover:bg-red-100'
                   >Retry</button>
                 </div>
               )}
 
               {/* Actions */}
-             <div className="p-2 gap-1 flex flex-col text-sm">
-  <ProfileMenuItem
-    icon={whiteProfile}
-    label="My Profile"
-    onClick={() => {
-      setShowProfile(false);
-      navigate('/doc/profile');
-    }}
-  />
+              <div className="p-2 gap-1 flex flex-col text-sm">
+                <ProfileMenuItem
+                  icon={whiteProfile}
+                  label="My Profile"
+                  onClick={() => {
+                    setShowProfile(false);
+                    navigate('/doc/profile');
+                  }}
+                />
 
-  <ProfileMenuItem
-    icon={whiteSubscription}
-    label="Subscription"
-    onClick={() => {
-      setShowProfile(false);
-      navigate('/doc/subscription');
-    }}
-  />
+                <ProfileMenuItem
+                  icon={whiteSubscription}
+                  label="Subscription"
+                  onClick={() => {
+                    setShowProfile(false);
+                    navigate('/doc/subscription');
+                  }}
+                />
 
-  <ProfileMenuItem
-    icon={whiteOutOfOffice}
-    label="Out Of Office"
-    onClick={() => {
-      setShowProfile(false);
-      navigate('/doc/out-of-office');
-    }}
-  />
+                <ProfileMenuItem
+                  icon={whiteOutOfOffice}
+                  label="Out Of Office"
+                  onClick={() => {
+                    setShowProfile(false);
+                    navigate('/doc/out-of-office');
+                  }}
+                />
 
-  <ProfileMenuItem
-    icon={whiteProfileLink}
-    label={copied ? 'Link Copied' : 'Copy Profile Link'}
-    onClick={handleCopyProfileLink}
-  />
+                <ProfileMenuItem
+                  icon={whiteProfileLink}
+                  label={copied ? 'Link Copied' : 'Copy Profile Link'}
+                  onClick={handleCopyProfileLink}
+                />
 
-  <ProfileMenuItem
-    icon={whiteLogout}
-    label="Logout"
-    onClick={() => {
-      setShowProfile(false);
-      // TODO: logout
-    }}
-  />
-</div>
+                <ProfileMenuItem
+                  icon={whiteLogout}
+                  label="Logout"
+                  onClick={() => {
+                    setShowProfile(false);
+                    // TODO: logout
+                  }}
+                />
+              </div>
 
               {doctorLoading && <div className='absolute inset-0 bg-white/60 flex items-center justify-center text-xs text-gray-500'>Loading…</div>}
             </div>
           )}
         </div>
-  </div>
-  <NotificationDrawer show={showNotifications} onClose={()=>setShowNotifications(false)} />
-  <AddPatientDrawer open={addPatientOpen} onClose={()=>setAddPatientOpen(false)} onSave={()=>setAddPatientOpen(false)} />
-  <BookAppointmentDrawer open={bookApptOpen} onClose={()=>setBookApptOpen(false)} />
-  </div>
+      </div>
+      <NotificationDrawer show={showNotifications} onClose={() => setShowNotifications(false)} />
+      <AddPatientDrawer open={addPatientOpen} onClose={() => setAddPatientOpen(false)} onSave={() => setAddPatientOpen(false)} />
+      <BookAppointmentDrawer open={bookApptOpen} onClose={() => setBookApptOpen(false)} />
+    </div>
   )
 }
 

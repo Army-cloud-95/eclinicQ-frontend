@@ -172,4 +172,12 @@ input[type="date"] {
 
 .rdp-dropdown option:hover {
   background-color: hsl(var(--accent));
+
+/* hide scrollbar but keep scroll */
+.no-scrollbar {
+  -ms-overflow-style: none;  /* IE & Edge */
+  scrollbar-width: none;     /* Firefox */
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;             /* Chrome, Safari */
 }

@@ -32,8 +32,8 @@ const SectionCard = ({ title, children, right }) => (
       <h3 className="text-[#424242] text-sm sm:text-base font-medium">{title}</h3>
       <div className="flex items-center gap-2">
         {right}
-        <button className="p-1.5 rounded border border-gray-200 hover:bg-gray-50">
-          <Download className="w-4 h-4 text-gray-600" />
+        <button className="p-1.5 rounded  hover:bg-gray-50">
+          <Download className="w-5 h-5  text-gray-600" />
         </button>
       </div>
     </div>
@@ -72,9 +72,9 @@ const DocDashboard = () => {
         {/* Welcome + Walk-In */}
         <div className="flex items-center justify-between gap-3">
           <p className="text-md text-secondary-grey300">Welcome, Dr. Millin Chavan. Here's an overview of your practice.</p>
-          <div className="flex items-center ">
-            <button onClick={()=> setBookOpen(true)} className="inline-flex items-center gap-2 h-[32px] min-w-[32px] p-2 rounded-md border text-sm border-[#BFD6FF] bg-[#F3F8FF] text-[#2372EC] hover:bg-[#E9F2FF]">
-              <img src={walkInBlue} alt="" className='h-4' />
+          <div className="flex items-center  ">
+            <button onClick={()=> setBookOpen(true)} className=" group inline-flex items-center gap-2 h-[32px] min-w-[32px] p-2 rounded-md border text-sm border-[#BFD6FF] bg-[#F3F8FF] text-[#2372EC] hover:bg-[#2372EC] hover:text-white transition-colors">
+              <img src={walkInBlue} alt="" className='h-4  group-hover:invert group-hover:brightness-0' />
               <span>Walk-In Appointment</span>
             </button>
           </div>
@@ -136,10 +136,10 @@ const DocDashboard = () => {
             {isMonthOpen && (
               <div
                 ref={monthDropRef}
-                className="absolute z-[1000] left-0 top-10 w-[200px] rounded-md border border-gray-200 bg-white shadow-lg"
+                className="absolute z-[1000] left-0 top-10 w-[120px] rounded-md border border-gray-200 bg-white shadow-lg"
                 role="listbox"
               >
-                <div className="py-1">
+                <div className="py-1 max-h-[200px] overflow-y-auto no-scrollbar">
                   {months.map((m) => (
                     <button
                       key={m}
@@ -160,6 +160,7 @@ const DocDashboard = () => {
     
 
       {/* Overview cards */}
+      <div className='font-semibold text-gray-600'>Appointment Overview</div>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-4 mb-6">
   <Overview_cards title="Avg. Appointment Booked" value={103} percent={12} periodText="from last Year" variant="profit" icon={<img src={appointementWhite} alt="" className="w-5 h-5"/>} />
   <Overview_cards title="Avg. Engage Patient" value={80} percent={-8} periodText="from last Year" variant="loss" icon={<img src={engageWhite} alt="" className="w-5 h-5"/>} />
@@ -176,13 +177,13 @@ const DocDashboard = () => {
         <span className="text-sm sm:text-base font-medium text-[#424242]">Analytics Overview</span>
       </div>
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4 mb-4 sm:mb-6">
-        <SectionCard title="Patients Served" right={<span className="text-xs text-[#626060]">Patients added over the Year</span>}>
+        <SectionCard title="Patients Served" >
           <div className="h-[300px] rounded-md border border-dashed border-gray-300 flex items-center justify-center text-gray-500 text-sm">
             Chart placeholder — to be added
           </div>
         </SectionCard>
 
-        <SectionCard title="Appointment Booking Through" right={<span className="text-xs text-[#626060]">Appointment trends over the Year</span>}>
+        <SectionCard title="Appointment Booking Through" >
           <div className="h-[300px] rounded-md border border-dashed border-gray-300 flex items-center justify-center text-gray-500 text-sm">
             Chart placeholder — to be added
           </div>
