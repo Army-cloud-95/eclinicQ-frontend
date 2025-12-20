@@ -56,6 +56,11 @@ import whiteSubscription from './Doctor_module/navbar/avatar/white_subscription.
 import collapse_white from './Doctor_module/navbar/header/collapse_white.png';
 import vertical from './Doctor_module/vertical.png';
 // Doctor module dashboard icons
+import arrowRightNav from './Doctor_module/dashboard/arrowRightNav.svg';
+import appointementNav from './Doctor_module/dashboard/appointement.svg'; 
+import mapPoint from './Doctor_module/dashboard/mapPoint.svg';
+import staff from './Doctor_module/dashboard/staff.svg';
+import vector from './Doctor_module/dashboard/vector.svg';
 import admitWhite from './Doctor_module/dashboard/admit_white.png';
 import appointementWhite from './Doctor_module/dashboard/appointement_white.png';
 import avgTimeWhite from './Doctor_module/dashboard/avg_time_white.png';
@@ -88,6 +93,10 @@ import blueBag from './doctor_info/bluebag.png';
 import docIcon from './doctor_info/doc.png';
 import whiteBag from './doctor_info/whitebag.png';
 
+import morningQueue from "/public/Doctor_module/queue/morningQueue.svg";
+import eveningQueue from './Doctor_module/queue/eveningQueue.svg';
+import nightQueue from './Doctor_module/queue/nightQueue.svg';
+import afternoonQueue from './Doctor_module/queue/afternoonQueue.svg';  
 
 export {
   // Root PNGs
@@ -151,6 +160,11 @@ export {
   downloadWhite,
   engageWhite,
   newPatientWhite,
+  vector,
+  staff, 
+  mapPoint,
+  arrowRightNav,
+  appointementNav,
   tokenWhite,
   waitingWhite,
   walkInBlue,
@@ -170,7 +184,12 @@ export {
   queueBlue,
   queueWhite,
   settingBlue, 
-  helpWhite
+  helpWhite, 
+  //queue icons
+  morningQueue,
+  eveningQueue,
+  nightQueue,
+  afternoonQueue,
 };
 
 
