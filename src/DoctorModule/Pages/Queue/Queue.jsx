@@ -1503,10 +1503,10 @@ const Queue = () => {
                 setSlotPos({ top, left, width });
               }}
             >
-              <span className="font-medium mr-1 ">
+              <span className="text-secondary-grey400 mr-1">
                 {timeSlots.find((t) => t.key === slotValue)?.label || "Morning"}
               </span>
-              <span className="text-gray-500 py-2 border-gray-300">
+              <span className="text-secondary-grey400 py-2 border-gray-300">
                 ({timeSlots.find((t) => t.key === slotValue)?.time || ""})
               </span>
               <ChevronDown className="ml-2 h-4 w-4 border-gray-300 border-l text-gray-500" />
@@ -1555,7 +1555,7 @@ const Queue = () => {
                                 className={`text-[14px] font-semibold ${
                                   slotValue === key
                                     ? "text-white"
-                                    : "text-gray-900"
+                                    : "text-secondary-grey400"
                                 }`}
                               >
                                 {label}
@@ -1564,7 +1564,7 @@ const Queue = () => {
                                 className={`text-[13px] ${
                                   slotValue === key
                                     ? "text-white/90"
-                                    : "text-gray-600"
+                                    : "text-secondary-grey300"
                                 }`}
                               >
                                 ({time})
@@ -1919,16 +1919,12 @@ const Queue = () => {
               </div> */}
                 <img src={queue_download} alt="" className="w-4" />
                 <img src={vertical} alt="" className="h-6" />
-                <Badge
-                  size="large"
-                  type="ghost"
-                  color="blue"
-                  hover
-                  className="cursor-pointer hover:bg-blue-primary250 hover:text-white select-none"
+                <button
                   onClick={() => setShowWalkIn(true)}
+                  className="inline-flex items-center gap-2 h-[32px] min-w-[32px] p-2 rounded-md border text-sm border-[#BFD6FF] bg-[#F3F8FF] text-[#2372EC] hover:bg-[#2372EC] hover:text-white transition-colors"
                 >
-                  Walk-in Appointment
-                </Badge>
+                  <span>Walk-in Appointment</span>
+                </button>
               </div>
             </div>
 

@@ -25,7 +25,10 @@ export default function InputWithMeta({
   // optional: request parent to close dropdown (outside click or toggle)
   onRequestClose,
   // optional: extra selectors considered as inside when detecting outside clicks
-  outsideIgnoreSelectors = [".shadcn-calendar-dropdown", ".input-meta-dropdown"],
+  outsideIgnoreSelectors = [
+    ".shadcn-calendar-dropdown",
+    ".input-meta-dropdown",
+  ],
 }) {
   const rootRef = useRef(null);
   const isReadOnly = !!RightIcon && readonlyWhenIcon;
@@ -48,7 +51,9 @@ export default function InputWithMeta({
       const t = e.target;
       if (!rootRef.current) return;
       const insideRoot = rootRef.current.contains(t);
-      const insideIgnored = outsideIgnoreSelectors?.some((sel) => t.closest?.(sel));
+      const insideIgnored = outsideIgnoreSelectors?.some((sel) =>
+        t.closest?.(sel)
+      );
       if (!insideRoot && !insideIgnored) {
         onRequestClose?.();
       }
@@ -58,19 +63,28 @@ export default function InputWithMeta({
   }, [dropdownOpen, onRequestClose, outsideIgnoreSelectors]);
 
   return (
-    <div ref={rootRef} className={`w-full flex flex-col gap-1 relative ${className}`}>
+    <div
+      ref={rootRef}
+      className={`w-full flex flex-col gap-1 relative ${className}`}
+    >
       <div className="flex items-center justify-between ">
         <label className="text-sm text-secondary-grey300 flex items-center gap-1">
           {label}
-          {requiredDot && <div className="bg-red-500 w-1 h-1 rounded-full"></div>}
+          {requiredDot && (
+            <div className="bg-red-500 w-1 h-1 rounded-full"></div>
+          )}
         </label>
-        {rightMeta ? <div className="text-xs text-green-600">{rightMeta}</div> : null}
+        {rightMeta ? (
+          <div className="text-xs text-green-600">{rightMeta}</div>
+        ) : null}
       </div>
 
       <div className="relative">
         <input
           type="text"
-          className={`w-full rounded-md border-[0.5px] border-secondary-grey300 p-2 h-8 text-sm focus:ring-blue-300 focus:ring-1 pr-10 ${disabled ? "bg-gray-100 cursor-not-allowed" : ""} ${(isReadOnly || dropdownOpen) ? "cursor-pointer select-none" : ""}`}
+          className={`w-full rounded-md border-[0.5px] border-secondary-grey300 p-2 h-8 text-sm text-secondary-grey400 placeholder:text-secondary-grey100 focus:ring-blue-300 focus:ring-1 pr-10 ${
+            disabled ? "bg-gray-100 cursor-not-allowed" : ""
+          } ${isReadOnly || dropdownOpen ? "cursor-pointer select-none" : ""}`}
           value={value || ""}
           onChange={(e) => {
             if (isReadOnly) return; // prevent typing when read-only
@@ -87,7 +101,16 @@ export default function InputWithMeta({
           onKeyDown={(e) => {
             if (!isReadOnly) return;
             // Allow navigation keys; block typing
-            const allow = ["Tab", "Shift", "ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown", "Escape", "Enter"]; 
+            const allow = [
+              "Tab",
+              "Shift",
+              "ArrowLeft",
+              "ArrowRight",
+              "ArrowUp",
+              "ArrowDown",
+              "Escape",
+              "Enter",
+            ];
             if (!allow.includes(e.key)) {
               e.preventDefault();
             }
@@ -111,29 +134,35 @@ export default function InputWithMeta({
       {dropdown}
 
       {/* Built-in dropdown menu */}
-      {dropdownOpen && Array.isArray(dropdownItems) && dropdownItems.length > 0 && (
-        <div className="input-meta-dropdown absolute left-0 top-full mt-1 z-[10000] bg-white border border-gray-200 rounded-xl shadow-2xl w-full max-h-60 overflow-auto">
-          <ul className="py-1">
-            {dropdownItems.map((it, idx) => {
-              const isSelected = selectedValue === (it.value ?? it.label);
-              return (
-                <li key={it.value ?? idx}>
-                  <button
-                    type="button"
-                    className={`w-full text-left px-3 py-2 text-sm hover:bg-gray-50 ${isSelected ? "bg-gray-100" : ""}`}
-                    onClick={() => {
-                      onSelectItem?.(it);
-                      onRequestClose?.();
-                    }}
-                  >
-                    {itemRenderer ? itemRenderer(it, { isSelected }) : it.label}
-                  </button>
-                </li>
-              );
-            })}
-          </ul>
-        </div>
-      )}
+      {dropdownOpen &&
+        Array.isArray(dropdownItems) &&
+        dropdownItems.length > 0 && (
+          <div className="input-meta-dropdown absolute left-0 top-full mt-1 z-[10000] bg-white border border-gray-200 rounded-xl shadow-2xl w-full max-h-60 overflow-auto">
+            <ul className="py-1">
+              {dropdownItems.map((it, idx) => {
+                const isSelected = selectedValue === (it.value ?? it.label);
+                return (
+                  <li key={it.value ?? idx}>
+                    <button
+                      type="button"
+                      className={`w-full text-left px-3 py-2 text-sm text-secondary-grey400 hover:bg-gray-50 ${
+                        isSelected ? "bg-gray-100" : ""
+                      }`}
+                      onClick={() => {
+                        onSelectItem?.(it);
+                        onRequestClose?.();
+                      }}
+                    >
+                      {itemRenderer
+                        ? itemRenderer(it, { isSelected })
+                        : it.label}
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+        )}
     </div>
   );
 }
