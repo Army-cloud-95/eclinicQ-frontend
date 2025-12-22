@@ -1,4 +1,5 @@
 import React, { useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 
 /**
  * Dropdown — floating menu component.
@@ -23,39 +24,63 @@ export default function Dropdown({
   selectedValue,
 }) {
   const panelRef = useRef(null);
+  const anchorRef = useRef(null);
+  const [position, setPosition] = React.useState({ top: 0, left: 0, width: 0 });
 
   useEffect(() => {
     if (!open) return;
-    const onKey = (e) => { if (e.key === 'Escape') onClose?.(); };
-    document.addEventListener('keydown', onKey);
-    return () => document.removeEventListener('keydown', onKey);
+    const onKey = (e) => {
+      if (e.key === "Escape") onClose?.();
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
   }, [open, onClose]);
 
-  const onBackdropClick = (e) => {
-    // close when click is outside the panel
-    if (panelRef.current && !panelRef.current.contains(e.target)) onClose?.();
-  };
+  // Calculate position based on anchor element
+  useEffect(() => {
+    if (open && anchorRef.current) {
+      const rect = anchorRef.current.getBoundingClientRect();
+      setPosition({
+        top: rect.bottom + window.scrollY,
+        left: rect.left + window.scrollX,
+        width: rect.width,
+      });
+    }
+  }, [open]);
 
-  if (!open) return null;
+  if (!open) return <div ref={anchorRef} className={anchorClassName} />;
 
-  return (
-    <div className={`relative ${anchorClassName}`}>
+  const dropdown = (
+    <>
       {/* global backdrop to catch clicks anywhere */}
-      <div className="fixed inset-0 z-[5999]" onClick={onClose} />
+      <div className="fixed inset-0 z-[9998]" onClick={onClose} />
       <div
         ref={panelRef}
-        className={`absolute z-[6000]  w-[360px] rounded-md border border-gray-200 bg-white shadow-lg ${className}`}
+        className={`fixed z-[9999] rounded-md border border-gray-200 bg-white shadow-lg ${className}`}
+        style={{
+          top: `${position.top}px`,
+          left: `${position.left}px`,
+          width: position.width ? `${position.width}px` : "360px",
+        }}
         onClick={(e) => e.stopPropagation()}
       >
-  <ul className="max-h-[240px] overflow-auto py-1 scrollbar-hide">
+        <ul className="max-h-[240px] overflow-auto py-2 px-2 flex flex-col gap-1 scrollbar-hide">
           {items.map((it) => {
-            const isSel = selectedValue !== undefined && it.value === selectedValue;
+            const isSel =
+              selectedValue !== undefined && it.value === selectedValue;
             return (
               <li key={String(it.value)}>
                 <button
                   type="button"
-                  className={`w-full text-left px-3 py-2 text-sm ${isSel ? "bg-blue-50 text-blue-600" : "hover:bg-gray-50"} ${itemClassName}`}
-                  onClick={() => { onSelect?.(it); onClose?.(); }}
+                  className={`w-full text-left px-3 py-2 text-sm text-secondary-grey400 rounded-md ${
+                    isSel
+                      ? "bg-blue-50 text-blue-600"
+                      : "hover:bg-secondary-grey50"
+                  } ${itemClassName}`}
+                  onClick={() => {
+                    onSelect?.(it);
+                    onClose?.();
+                  }}
                 >
                   {it.label}
                 </button>
@@ -64,6 +89,13 @@ export default function Dropdown({
           })}
         </ul>
       </div>
-    </div>
+    </>
+  );
+
+  return (
+    <>
+      <div ref={anchorRef} className={anchorClassName} />
+      {createPortal(dropdown, document.body)}
+    </>
   );
 }

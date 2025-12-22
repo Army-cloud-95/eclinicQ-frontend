@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { X } from "lucide-react";
+import { drawerCross } from "../../../public/index.js";
 
 export default function GeneralDrawer({
   isOpen,
@@ -87,7 +88,7 @@ export default function GeneralDrawer({
         style={{ zIndex: 5001 }}
       />
 
-  {/* Drawer panel with 16px inset from edges */}
+      {/* Drawer panel with 16px inset from edges */}
       <aside
         aria-hidden={!isOpen}
         className={`absolute top-4 right-4 bottom-4 bg-white shadow-2xl border border-gray-200 rounded-xl overflow-hidden ${
@@ -102,17 +103,21 @@ export default function GeneralDrawer({
           {/* Header */}
           <div className="sticky top-0 z-10 bg-white border-b pb-2">
             <div className="flex items-center justify-between">
-              <h2 className="text-[18px] font-medium text-secondary-grey400">{title}</h2>
+              <h2 className="text-[18px] font-medium text-secondary-grey400">
+                {title}
+              </h2>
               <div className="flex items-center gap-2">
                 {headerRight}
-                
+
                 <button
-                  onClick={() => (onPrimaryAction ? onPrimaryAction() : onClose?.())}
+                  onClick={() =>
+                    onPrimaryAction ? onPrimaryAction() : onClose?.()
+                  }
                   disabled={primaryActionDisabled}
                   className={`text-sm min-w-8 font-medium rounded-[4px] p-2 border ${
                     primaryActionDisabled
-                      ? "text-gray-400 bg-gray-100 border-gray-200 cursor-not-allowed"
-                      : "bg-blue-600 text-white border-blue-600 hover:bg-blue-700"
+                      ? "text-secondary-grey100 bg-secondary-grey50 border-transparent cursor-not-allowed"
+                      : "bg-blue-primary250 text-white border-transparent hover:bg-blue-700"
                   }`}
                 >
                   {primaryActionLabel || "Save"}
@@ -123,14 +128,13 @@ export default function GeneralDrawer({
                   onClick={requestClose}
                   aria-label="Close drawer"
                 >
-                  <X className="w-5 h-5" />
+                  <img src={drawerCross} alt="Close" className="w-3 h-3" />
                 </button>
               </div>
             </div>
           </div>
 
-            <div className="">{children}</div>
-
+          <div className="">{children}</div>
         </div>
       </aside>
     </div>
