@@ -333,28 +333,28 @@ export default function PatientDetails() {
       </div>
 
       {/* Main split panels: left fixed 400px, right flexible — each has its own navigation */}
-      <div className="bg-white px-4 border border-gray-200">
+      <div className="bg-white border border-gray-200">
         <div className="">
-          <div className="flex gap-6">
+          <div className="flex">
             {/* Left fixed column with its own nav */}
-            <div className="w-[400px] flex-shrink-0 border-r border-gray-200 pr-4">
-              <div className="flex items-center gap-4 mb-3">
+            <div className="w-[350px] flex-shrink-0 border-r border-gray-200">
+              <div className="w-[100%] h-10 px-2 bg-white opacity-100 border-b-[1.5px] border-[#D6D6D6] flex gap-[4px]">
                 <button
                   onClick={() => setLeftTab("overview")}
-                  className={`h-9 px-2 ${
+                  className={`${
                     leftTab === "overview"
-                      ? "text-blue-600 border-b-2 border-blue-600"
-                      : "text-gray-600 hover:text-gray-800"
+                      ? "h-10 py-1 gap-1 opacity-100 border-b-[2px] border-[#2372EC]"
+                      : "h-10 py-1 gap-1 opacity-100 border-b-[1px] text-gray-600 hover:text-gray-800"
                   }`}
                 >
                   Overview
                 </button>
                 <button
                   onClick={() => setLeftTab("demographics")}
-                  className={`h-9 px-2 ${
+                  className={`${
                     leftTab === "demographics"
-                      ? "text-blue-600 border-b-2 border-blue-600"
-                      : "text-gray-600 hover:text-gray-800"
+                      ? "h-10 px-[6px] py-1 gap-1 opacity-100 border-b-[2px] border-[#2372EC]"
+                      : "h-10 px-[6px] py-1 gap-1 opacity-100 border-b-[1px] text-gray-600 hover:text-gray-800"
                   }`}
                 >
                   Demographics
@@ -362,24 +362,24 @@ export default function PatientDetails() {
               </div>
 
               {/* sticky notes input */}
-              <div className="mb-3">
+              <div className="">
                 <input
                   value={stickyNote}
                   onChange={(e) => setStickyNote(e.target.value)}
                   placeholder="Add Sticky Notes of Patient's Quick Updates"
-                  className="w-full bg-yellow-50 border border-yellow-200 text-yellow-800 px-3 py-2 rounded text-sm focus:outline-none"
+                  className="text-[14px] w-[100%] h-9 p-[10px] gap-2.5 opacity-100 border-t-[0.5px] border-b-[0.5px] border-[#BE8B0080] focus:outline-none focus:border-[#be8b00c9] bg-[#FEF9E6]"
                 />
               </div>
 
               {/* left content area */}
               {leftTab === "overview" && (
-                <div className="">
-                  <div className="font-semibold text-gray-800">
+                <div className="w-[100%] gap-4 pt-4 px-3 pb-3 opacity-100">
+                  <div className="text-sm font-semibold text-gray-800">
                     Contact Info
                   </div>
 
                   {/* horizontal line */}
-                  <div className="h-[1.2px] bg-gray-200 my-[10px]"></div>
+                  <div className="border-b border-gray-300 mt-1 mb-2" />
 
                   <div className="flex flex-col gap-2 text-sm text-gray-700 !m-0">
                     {loading ? (
@@ -588,12 +588,12 @@ export default function PatientDetails() {
                     )}
                   </div>
 
-                  <div className="font-semibold text-gray-800 mb-2">
+                  <div className="text-sm font-semibold text-gray-800">
                     Last Visit
                   </div>
 
                   {/* horizontal line */}
-                  <div className="h-[1.2px] bg-gray-200 my-[10px]"></div>
+                  <div className="border-b border-gray-300 mt-1 mb-2"></div>
 
                   <div className="flex flex-col gap-y-3 text-sm text-gray-700">
                     <div className="flex items-center justify-between">
@@ -639,12 +639,12 @@ export default function PatientDetails() {
                     </div>
                   </div>
 
-                  <div className="font-semibold text-gray-800 mt-5">
+                  <div className="text-sm font-semibold text-gray-800 mt-3">
                     Last Recorded Vitals & Biometrics
                   </div>
 
                   {/* horizontal line */}
-                  <div className="h-[1.5px] bg-gray-200 my-[10px]"></div>
+                  <div className="border-b border-gray-300 mt-1 mb-2"></div>
 
                   {patient.lastRecordedVitals ? (
                     <div>
@@ -763,12 +763,13 @@ export default function PatientDetails() {
                     </div>
                   )}
 
-                  <div className="font-semibold text-gray-800 mt-5">
+                  <div className="text-sm font-semibold text-gray-800 mt-3">
                     Active Problems
                   </div>
 
                   {/* horizontal line */}
-                  <div className="h-[1.2px] bg-gray-200 my-[10px]"></div>
+                  <div className="border-b border-gray-300 mt-1 mb-2"></div>
+
 
                   <div className="flex flex-col gap-2 mb-2 text-sm text-gray-600">
                     {activeProblems.map((p, idx) => (
@@ -794,7 +795,7 @@ export default function PatientDetails() {
                   </div>
 
                   <div className="flex items-center justify-between mt-5">
-                    <div className="font-semibold text-gray-800">
+                    <div className="text-sm font-semibold text-gray-800">
                       Dependents{" "}
                       <span className="text-xs text-gray-500">
                         {dependants.length ? `(${dependants.length})` : ""}
@@ -804,7 +805,7 @@ export default function PatientDetails() {
                   </div>
 
                   {/* horizontal line */}
-                  <div className="h-[1.2px] bg-gray-200 my-[10px]"></div>
+                  <div className="border-b border-gray-300 mt-1 mb-2"></div>
 
                   <div className="flex flex-col gap-3 text-sm text-gray-700">
                     {dependants && dependants.length > 0 ? (
@@ -850,10 +851,10 @@ export default function PatientDetails() {
 
             {/* Right flexible column with its own nav */}
             <div className="flex-1">
-              <div className="flex items-center gap-6 mb-3">
+              <div className="h-10 gap-2 px-2 opacity-100 border-b-[0.5px] border-[#D6D6D6]">
                 <button
                   onClick={() => setRightTab("vitals")}
-                  className={`h-9 px-2 ${
+                  className={`h-10 px-2 ${
                     rightTab === "vitals"
                       ? "text-blue-600 border-b-2 border-blue-600"
                       : "text-gray-600 hover:text-gray-800"
@@ -863,7 +864,7 @@ export default function PatientDetails() {
                 </button>
                 <button
                   onClick={() => setRightTab("appointment")}
-                  className={`h-9 px-2 ${
+                  className={`h-10 px-2 ${
                     rightTab === "appointment"
                       ? "text-blue-600 border-b-2 border-blue-600"
                       : "text-gray-600 hover:text-gray-800"
@@ -873,7 +874,7 @@ export default function PatientDetails() {
                 </button>
                 <button
                   onClick={() => setRightTab("medical")}
-                  className={`h-9 px-2 ${
+                  className={`h-10 px-2 ${
                     rightTab === "medical"
                       ? "text-blue-600 border-b-2 border-blue-600"
                       : "text-gray-600 hover:text-gray-800"
@@ -881,7 +882,7 @@ export default function PatientDetails() {
                 >
                   Medical History
                 </button>
-                <button
+                {/* <button
                   onClick={() => setRightTab("documents")}
                   className={`h-9 px-2 ${
                     rightTab === "documents"
@@ -890,12 +891,12 @@ export default function PatientDetails() {
                   }`}
                 >
                   Documents
-                </button>
+                </button> */}
               </div>
 
               <div className="bg-white p-4 rounded border border-gray-200 min-h-[240px]">
                 {rightTab === "vitals" && (
-                  <div className="py-2">
+                  <div>
                     <PatientVitals
                       embedded
                       onAdd={handleOpenAddVitals}
@@ -906,12 +907,12 @@ export default function PatientDetails() {
                   </div>
                 )}
                 {rightTab === "appointment" && (
-                  <div className="py-2">
+                  <div>
                     <PatientAppointments />
                   </div>
                 )}
                 {rightTab === "medical" && (
-                  <div className="py-2">
+                  <div>
                     <PatientMedicalHistory />
                   </div>
                 )}

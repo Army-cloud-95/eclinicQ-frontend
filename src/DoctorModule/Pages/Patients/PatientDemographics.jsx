@@ -11,13 +11,13 @@ function Row({ label, value }) {
 
 function SectionCard({ title, children, editButtonGroup }) {
   return (
-    <div>
-      <div className=" text-sm font-semibold text-gray-800 flex items-center justify-between">
+    <div className="mt-2">
+      <div className="text-sm font-semibold text-gray-800 flex items-center justify-between">
         <div>{title}</div>
         {editButtonGroup ? <div>{editButtonGroup}</div> : null}
       </div>
       {/* horizontal line */}
-      <div className="border-b border-gray-300 my-2" />
+      <div className="border-b border-gray-300 my-1" />
       <div>{children}</div>
     </div>
   );
@@ -25,8 +25,8 @@ function SectionCard({ title, children, editButtonGroup }) {
 
 export default function PatientDemographics() {
   return (
-    <div className="">
-      <div className="space-y-[1rem]">
+    <div className="w-[100%] gap-4 pt-4 px-3 pb-3 opacity-100">
+      <div className="">
         <SectionCard
           title="Basic Info"
           editButtonGroup={
