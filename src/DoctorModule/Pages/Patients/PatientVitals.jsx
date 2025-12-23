@@ -3,6 +3,7 @@ import { NavLink, useParams } from 'react-router-dom';
 import { Eye, MoreVertical, Plus, ChevronDown, List, BarChart2 } from 'lucide-react';
 import Badge from '../../../components/Badge';
 
+
 const vitals = [
   { name: 'Blood Pressure', unit: 'mmHg', normal: '90/60 - 120/80', status: 'Worse', trend: [
     { value: '130/85 ↑', date: '30/1/25' },
@@ -73,7 +74,7 @@ function VitalsTable({ history = [], loading = false, error = null }) {
   };
 
   if (loading) return <div className="p-4 text-sm text-gray-600">Loading vitals...</div>;
-  if (error) return <div className="p-4 text-sm text-red-600">Failed to load vitals</div>;
+  // if (error) return <div className="p-4 text-sm text-red-600">Failed to load vitals</div>;
 
   // If history provided, render it in the existing table design: one row per vital, last 3 values with small dates
   if (history && history.length > 0) {
@@ -166,7 +167,7 @@ function VitalsTable({ history = [], loading = false, error = null }) {
   }
 
   // If no history, show a simple empty state (no dummy data)
-  return <div className="p-4 text-sm text-gray-500">No vitals recorded</div>;
+  return <div className="p-4 text-sm text-gray-500">hello k</div>;
 }
 
 function BiometricsTable() {
