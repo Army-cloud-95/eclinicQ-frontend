@@ -254,7 +254,7 @@ const Calendar = ({
               <input
                 type="text"
                 placeholder="Search Patient..."
-                className="pl-9 pr-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-blue-500 w-64"
+                className="pl-9 pr-4 py-2 border border-secondary-grey100 rounded-lg text-sm focus:outline-none focus:border-blue-500 w-64"
               />
             </div>
 
@@ -300,11 +300,11 @@ const Calendar = ({
           </div>
 
           {/* Divider */}
-          <div className="border-b border-gray-200 mx-4"></div>
+          <div className="border-b border-secondary-grey100 mx-4"></div>
 
           {/* Mini Calendar */}
           <div className="p-4 pt-2">
-            <div className="border border-gray-200 rounded-lg p-3 bg-white overflow-hidden">
+            <div className="border border-secondary-grey100 rounded-lg p-3 bg-white overflow-hidden">
               <ShadcnCalendar
                 mode="single"
                 selected={selectedDate}
@@ -323,7 +323,7 @@ const Calendar = ({
         </div>
 
         {/* Main Calendar Area */}
-        <div className="flex-1 flex flex-col overflow-hidden border border-gray-200 rounded-lg ml-2 mt-4 mr-6 mb-6 bg-white">
+        <div className="flex-1 flex flex-col overflow-hidden border border-secondary-grey100 rounded-lg ml-2 mt-4 mr-6 mb-6 bg-white">
           {/* Calendar Grid */}
           <div
             className="flex-1 overflow-auto"
@@ -339,7 +339,7 @@ const Calendar = ({
                   (day) => (
                     <div
                       key={day}
-                      className="border-b border-r border-gray-200 px-4 py-2 text-xs font-medium text-gray-500 bg-gray-50"
+                      className="border-b border-r border-secondary-grey100 px-4 py-2 text-xs font-medium text-gray-500 bg-gray-50"
                     >
                       {day}
                     </div>
@@ -353,7 +353,7 @@ const Calendar = ({
                     <div
                       key={idx}
                       className={`
-                      border-b border-r border-gray-200 p-2 min-h-[120px]
+                      border-b border-r border-secondary-grey100 p-2 min-h-[120px]
                       ${!day.isCurrentMonth ? "bg-gray-50" : "bg-white"}
                       ${isToday(day.date) ? "bg-blue-50/50" : ""}
                       ${
@@ -428,39 +428,51 @@ const Calendar = ({
             {view === "week" && (
               <div className="flex flex-col h-full">
                 {/* Week header */}
-                <div className="flex border-b border-gray-200 bg-gray-50 sticky top-0 z-10">
+                <div className="flex border-b border-secondary-grey100 sticky top-0 z-10">
                   {/* GMT column - fixed width to match time column */}
-                  <div className="w-20 flex-shrink-0 border-r border-gray-200 p-3 text-xs text-gray-500 flex items-center justify-center">
+                  <div className="w-20 flex-shrink-0 border-r border-secondary-grey100 p-3 font-inter font-normal text-[15px] leading-[140%] text-center text-secondary-grey300 flex items-center justify-center bg-secondary-grey50 whitespace-nowrap">
                     GMT +5
                   </div>
 
                   {/* Day columns - flex-1 for equal spacing */}
-                  {getWeekDays().map((day, idx) => (
-                    <div
-                      key={idx}
-                      className="flex-1 border-r border-gray-200 p-3 text-left last:border-r-0"
-                    >
-                      <div className="text-3xl font-semibold text-blue-600">
-                        {day.getDate().toString().padStart(2, "0")}
+                  {getWeekDays().map((day, idx) => {
+                    const isDaySelected = isSelected(day);
+                    const textColor = isDaySelected
+                      ? "text-blue-primary250"
+                      : "text-secondary-grey400";
+                    const bgColor = isDaySelected ? "bg-blue-primary50" : "";
+
+                    return (
+                      <div
+                        key={idx}
+                        className={`flex-1 border-r border-secondary-grey100 p-3 text-left last:border-r-0 ${bgColor}`}
+                      >
+                        <div
+                          className={`font-inter font-semibold text-[20px] leading-[140%] ${textColor}`}
+                        >
+                          {day.getDate().toString().padStart(2, "0")}
+                        </div>
+                        <div
+                          className={`font-inter font-normal text-[15px] leading-[140%] ${textColor} mt-1`}
+                        >
+                          {day.toLocaleDateString("en-US", { month: "short" })},{" "}
+                          {day.toLocaleDateString("en-US", { weekday: "long" })}
+                        </div>
                       </div>
-                      <div className="text-xs text-gray-700 mt-1">
-                        {day.toLocaleDateString("en-US", { month: "short" })},{" "}
-                        {day.toLocaleDateString("en-US", { weekday: "long" })}
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
 
                 {/* Time grid */}
                 <div className="flex-1 overflow-auto">
                   <div className="flex">
                     {/* Time column - fixed width to match header GMT column */}
-                    <div className="w-20 flex-shrink-0 border-r border-gray-200">
+                    <div className="w-20 flex-shrink-0 border-r border-secondary-grey100 bg-secondary-grey50">
                       {Array.from({ length: 15 }, (_, i) => i + 7).map(
                         (hour) => (
                           <div
                             key={hour}
-                            className="h-16 border-b border-gray-200 px-2 py-1 text-xs text-gray-500"
+                            className="h-16 border-b border-secondary-grey100 px-2 py-1 font-inter font-normal text-[15px] leading-[140%] text-center text-secondary-grey400 flex items-center justify-center"
                           >
                             {`${hour.toString().padStart(2, "0")}:00`}
                           </div>
@@ -471,16 +483,19 @@ const Calendar = ({
                     {/* Day columns - flex-1 to match header day columns */}
                     {getWeekDays().map((day, dayIdx) => {
                       const dayEvents = getEventsForDate(day);
+                      const isDaySelected = isSelected(day);
+                      const bgColor = isDaySelected ? "bg-blue-primary50" : "";
+
                       return (
                         <div
                           key={dayIdx}
-                          className="flex-1 border-r border-gray-200 relative last:border-r-0"
+                          className={`flex-1 border-r border-secondary-grey100 relative last:border-r-0 ${bgColor}`}
                         >
                           {Array.from({ length: 15 }, (_, i) => i + 7).map(
                             (hour) => (
                               <div
                                 key={hour}
-                                className="h-16 border-b border-gray-200"
+                                className="h-16 border-b border-secondary-grey100"
                               />
                             )
                           )}
@@ -540,19 +555,21 @@ const Calendar = ({
             {view === "day" && (
               <div className="flex flex-col h-full">
                 {/* Day header - matching time grid layout */}
-                <div className="border-b border-gray-200 bg-gray-50 sticky top-0 z-10">
+                <div className="border-b border-secondary-grey100 sticky top-0 z-10">
                   <div className="relative">
                     {/* Time zone label - aligned with time column */}
-                    <div className="absolute left-0 w-20 h-full flex items-center justify-center border-r border-gray-200">
-                      <div className="text-xs text-gray-500">GMT +5</div>
+                    <div className="absolute left-0 w-20 h-full flex items-center justify-center border-r border-secondary-grey100 bg-secondary-grey50">
+                      <div className="font-inter font-normal text-[15px] leading-[140%] text-center text-secondary-grey300">
+                        GMT +5
+                      </div>
                     </div>
 
                     {/* Date info - aligned with main calendar area */}
                     <div className="ml-20 p-3">
-                      <div className="text-3xl font-semibold text-blue-600">
+                      <div className="font-inter font-semibold text-[24px] leading-[140%] text-blue-primary250">
                         {selectedDate.getDate().toString().padStart(2, "0")}
                       </div>
-                      <div className="text-xs text-blue-600 mt-1">
+                      <div className="font-inter font-normal text-[15px] leading-[140%] text-blue-primary250 mt-1">
                         {selectedDate.toLocaleDateString("en-US", {
                           month: "short",
                         })}
@@ -569,12 +586,12 @@ const Calendar = ({
                 <div className="flex-1 overflow-auto">
                   <div className="relative">
                     {/* Time labels */}
-                    <div className="absolute left-0 w-20">
+                    <div className="absolute left-0 w-20 bg-secondary-grey50">
                       {Array.from({ length: 15 }, (_, i) => i + 7).map(
                         (hour) => (
                           <div
                             key={hour}
-                            className="h-16 px-2 py-1 text-xs text-gray-500 border-b border-gray-200"
+                            className="h-16 px-2 py-1 font-inter font-normal text-[15px] leading-[140%] text-center text-secondary-grey400 border-b border-secondary-grey100 flex items-center justify-center"
                           >
                             {`${hour.toString().padStart(2, "0")}:00`}
                           </div>
@@ -583,13 +600,13 @@ const Calendar = ({
                     </div>
 
                     {/* Event area */}
-                    <div className="ml-20 border-l border-gray-200 relative">
+                    <div className="ml-20 border-l border-secondary-grey100 relative">
                       {/* Hour lines */}
                       {Array.from({ length: 15 }, (_, i) => i + 7).map(
                         (hour) => (
                           <div
                             key={hour}
-                            className="h-16 border-b border-gray-200"
+                            className="h-16 border-b border-secondary-grey100"
                           />
                         )
                       )}
