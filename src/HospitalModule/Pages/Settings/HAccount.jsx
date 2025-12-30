@@ -18,18 +18,22 @@ import {
   Eye,
 } from "lucide-react";
 
-
-const InfoField = ({ label, value, right,className:Class}) => (
- <div
-  className={`${Class} flex flex-col gap-1 text-[14px] border-b-[0.5px] pb-2 border-secondary-grey100`}
->
-    <div className="col-span-4  text-secondary-grey200">{label}</div>
-    <div className="col-span-8 text-secondary-grey400 flex items-center justify-between">
+const InfoField = ({ label, value, right, className, noBorder }) => (
+  <div
+    className={`
+      ${className}
+      flex flex-col gap-1 text-[14px]
+      ${noBorder ? "" : "border-b-[0.5px] border-secondary-grey100 pb-2"}
+    `}
+  >
+    <div className="text-secondary-grey200">{label}</div>
+    <div className="text-secondary-grey400 flex items-center justify-between">
       <span className="truncate">{value || "-"}</span>
       {right}
     </div>
   </div>
 );
+
 const SectionCard = ({
   title,
   subtitle,
@@ -128,12 +132,13 @@ export default function HAccount(){
     gst: { number: '27AAECA1234F1Z5', proof: 'GST Proof.pdf' },
     cin: {
       number: '27AAECA1234F1Z5', company: 'Manipal Hospital Pvt. Ltd.', type: 'Private Limited',proof: 'GST Proof.pdf',
-      incorporation: '02/05/2015', address: '101, FC Road, Pune', stateCode: 'PN (Maharashtra)', director: 'Dr. R. Mehta', code: '012345'
+      incorporation: '02/05/2015', address: '101, FC Road, Pune',email:'info@manipalhospital.com' ,stateCode: 'PN (Maharashtra)', director: 'Dr. R. Mehta', code: '012345'
     },
      shr: { number: '27AAECA1234F1Z5', proof: 'SHR Proof.pdf' },
     pan: { number: '27AAECA1234F1Z5', proof: 'SHR Proof.pdf' },
     rohini: { number: '27AAECA1234F1Z5', proof: 'Rohini Proof.pdf' },
     nabh: { number: '27AAECA1234F1Z5', proof: 'NABH Proof.pdf' },
+    est:{proof:'Establishment Proof.pdf'},
     about: `Dr. Milind Chauhan practices Gynaecologist and Obstetrician in Andheri East, Mumbai and has 13 years of experience in this field. He has completed his DNB - Obstetric and Gynecology and MBBS. Dr. Milind Chauhan has gained the confidence of patients and is a popular Gynaecologist and Obstetrician expert in Mumbai who performs treatment and procedures for various health issues related to Gynaecologist and Obstetrician.`,
     photos: [
       'https://images.unsplash.com/photo-1586773860418-d37222d8fce3?w=400',
@@ -242,7 +247,7 @@ export default function HAccount(){
                       <div>
                   <div className="text-[12px] text-gray-500 mb-2">Establishment Proof</div>
                   <div className="mt-1 flex items-center justify-between gap-2 w-full max-w-xs border rounded px-2 py-1 text-[12px] bg-gray-50">
-                    <span className="inline-flex items-center gap-1 text-gray-700"><FileText size={14}/> {profile.gst.proof}</span>
+                    <span className="inline-flex items-center gap-1 text-gray-700"><FileText size={14}/> {profile.est.proof}</span>
                     <button
                               type="button"
                               title="View"
@@ -475,7 +480,7 @@ export default function HAccount(){
                   <div className="relative text-[12px] text-gray-500 mb-2">GST Details
                     <span className="absolute left-0 bottom-0 h-[0.5px] w-[50px] bg-blue-primary250" />
                   </div>
-                  <InfoField label="GST Number" value={profile.gst.number} />
+                  <InfoField label="GST Number" value={profile.gst.number} noBorder />
                 </div>
                 <div>
                   <div className="text-[12px] text-gray-500 mb-2">Proof of GST Registration</div>
@@ -509,7 +514,7 @@ export default function HAccount(){
                   <InfoField label="State and ROC Code" value={profile.cin.stateCode} />
                   <InfoField label="Registration Number" value={profile.cin.code} />
                   <InfoField label="Authorized Director" value={profile.cin.director} />
-                  <InfoField label="Authorized Email (From MCA)" value={profile.cin.email} />
+                  <InfoField label="Authorized Email (From MCA)" value={profile.cin.email} noBorder />
                  <div>
                   <div className="text-[12px] text-gray-500 mb-2">Proof of CIN Registration</div>
                   <div className="mt-1 flex items-center justify-between gap-2 w-full max-w-xs border rounded px-2 py-1 text-[12px] bg-gray-50">
@@ -533,7 +538,7 @@ export default function HAccount(){
                   <div className="relative text-[12px] text-gray-500 mb-2">State Health Registration Details
                     <span className="absolute left-0 bottom-0 h-[0.5px] w-[50px] bg-blue-primary250" />
                   </div>
-                  <InfoField label="State Health Registration Number" value={profile.shr.number} />
+                  <InfoField label="State Health Registration Number" value={profile.shr.number} noBorder />
                 </div>
                 <div>
                   <div className="text-[12px] text-gray-500 mb-2">Proof of State Health Registration</div>
@@ -558,7 +563,7 @@ export default function HAccount(){
                   <div className="relative text-[12px] text-gray-500 mb-2">Pan Card Details
                     <span className="absolute left-0 bottom-0 h-[0.5px] w-[50px] bg-blue-primary250" />
                   </div>
-                  <InfoField label="Pan Card Number" value={profile.pan.number} />
+                  <InfoField label="Pan Card Number" value={profile.pan.number} noBorder />
                 </div>
                 <div>
                   <div className="text-[12px] text-gray-500 mb-2">Proof of Pan Card</div>
@@ -582,7 +587,7 @@ export default function HAccount(){
                   <div className="relative text-[12px] text-gray-500 mb-2">Rohini Details
                     <span className="absolute left-0 bottom-0 h-[0.5px] w-[50px] bg-blue-primary250" />
                   </div>
-                  <InfoField label="Rohini ID" value={profile.rohini.number} />
+                  <InfoField label="Rohini ID" value={profile.rohini.number} noBorder />
                  
 
                 </div>
@@ -608,7 +613,7 @@ export default function HAccount(){
                   <div className="relative text-[12px] text-gray-500 mb-2">NABH Acceditation Details
                     <span className="absolute left-0 bottom-0 h-[0.5px] w-[50px] bg-blue-primary250" />
                   </div>
-                  <InfoField label="NABH Number" value={profile.nabh.number} />
+                  <InfoField label="NABH Number" value={profile.nabh.number}  />
                   
                 </div>
                 <div>
