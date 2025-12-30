@@ -11,29 +11,55 @@ import Input from "../../../components/FormItems/Input";
 import Toggle from "../../../components/FormItems/Toggle";
 import TimeInput from "../../../components/FormItems/TimeInput";
 import MapLocation from "../../../components/FormItems/MapLocation";
+import usePracticeStore from "../../../store/settings/usePracticeStore";
 
 
-const InfoField = ({ label, value, right }) => (
-  <div className="grid grid-cols-12 gap-2 text-[13px] leading-5">
-    <div className="col-span-4 text-gray-500">{label}</div>
-    <div className="col-span-8 text-gray-900 flex items-center gap-2 min-h-[26px]">
-      <span className="truncate">{value || '-'}</span>
+const InfoField = ({ label, value, right,className:Class}) => (
+ <div
+  className={`${Class} flex flex-col gap-1 text-[14px] border-b-[0.5px] pb-2 border-secondary-grey100`}
+>
+    <div className="col-span-4  text-secondary-grey200">{label}</div>
+    <div className="col-span-8 text-secondary-grey400 flex items-center justify-between">
+      <span className="truncate">{value || "-"}</span>
       {right}
     </div>
   </div>
-)
+);
+const SectionCard = ({
+  title,
+  subtitle,
+  subo,
+  Icon,
+  onIconClick,
+  headerRight,
+  children,
+}) => (
+  <div className="px-4 py-3 flex flex-col gap-3 rounded-lg bg-white">
+    <div className="flex items-center justify-between">
+      {/* LEFT */}
+      <div className="flex flex-col">
+        <div className="flex items-center gap-1 text-sm">
+          <div className="font-medium text-[14px] text-gray-900">{title}</div>
 
-const SectionCard = ({ title, subtitle, action, Icon, children,onIconClick, variant = 'default' }) => (
-  <div className="bg-white rounded-lg border border-gray-200">
-    {variant === 'default' ? (
-      <>
-        <div className="px-4 py-3 border-b border-gray-200 flex items-center justify-between">
-          <div className="text-sm">
-            <div className="font-medium text-gray-900">{title}</div>
-            {subtitle ? <div className="text-[12px] text-gray-500">{subtitle}</div> : null}
+          {subtitle && (
+            <div className="px-1 py-[2px] bg-secondary-grey50 rounded-md text-[12px] text-gray-500">
+              {subtitle}
+            </div>
+          )}
+        </div>
+
+        {subo && (
+          <div className="flex gap-1 text-[12px] text-secondary-grey200">
+            <span>{subo}</span>
+            <span className="text-blue-primary250">Call Us</span>
           </div>
-         
-        
+        )}
+      </div>
+
+      {/* RIGHT */}
+      <div className="flex items-center gap-3 shrink-0">
+        {headerRight}
+
         {Icon && (
           <button
             onClick={onIconClick}
@@ -46,25 +72,14 @@ const SectionCard = ({ title, subtitle, action, Icon, children,onIconClick, vari
             )}
           </button>
         )}
-        </div>
-        <div className="p-4">{children}</div>
-      </>
-    ) : (
-      <div className="p-3">
-        <div className="flex items-center justify-between mb-2">
-          <div className="flex items-center gap-2">
-            <div className="text-sm font-medium text-gray-900">{title}</div>
-            {subtitle ? (
-              <span className="text-[11px] px-2 py-0.5 rounded border bg-gray-50 text-gray-600">{subtitle}</span>
-            ) : null}
-          </div>
-         
-        </div>
-        <div>{children}</div>
       </div>
-    )}
+    </div>
+
+    <div>{children}</div>
   </div>
-)
+);
+
+
 
 export default function HAccount(){
   const location = useLocation()
@@ -119,11 +134,15 @@ export default function HAccount(){
     ],
   }), [])
     const [showAddMenu, setShowAddMenu] = useState(false);
+      const {
+    hospitalDate,
+
+  } = usePracticeStore();
 
   return (
-    <div className="px-6 pb-10">
+    <div className="px-4 pb-10 bg-secondary-grey50">
       {/* Top banner + centered avatar + tabs */}
-      <div className="-mx-6">
+      <div className="-mx-4">
         <div className="relative">
           <img src={coverImg} alt="cover" className="w-full h-40 object-cover" />
           <div className="absolute -bottom-10 left-1/2 -translate-x-1/2">
@@ -154,9 +173,9 @@ export default function HAccount(){
 
       {/* Account Detail content */}
       {activeTab === 'account' && (
-        <div className="mt-4 grid grid-cols-12 gap-4">
+        <div className="mt-4 grid grid-cols-12 gap-4 ">
           {/* Two-column layout: left 7, right 5 */}
-          <div className="col-span-12 xl:col-span-7 space-y-4">
+          <div className="col-span-12 xl:col-span-6 space-y-6">
             <SectionCard
               title="Basic Info"
               subtitle="Visible to Patient"
@@ -201,54 +220,76 @@ export default function HAccount(){
                       </span>
                     }
                   />
-                  <InfoField
-                    label="Gender"
+                  
+                     <InfoField
+                    label="Establishment Date"
                     value={
-                      profile.basic?.gender?.charAt(0).toUpperCase() +
-                      profile.basic?.gender?.slice(1).toLowerCase()
+                      hospital?.establishmentDate
+                        ? new Date(hospital.establishmentDate).toLocaleDateString()
+                        : "-"
                     }
+                    />
+
+                    
+                  
+                  <InfoField label="Website" value={profile.basic?.website} />
+                   <InfoField
+                    label="Emergency Contact Detail"
+                    value={profile.basic?.emergencyPhone}
+                  />
+                   <InfoField
+                    label="Number of Beds"
+                    value={profile.basic?.numberOfBeds}
                   />
                   
-                  <InfoField
-                    label="Language"
-                    value={
-                      Array.isArray(profile.basic?.languages) && profile.basic.languages.length > 0 ? (
-                        <div className="flex gap-1">
-                          {profile.basic.languages.map((lang, idx) => (
-                            <span
-                              key={`${lang}-${idx}`}
-                              className="inline-flex items-center h-5 gap-2 px-[6px] rounded-[4px] bg-secondary-grey50 text-secondary-grey400"
-                            >
-                              <span className="text-[14px] text-secondary-grey400 inline-flex items-center">{lang}</span>
-                              {/* removable button omitted in read-only view */}
-                            </span>
-                          ))}
-                        </div>
-                      ) : (
-                        <span className="text-secondary-grey100 px-1">Select Language</span>
-                      )
-                    }
+                   <InfoField
+                    label="Number of ICU Beds"
+                    value={profile.basic?.icuBeds}
                   />
-                  <InfoField label="City" value={profile.basic?.city} />
-                  <InfoField label="Website" value={profile.basic?.website} />
+                   <InfoField
+                    label="Number of Ambulances"
+                    value={profile.basic?.ambulance}
+                  />
+
+                    <InfoField
+                    label="Ambulance Contact Number"
+                    value={profile.basic?.ambulancePhone}
+                  />
+                   <InfoField
+                    label="Do you have Blood Bank"
+                    value={profile.basic?.bloodBank ? "No" : "Yes"}
+                  />
+                  <InfoField
+                    label="Blood Bank Contact Number"
+                    value={profile.basic?.bloodBankPhone}
+                  />
                 </div>
+
 
                 <div className="flex flex-col gap-5">
-                  <InfoField
-                    label="Profile Headline"
-                    value={profile.basic?.headline}
+                 
+                 <InfoField
+                    label="About"
+                    value={
+                      <p className="text-[13px] leading-6 text-gray-800 whitespace-pre-line">
+                        {profile.about}
+                      </p>
+                    }
                   />
-                  <InfoField label="About" value={profile.basic?.about} />
-                </div>
-                 <p className="text-[13px] leading-6 text-gray-800">{profile.about}</p>
 
+                </div>
+                 
+                        <div className="text-[13px] text-gray-500 mb-2">
+                    Clinic Photos
+                  </div>
                  {/* <SectionCard variant="subtle" title="Hospital Photos"> */}
               <div className="flex items-center gap-3 overflow-x-auto">
-
+               
                 {profile.photos.map((src, i) => (
                   <img key={i} src={src} alt="hospital" className="w-36 h-24 rounded-md object-cover border" />
                 ))}
               </div>
+              
             {/* </SectionCard> */}
               </div>
             </SectionCard>
@@ -266,7 +307,9 @@ export default function HAccount(){
               variant="subtle"
               title="Medical Specialties"
               subtitle="Visible to Patient"
-              action={<button className="text-blue-600 text-sm inline-flex items-center gap-1" title="Edit">✎</button>}
+              // action={<button className="text-blue-600 text-sm inline-flex items-center gap-1" title="Edit">✎</button>}
+              Icon={pencil}
+              onIconClick={() => setShowEditSpecialties(true)}
             >
               <div className="flex flex-wrap gap-2">
                 {profile.specialties.map((s,i)=>(<span key={i} className="text-xs px-2 py-1 rounded border bg-gray-50 text-gray-700">{s}</span>))}
@@ -278,7 +321,9 @@ export default function HAccount(){
               variant="subtle"
               title="Hospital Services & Facilities"
               subtitle="Visible to Patient"
-              action={<button className="text-blue-600 text-sm inline-flex items-center gap-1" title="Edit">✎</button>}
+            // action={<button className="text-blue-600 text-sm inline-flex item  s-center gap-1" title="Edit">✎</button>}
+              Icon={pencil}
+              onIconClick={() => setShowEditServices(true)}
             >
               <div className="flex flex-wrap gap-2">
                 {profile.services.map((s,i)=>(<span key={i} className="text-xs px-2 py-1 rounded border bg-gray-50 text-gray-700">{s}</span>))}
@@ -302,7 +347,7 @@ export default function HAccount(){
             </SectionCard>
           </div>
 
-          <div className="col-span-12 xl:col-span-5 space-y-4">
+          <div className="col-span-12 xl:col-span-6 space-y-6">
 
             <SectionCard
               title="hospital Address"
@@ -314,7 +359,7 @@ export default function HAccount(){
                 <div className="text-[13px] text-gray-500 mb-1">
                   Map Location
                 </div>
-                <div className="h-[220px] rounded overflow-hidden border">
+                <div className="h-[120px] rounded overflow-hidden border">
                   <MapLocation
                     heightClass="h-full"
                     initialPosition={[
