@@ -6,12 +6,17 @@ import { hospital as coverImg,
   pencil,
   verifiedTick
  } from '../../../../public/index.js'
+
 import { useLocation, useNavigate } from 'react-router-dom'
 import Input from "../../../components/FormItems/Input";
 import Toggle from "../../../components/FormItems/Toggle";
 import TimeInput from "../../../components/FormItems/TimeInput";
 import MapLocation from "../../../components/FormItems/MapLocation";
 import usePracticeStore from "../../../store/settings/usePracticeStore";
+import {
+   
+  Eye,
+} from "lucide-react";
 
 
 const InfoField = ({ label, value, right,className:Class}) => (
@@ -122,9 +127,13 @@ export default function HAccount(){
     services: ['MRI Scan','CT Scan','Blood Bank','Parking','Path Lab','X Ray','Pharmacy','Radiology','Private Room','General Ward'],
     gst: { number: '27AAECA1234F1Z5', proof: 'GST Proof.pdf' },
     cin: {
-      number: '27AAECA1234F1Z5', company: 'Manipal Hospital Pvt. Ltd.', type: 'Private Limited',
+      number: '27AAECA1234F1Z5', company: 'Manipal Hospital Pvt. Ltd.', type: 'Private Limited',proof: 'GST Proof.pdf',
       incorporation: '02/05/2015', address: '101, FC Road, Pune', stateCode: 'PN (Maharashtra)', director: 'Dr. R. Mehta', code: '012345'
     },
+     shr: { number: '27AAECA1234F1Z5', proof: 'SHR Proof.pdf' },
+    pan: { number: '27AAECA1234F1Z5', proof: 'SHR Proof.pdf' },
+    rohini: { number: '27AAECA1234F1Z5', proof: 'Rohini Proof.pdf' },
+    nabh: { number: '27AAECA1234F1Z5', proof: 'NABH Proof.pdf' },
     about: `Dr. Milind Chauhan practices Gynaecologist and Obstetrician in Andheri East, Mumbai and has 13 years of experience in this field. He has completed his DNB - Obstetric and Gynecology and MBBS. Dr. Milind Chauhan has gained the confidence of patients and is a popular Gynaecologist and Obstetrician expert in Mumbai who performs treatment and procedures for various health issues related to Gynaecologist and Obstetrician.`,
     photos: [
       'https://images.unsplash.com/photo-1586773860418-d37222d8fce3?w=400',
@@ -230,6 +239,21 @@ export default function HAccount(){
                     }
                     />
 
+                      <div>
+                  <div className="text-[12px] text-gray-500 mb-2">Establishment Proof</div>
+                  <div className="mt-1 flex items-center justify-between gap-2 w-full max-w-xs border rounded px-2 py-1 text-[12px] bg-gray-50">
+                    <span className="inline-flex items-center gap-1 text-gray-700"><FileText size={14}/> {profile.gst.proof}</span>
+                    <button
+                              type="button"
+                              title="View"
+                              className="hover:text-secondary-grey400 p-2"
+                              onClick={() => onFileView?.(fileName)}
+                            >
+                              {/* simple eye */}
+                              <img src="/Doctor_module/settings/eye.png" alt="" className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
                     
                   
                   <InfoField label="Website" value={profile.basic?.website} />
@@ -448,14 +472,24 @@ export default function HAccount(){
             <SectionCard title="Verification Documents" subtitle="Visible to Patient" action={<span className="text-[12px] text-gray-500">To Change your Medical proof please <a href="#" className="text-blue-600" onClick={(e)=>e.preventDefault()}>Call Us</a></span>}>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <div className="text-[12px] text-gray-500 mb-2">GST Details</div>
+                  <div className="relative text-[12px] text-gray-500 mb-2">GST Details
+                    <span className="absolute left-0 bottom-0 h-[0.5px] w-[50px] bg-blue-primary250" />
+                  </div>
                   <InfoField label="GST Number" value={profile.gst.number} />
                 </div>
                 <div>
                   <div className="text-[12px] text-gray-500 mb-2">Proof of GST Registration</div>
                   <div className="mt-1 flex items-center justify-between gap-2 w-full max-w-xs border rounded px-2 py-1 text-[12px] bg-gray-50">
                     <span className="inline-flex items-center gap-1 text-gray-700"><FileText size={14}/> {profile.gst.proof}</span>
-                    <button className="text-gray-500 hover:text-gray-700" title="More">⋮</button>
+                    <button
+                              type="button"
+                              title="View"
+                              className="hover:text-secondary-grey400 p-2"
+                              onClick={() => onFileView?.(fileName)}
+                            >
+                              {/* simple eye */}
+                              <img src="/Doctor_module/settings/eye.png" alt="" className="w-4 h-4" />
+                    </button>
                   </div>
                 </div>
               </div>
@@ -463,7 +497,9 @@ export default function HAccount(){
               <div className="my-3 h-px bg-gray-200" />
 
               <div className="mt-2">
-                <div className="text-[12px] text-gray-500 mb-2">CIN Details</div>
+                <div className="relative text-[12px] text-gray-500 mb-2">CIN Details
+                    <span className="absolute left-0 bottom-0 h-[0.5px] w-[50px] bg-blue-primary250" />
+                </div>
                 <div className="grid grid-cols-2 gap-3 text-[13px]">
                   <InfoField label="CIN Number" value={profile.cin.number} />
                   <InfoField label="Registered Company Name" value={profile.cin.company} />
@@ -471,10 +507,127 @@ export default function HAccount(){
                   <InfoField label="Date of Incorporation" value={profile.cin.incorporation} />
                   <InfoField label="Registered Office Address" value={profile.cin.address} />
                   <InfoField label="State and ROC Code" value={profile.cin.stateCode} />
+                  <InfoField label="Registration Number" value={profile.cin.code} />
                   <InfoField label="Authorized Director" value={profile.cin.director} />
-                  <InfoField label="Director Code" value={profile.cin.code} />
+                  <InfoField label="Authorized Email (From MCA)" value={profile.cin.email} />
+                 <div>
+                  <div className="text-[12px] text-gray-500 mb-2">Proof of CIN Registration</div>
+                  <div className="mt-1 flex items-center justify-between gap-2 w-full max-w-xs border rounded px-2 py-1 text-[12px] bg-gray-50">
+                    <span className="inline-flex items-center gap-1 text-gray-700"><FileText size={14}/> {profile.gst.proof}</span>
+                    <button
+                              type="button"
+                              title="View"
+                              className="hover:text-secondary-grey400 p-2"
+                              onClick={() => onFileView?.(fileName)}
+                            >
+                              {/* simple eye */}
+                              <img src="/Doctor_module/settings/eye.png" alt="" className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div> 
                 </div>
               </div>
+               <div className="my-3 h-px bg-gray-200" />
+               <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <div className="relative text-[12px] text-gray-500 mb-2">State Health Registration Details
+                    <span className="absolute left-0 bottom-0 h-[0.5px] w-[50px] bg-blue-primary250" />
+                  </div>
+                  <InfoField label="State Health Registration Number" value={profile.shr.number} />
+                </div>
+                <div>
+                  <div className="text-[12px] text-gray-500 mb-2">Proof of State Health Registration</div>
+                  <div className="mt-1 flex items-center justify-between gap-2 w-full max-w-xs border rounded px-2 py-1 text-[12px] bg-gray-50">
+                    <span className="inline-flex items-center gap-1 text-gray-700"><FileText size={14}/> {profile.shr.proof}</span>
+                    <button
+                              type="button"
+                              title="View"
+                              className="hover:text-secondary-grey400 p-2"
+                              onClick={() => onFileView?.(fileName)}
+                            >
+                              {/* simple eye */}
+                              <img src="/Doctor_module/settings/eye.png" alt="" className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <div className="my-3 h-px bg-gray-200" />
+                     <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <div className="relative text-[12px] text-gray-500 mb-2">Pan Card Details
+                    <span className="absolute left-0 bottom-0 h-[0.5px] w-[50px] bg-blue-primary250" />
+                  </div>
+                  <InfoField label="Pan Card Number" value={profile.pan.number} />
+                </div>
+                <div>
+                  <div className="text-[12px] text-gray-500 mb-2">Proof of Pan Card</div>
+                  <div className="mt-1 flex items-center justify-between gap-2 w-full max-w-xs border rounded px-2 py-1 text-[12px] bg-gray-50">
+                    <span className="inline-flex items-center gap-1 text-gray-700"><FileText size={14}/> {profile.pan.proof}</span>
+                    <button
+                              type="button"
+                              title="View"
+                              className="hover:text-secondary-grey400 p-2"
+                              onClick={() => onFileView?.(fileName)}
+                            >
+                              {/* simple eye */}
+                              <img src="/Doctor_module/settings/eye.png" alt="" className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+              <div className="my-3 h-px bg-gray-200" />
+                     <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <div className="relative text-[12px] text-gray-500 mb-2">Rohini Details
+                    <span className="absolute left-0 bottom-0 h-[0.5px] w-[50px] bg-blue-primary250" />
+                  </div>
+                  <InfoField label="Rohini ID" value={profile.rohini.number} />
+                 
+
+                </div>
+                <div>
+                  <div className="text-[12px] text-gray-500 mb-2">Proof of Rohini</div>
+                  <div className="mt-1 flex items-center justify-between gap-2 w-full max-w-xs border rounded px-2 py-1 text-[12px] bg-gray-50">
+                    <span className="inline-flex items-center gap-1 text-gray-700"><FileText size={14}/> {profile.rohini.proof}</span>
+                    <button
+                              type="button"
+                              title="View"
+                              className="hover:text-secondary-grey400 p-2"
+                              onClick={() => onFileView?.(fileName)}
+                            >
+                              {/* simple eye */}
+                              <img src="/Doctor_module/settings/eye.png" alt="" className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+              <div className="my-3 h-px bg-gray-200" />
+                     <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <div className="relative text-[12px] text-gray-500 mb-2">NABH Acceditation Details
+                    <span className="absolute left-0 bottom-0 h-[0.5px] w-[50px] bg-blue-primary250" />
+                  </div>
+                  <InfoField label="NABH Number" value={profile.nabh.number} />
+                  
+                </div>
+                <div>
+                  <div className="text-[12px] text-gray-500 mb-2">Proof of NABH</div>
+                  <div className="mt-1 flex items-center justify-between gap-2 w-full max-w-xs border rounded px-2 py-1 text-[12px] bg-gray-50">
+                    <span className="inline-flex items-center gap-1 text-gray-700"><FileText size={14}/> {profile.nabh.proof}</span>
+                    <button
+                              type="button"
+                              title="View"
+                              className="hover:text-secondary-grey400 p-2"
+                              onClick={() => onFileView?.(fileName)}
+                            >
+                              {/* simple eye */}
+                              <img src="/Doctor_module/settings/eye.png" alt="" className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+                
             </SectionCard>
             </div>
           </div>
