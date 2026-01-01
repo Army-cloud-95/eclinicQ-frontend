@@ -92,7 +92,7 @@ export default function HTiming(){
                 const enabled = availability[day]
                 const count = sessions[day] || 0
                 return (
-                  <div key={day} className="border border-gray-200 rounded-lg p-3">
+                  <div key={day} className="border border-gray-200 bg-white rounded-lg p-3">
                     <div className="flex items-center justify-between">
                       <span className="text-[15px] font-medium secondary:text-gray-400">{day}</span>
                       <div className="flex items-center gap-2 text-sm text-gray-600">
