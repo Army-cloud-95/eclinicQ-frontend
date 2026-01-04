@@ -175,7 +175,7 @@ export const getPatientColumns = (onOpenLog, onSchedule) => [
         key: 'reason',
         header: <TableHeader label="Reason for Last Visit" />,
         width: 689,
-      
+
         render: (row) => <span className="text-secondary-grey300 text-sm " title={row.reason}>{row.reason}</span>
     },
     {

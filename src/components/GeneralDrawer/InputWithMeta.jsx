@@ -161,7 +161,7 @@ export default function InputWithMeta({
             />
             <div className="h-[32px] w-full border-[0.5px] border-dashed border-secondary-grey200 rounded-md flex items-center justify-between px-2 text-sm cursor-pointer overflow-x-hidden bg-secondary-grey50">
               <span className="flex items-center gap-2 text-secondary-grey300 flex-1 min-w-0">
-                <img src="/Doctor_module/settings/pdf_black.png" alt="" className="h-5 w-5" />
+                <img src="/Doctor_module/settings/pdf_black.png" alt="" className="h-6 w-6" />
                 <span className="whitespace-normal break-words break-all overflow-hidden text-secondary-grey400">
                   {truncate(fileName || "Establishment.pdf", fileNameMaxLength)}
                 </span>
@@ -192,11 +192,11 @@ export default function InputWithMeta({
                   <button
                     type="button"
                     title="View"
-                    className="hover:text-secondary-grey400"
+                    className="hover:text-secondary-grey400 mr-0.5"
                     onClick={() => onFileView?.(fileName)}
                   >
                     {/* simple eye */}
-                    <img src="/Doctor_module/settings/eye.png" alt="" className="w-3.5 h-3.5" />
+                    <img src="/Doctor_module/settings/eye.png" alt="" className="w-[17px]" />
                   </button>
                 )}
               </span>

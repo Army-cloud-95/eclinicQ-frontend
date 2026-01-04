@@ -1,238 +1,642 @@
-import React, { useMemo, useState, useEffect } from 'react'
-import { CheckCircle2, Upload, FileText } from 'lucide-react'
+// HAccount.jsx
+import React, { useState } from 'react'
+import {
+  Phone,
+  Mail,
+  Trash2,
+  ChevronDown,
+  Eye,
+  CheckCircle2,
+  Upload,
+  FileText
+} from 'lucide-react'
 import AvatarCircle from '../../../components/AvatarCircle'
-import { hospital as coverImg } from '../../../../public/index.js'
-import { useLocation, useNavigate } from 'react-router-dom'
+import Badge from '../../../components/Badge'
+import MapLocation from '../../../components/FormItems/MapLocation'
+import InputWithMeta from '../../../components/GeneralDrawer/InputWithMeta'
+import HospitalInfoDrawer from './Drawers/HospitalInfoDrawer'
+import MedicalSpecialtiesDrawer from './Drawers/MedicalSpecialtiesDrawer'
+import HospitalServicesDrawer from './Drawers/HospitalServicesDrawer'
+import AddAwardDrawer from './Drawers/AddAwardDrawer'
+import AccreditationDrawer from './Drawers/AccreditationDrawer'
 
-const InfoField = ({ label, value, right }) => (
-  <div className="grid grid-cols-12 gap-2 text-[13px] leading-5">
-    <div className="col-span-4 text-gray-500">{label}</div>
-    <div className="col-span-8 text-gray-900 flex items-center gap-2 min-h-[26px]">
-      <span className="truncate">{value || '-'}</span>
+
+// Custom Images Import (matching Doc_settings)
+import {
+  cap,
+  add,
+  hospital,
+  verifiedTick,
+  inviteUserIcon,
+  pencil,
+  pdf_blue,
+  experience,
+  publication,
+  award
+} from '../../../../public/index.js'
+
+
+// --- Components from Doc_settings.jsx (EXACT COPY) ---
+
+const InfoField = ({ label, value, right, className: Class }) => (
+  <div
+    className={`${Class} flex flex-col gap-1 text-[14px] border-b-[0.5px] pb-[6px] border-secondary-grey100`}
+  >
+    <div className="col-span-4  text-secondary-grey200">{label}</div>
+    <div className="col-span-8 text-secondary-grey400 flex items-center justify-between">
+      <span className="truncate">{value || "-"}</span>
       {right}
     </div>
   </div>
-)
+);
+const SectionCard = ({
+  title,
+  subtitle,
+  subo,
+  Icon,
+  onIconClick,
+  headerRight,
+  children,
+}) => (
+  <div className="px-4 py-3 flex flex-col gap-3 bg-white rounded-lg ">
+    <div className="flex items-center justify-between">
+      {/* LEFT */}
 
-const SectionCard = ({ title, subtitle, action, children, variant = 'default' }) => (
-  <div className="bg-white rounded-lg border border-gray-200">
-    {variant === 'default' ? (
-      <>
-        <div className="px-4 py-3 border-b border-gray-200 flex items-center justify-between">
-          <div className="text-sm">
-            <div className="font-medium text-gray-900">{title}</div>
-            {subtitle ? <div className="text-[12px] text-gray-500">{subtitle}</div> : null}
-          </div>
-          {action}
+      <div className='flex items-center justify-between w-full'>
+        <div className="flex items-center gap-1 text-sm">
+          <div className="font-medium text-[14px] text-gray-900">{title}</div>
+
+          {subtitle && (
+            <div className="px-1 border border-secondary-grey50 bg-secondary-grey50 rounded-[2px] text-[12px] text-gray-500 hover:border hover:border-blue-primary150 hover:text-blue-primary250 cursor-pointer">
+              {subtitle}
+            </div>
+          )}
         </div>
-        <div className="p-4">{children}</div>
-      </>
-    ) : (
-      <div className="p-3">
-        <div className="flex items-center justify-between mb-2">
-          <div className="flex items-center gap-2">
-            <div className="text-sm font-medium text-gray-900">{title}</div>
-            {subtitle ? (
-              <span className="text-[11px] px-2 py-0.5 rounded border bg-gray-50 text-gray-600">{subtitle}</span>
-            ) : null}
+
+        {subo && (
+          <div className="flex gap-1 text-[12px] text-secondary-grey200">
+            <span>{subo}</span>
+            <span className="text-blue-primary250">Call Us</span>
           </div>
-          {action}
-        </div>
-        <div>{children}</div>
+        )}
       </div>
-    )}
+
+
+      {/* RIGHT */}
+      <div className="flex items-center gap-3 shrink-0">
+        {headerRight}
+
+        {Icon && (
+          <button
+            onClick={onIconClick}
+            className="p-1 text-gray-500 hover:bg-gray-50"
+          >
+            {typeof Icon === "string" ? (
+              <img src={Icon} alt="icon" className="w-6 h-6" />
+            ) : (
+              <Icon className="w-6 h-6" />
+            )}
+          </button>
+        )}
+      </div>
+    </div>
+
+    <div>{children}</div>
   </div>
-)
+);
 
-export default function HAccount(){
-  const location = useLocation()
-  const navigate = useNavigate()
+const ProfileItemCard = ({
+  icon,
+  title,
+  badge,
+  subtitle,
+  date,
+  location, // new optional line under date
+  linkLabel,
+  linkUrl,
+  description, // new long text with See more toggle when no link
+  initiallyExpanded = false,
+  rightActions, // JSX slot (optional)
+  // Optional inline edit-education control
+  showEditEducation = false,
+  editEducationIcon, // string URL or React component
+  onEditEducationClick, // handler to open drawer
+  editEducationAriaLabel = "Edit education",
+}) => {
+  const [expanded, setExpanded] = useState(!!initiallyExpanded);
+  const MAX_CHARS = 220;
+  const showSeeMore = !linkUrl && typeof description === 'string' && description.length > MAX_CHARS;
+  const visibleText =
+    !linkUrl && typeof description === 'string'
+      ? expanded
+        ? description
+        : description.length > MAX_CHARS
+          ? description.slice(0, MAX_CHARS).trimEnd() + '…'
+          : description
+      : '';
+  return (
+    <div className="flex  py-2.5 pt-1.5 border-b rounded-md bg-white">
+      {/* Icon */}
+      <div className="w-[64px] mr-4 h-[64px] rounded-full border border-secondary-grey50 bg-gray-100 flex items-center justify-center text-gray-600 shrink-0">
+        {typeof icon === "string" ? (
+          <img src={icon} alt="" className="w-8 h-8 object-contain" />
+        ) : (
+          icon
+        )}
+      </div>
 
-  const tabs = [
-    { key: 'account', label: 'Account Detail', path: '/hospital/settings/account' },
-    { key: 'timing', label: 'Timing and Schedule', path: '/hospital/settings/timing' },
-    { key: 'surgeries', label: 'Surgeries', path: '/hospital/settings/surgeries' },
-    { key: 'staff', label: 'Staff Permissions', path: '/hospital/settings/staff-permissions' },
-    { key: 'security', label: 'Security Settings', path: '/hospital/settings/security' },
+      {/* Content */}
+      <div className="flex  flex-col gap-[2px] w-full">
+        <div className="flex items-center justify-between">
+          <div className="flex flex-shrink-0  items-center gap-1 text-sm text-secondary-grey400">
+            <span className="font-semibold">{title}</span>
+            {badge && (
+              <span className="text-[12px]   min-w-[18px]  text-secondary-grey400 bg-secondary-grey50 rounded px-1 ">
+                {badge}
+              </span>
+            )}
+          </div>
+          {showEditEducation && (
+
+            <button
+              type="button"
+              onClick={onEditEducationClick}
+              aria-label={editEducationAriaLabel}
+              title={editEducationAriaLabel}
+              className=" inline-flex items-center justify-center rounded hover:bg-secondary-grey50 text-secondary-grey300 mr-2"
+            >
+              {typeof editEducationIcon === "string" && editEducationIcon ? (
+                <img src={editEducationIcon} alt="edit" className="w-6" />
+              ) : editEducationIcon ? (
+                React.createElement(editEducationIcon, { className: "w-6" })
+              ) : (
+                <img src={pencil} alt="edit" className="w-6" />
+              )}
+            </button>
+
+
+          )}
+
+
+        </div>
+
+        {subtitle && <div className="text-sm text-secondary-grey400 w-4/5">{subtitle}</div>}
+
+        {date && <div className="text-sm text-secondary-grey200">{date}</div>}
+        {location && (
+          <div className="text-sm text-secondary-grey200">{location}</div>
+        )}
+
+        {linkUrl ? (
+          <div className="flex items-center gap-1">
+
+            <a
+              href={linkUrl}
+              className="inline-flex items-center gap-1 text-sm text-blue-primary250"
+              target="_blank"
+              rel="noreferrer"
+            >
+              {linkLabel}
+            </a>
+          </div>
+        ) : (
+          description ? (
+            <div className="mt-2">
+              <div className="text-[13px] text-secondary-grey400">{visibleText}</div>
+              {showSeeMore && (
+                <button
+                  type="button"
+                  className="mt-1 text-[13px] text-secondary-grey200 inline-flex items-center gap-1 hover:text-secondary-grey300"
+                  onClick={() => setExpanded((v) => !v)}
+                >
+                  {expanded ? 'See Less' : 'See More'}
+                  <ChevronDown className={`w-3 h-3 transition-transform ${expanded ? 'rotate-180' : ''}`} />
+                </button>
+              )}
+            </div>
+          ) : null
+        )}
+      </div>
+
+      {/* Right actions – render ONLY if provided */}
+      {rightActions && (
+        <div className="flex items-center gap-2">{rightActions}</div>
+      )}
+    </div>
+  );
+};
+// --- End Exact Copies ---
+
+export default function HAccount({ profile }) {
+  if (!profile) return null
+
+  // State for Add Menu Toggle (matching Doc_settings)
+  const [showAddMenu, setShowAddMenu] = useState(false);
+  const [hospitalInfoOpen, setHospitalInfoOpen] = useState(false);
+  const [specialtiesOpen, setSpecialtiesOpen] = useState(false);
+  const [servicesOpen, setServicesOpen] = useState(false);
+
+  const [awardOpen, setAwardOpen] = useState(false);
+  const [awardEditMode, setAwardEditMode] = useState("add");
+  const [awardEditData, setAwardEditData] = useState(null);
+
+  const [accreditationOpen, setAccreditationOpen] = useState(false);
+  const [accreditationEditMode, setAccreditationEditMode] = useState("add");
+  const [accreditationEditData, setAccreditationEditData] = useState(null);
+
+  // Dummy awards data if none provided
+  const awards = profile.awards || [
+    { id: 1, awardName: "Best Plasticene Award", issuerName: "Manipal hospital", issueDate: "May 2017", awardUrl: "#" },
+    { id: 2, awardName: "Best Plasticene Award", issuerName: "Manipal hospital", issueDate: "May 2017", awardUrl: "#" },
+    { id: 3, awardName: "NABH - National Accreditation Board", issuerName: "Manipal hospital", issueDate: "May 2017", awardUrl: "#" },
+    { id: 4, awardName: "ISO Certifications", issuerName: "Manipal hospital", issueDate: "May 2017", awardUrl: "#" },
+    { id: 5, awardName: "JCI - Joint Commission International", issuerName: "Manipal hospital", issueDate: "May 2017", awardUrl: "#" }
   ]
 
-  const activeKey = useMemo(() => {
-    const p = location.pathname
-    if (p.endsWith('/settings/account')) return 'account'
-    if (p.endsWith('/settings/timing')) return 'timing'
-    if (p.endsWith('/settings/surgeries')) return 'surgeries'
-    if (p.endsWith('/settings/staff-permissions')) return 'staff'
-    if (p.endsWith('/settings/security')) return 'security'
-    return 'account'
-  }, [location.pathname])
+  const publications = profile.publications || [];
 
-  const [activeTab, setActiveTab] = useState(activeKey)
-  useEffect(() => setActiveTab(activeKey), [activeKey])
+  // Helpers
+  const formatMonthYear = (dateStr) => {
+    // Mock formatting/returning already formatted string for dummy data
+    return dateStr;
+  }
 
-  const profile = useMemo(() => ({
-    name: 'Manipal Hospital - Baner',
-    status: 'Active',
-    phone: '91753 67487',
-    email: 'milindchahun@gmail.com',
-    gender: 'Male',
-    city: 'Akola, Maharashtra',
-    designation: 'Business Owner',
-    role: 'Super Admin',
-    specialties: ['Anaesthesiology','Cardiology','Dermatology','Orthopedics','Physiotherapy','ENT','Pulmonology','Haematology','Oncology'],
-    services: ['MRI Scan','CT Scan','Blood Bank','Parking','Path Lab','X Ray','Pharmacy','Radiology','Private Room','General Ward'],
-    gst: { number: '27AAECA1234F1Z5', proof: 'GST Proof.pdf' },
-    cin: {
-      number: '27AAECA1234F1Z5', company: 'Manipal Hospital Pvt. Ltd.', type: 'Private Limited',
-      incorporation: '02/05/2015', address: '101, FC Road, Pune', stateCode: 'PN (Maharashtra)', director: 'Dr. R. Mehta', code: '012345'
-    },
-    about: `Dr. Milind Chauhan practices Gynaecologist and Obstetrician in Andheri East, Mumbai and has 13 years of experience in this field. He has completed his DNB - Obstetric and Gynecology and MBBS. Dr. Milind Chauhan has gained the confidence of patients and is a popular Gynaecologist and Obstetrician expert in Mumbai who performs treatment and procedures for various health issues related to Gynaecologist and Obstetrician.`,
-    photos: [
-      'https://images.unsplash.com/photo-1586773860418-d37222d8fce3?w=400',
-      'https://images.unsplash.com/photo-1584985592394-8c40a30e2531?w=400',
-      'https://images.unsplash.com/photo-1504439904031-93ded9f93b28?w=400',
-      'https://images.unsplash.com/photo-1579154206451-2bdb0fd2d375?w=400',
-    ],
-  }), [])
+  // Verified Badge Component
+  const VerifiedBadge = () => (
+    <span className="inline-flex items-center text-success-300 border bg-success-100 border-success-300 py-0.5 px-1 rounded-md text-[12px]">
+      <img src={verifiedTick} alt="Verified" className="w-3.5 h-3.5 mr-1" />
+      Verified
+    </span>
+  )
 
   return (
-    <div className="px-6 pb-10">
-      {/* Top banner + centered avatar + tabs */}
-      <div className="-mx-6">
-        <div className="relative">
-          <img src={coverImg} alt="cover" className="w-full h-40 object-cover" />
-          <div className="absolute -bottom-10 left-1/2 -translate-x-1/2">
-            <div className="rounded-full ring-4 ring-white shadow-md">
-              <AvatarCircle name={profile.name} size="l" color="blue" className="w-24 h-24 text-3xl" />
-            </div>
-          </div>
-        </div>
-        <div className="bg-white border-b border-gray-200">
-          <div className="px-6 pt-10">
-            <div className="flex items-center justify-between">
-              <div className="text-center mx-auto">
-                <div className="text-lg font-medium text-gray-900">{profile.name}</div>
-                <div className="text-green-600 text-sm">{profile.status}</div>
+    <>
+      <div className=" grid grid-cols-12 gap-6 bg-secondary-grey50">
+
+        {/* Left Column (7/12) */}
+        <div className="col-span-12 xl:col-span-6 space-y-6">
+
+          {/* Hospital Info */}
+          <SectionCard
+            title="Hospital Info"
+            subtitle="Visible to Patient"
+            Icon={pencil} // Custom Icon
+            onIconClick={() => setHospitalInfoOpen(true)}
+          >
+            <div className="grid grid-cols-2 gap-x-8 gap-y-4">
+              <InfoField label="Hospital Name" value={profile.hospitalName || "Manipal Hospital"} />
+              <InfoField label="Hospital Type" value={profile.type || "Multi-Speciality Hospital"} />
+              <InfoField label="Mobile Number" value={profile.phone} right={<VerifiedBadge />} />
+              <InfoField label="Email" value={profile.email} right={<VerifiedBadge />} />
+              <InfoField label="Establishment Date" value={profile.estDate || "10/09/2005"} />
+
+              {/* Establishment Proof using InputWithMeta */}
+              <div>
+                <div className="text-[14px] text-secondary-grey200 mb-1">Establishment Proof</div>
+                <InputWithMeta
+                  imageUpload={true}
+                  fileName={"Establishment.pdf"}
+                  onFileView={(f) => console.log('view', f)}
+                  showInput={false}
+                />
               </div>
-              <div className="text-sm text-gray-600">Baner, Pune</div>
+
+              <InfoField label="Website" value={profile.website} />
+              <InfoField label="Emergency Contact Number" value={profile.emergencyPhone || profile.phone} />
+              <InfoField label="Number of Beds" value={profile.beds || "600"} />
+              <InfoField label="Number of ICU Beds" value={profile.icuBeds || "126"} />
+              <InfoField label="Number of Ambulances" value={profile.ambulances || "5"} />
+              <InfoField label="Ambulance Contact Number" value={profile.ambulancePhone || profile.phone} />
+              <InfoField label="Do you have Blood Bank" value={profile.bloodBank ? "Yes" : "No"} />
+              <InfoField label="Blood Bank Contact Number" value={profile.bloodBankPhone || profile.phone} />
             </div>
-            <nav className="mt-3 flex items-center gap-6 overflow-x-auto text-sm">
-              {tabs.map((t) => (
-                <button key={t.key} onClick={() => navigate(t.path)} className={`whitespace-nowrap pb-3 border-b-2 transition-colors ${activeTab===t.key? 'border-blue-600 text-gray-900' : 'border-transparent text-gray-600 hover:text-gray-900'}`}>
-                  {t.label}
-                </button>
+
+            <div className="pt-4 pb-4">
+              <div className="text-sm text-secondary-grey200 mb-1">About</div>
+              <p className="text-sm leading-relaxed text-secondary-grey400">{profile.about || "Dr. Milind Chauhan practices Gynaecologist and Obstetrician in Andheri East, Mumbai and has 13 years of experience in this field..."}</p>
+            </div>
+
+            <InputWithMeta
+              label="Hospital Photos"
+              showInput={false}
+
+            >
+            </InputWithMeta>
+            <div className="flex gap-4 overflow-x-auto pb-1">
+              {(profile.photos && profile.photos.length > 0 ? profile.photos : ['/placeholder_clinic.jpg', '/placeholder_clinic.jpg']).map((src, i) => (
+                <img key={i} src={src} alt="hospital" className="w-[120px] h-[120px] rounded-md object-cover border border-gray-100" />
               ))}
-            </nav>
-          </div>
-        </div>
-      </div>
-
-      {/* Account Detail content */}
-      {activeTab === 'account' && (
-        <div className="mt-4 grid grid-cols-12 gap-4">
-          {/* Two-column layout: left 7, right 5 */}
-          <div className="col-span-12 xl:col-span-7 space-y-4">
-            {/* About */}
-            <div className="bg-white border border-gray-200 rounded-lg p-4">
-              <p className="text-[13px] leading-6 text-gray-800">{profile.about}</p>
             </div>
+          </SectionCard>
 
-            {/* Photos */}
-            <SectionCard variant="subtle" title="Hospital Photos">
-              <div className="flex items-center gap-3 overflow-x-auto">
-                {profile.photos.map((src, i) => (
-                  <img key={i} src={src} alt="hospital" className="w-36 h-24 rounded-md object-cover border" />
+
+
+          {/* Medical Specialties */}
+          <SectionCard title="Medical Specialties" subtitle="Visible to Patient" Icon={pencil} onIconClick={() => setSpecialtiesOpen(true)}>
+            <div className="flex flex-wrap gap-2">
+              {(profile.specialties || ['Anaesthesiology', 'Cardiology', 'Dermatology', 'Orthopedics']).map((s, i) => (
+                <span key={i} className="px-1 rounded-[2px] border border-gray-100 bg-gray-50 text-sm text-secondary-grey400 hover:border-blue-primary150 hover:text-blue-primary250 cursor-pointer">{s}</span>
+              ))}
+            </div>
+          </SectionCard>
+
+          {/* Services & Facilities */}
+          <SectionCard title="Hospital Services & Facilities" subtitle="Visible to Patient" Icon={pencil} onIconClick={() => setServicesOpen(true)}>
+            <div className="flex flex-wrap gap-3">
+              {(profile.services || ['MRI Scan', 'CT Scan', 'Blood Bank', 'Parking']).map((s, i) => (
+                <span key={i} className="px-1 rounded-[2px] border border-gray-100 bg-gray-50 text-sm text-secondary-grey400 hover:border-blue-primary150 hover:text-blue-primary250 cursor-pointer">{s}</span>
+              ))}
+            </div>
+          </SectionCard>
+
+          {/* Awards & Publications (EXACT FROM DOC SETTINGS) */}
+          <SectionCard
+            title="Awards & Publications"
+            subtitle="Visible to Patient"
+            Icon={add}
+            onIconClick={() => setShowAddMenu((v) => !v)}
+          >
+            <div className="relative">
+              {showAddMenu && (
+                <div className="absolute right-0 -top-2 mt-0.5 bg-white border border-gray-200 shadow-2xl rounded-md p-1 text-[13px] z-20">
+                  <button
+                    className="flex items-center gap-2 px-3 py-2 hover:bg-gray-50 w-full text-left"
+                    onClick={() => { setShowAddMenu(false); setAwardEditMode("add"); setAwardEditData(null); setAwardOpen(true); }}
+                  >
+                    <img src={award} alt="" className="w-4 h-4" /> Add Awards
+                  </button>
+                  <button
+                    className="flex items-center gap-2 px-3 py-2 hover:bg-gray-50 w-full text-left"
+
+                    onClick={() => {
+                      setShowAddMenu(false);
+                      setAccreditationEditMode("add");
+                      setAccreditationEditData(null);
+                      setAccreditationOpen(true);
+                    }}
+                  >
+                    <img src={publication} alt="" className="w-4 h-4" /> Add Accreditations
+                  </button>
+                </div>
+              )}
+            </div>
+            <div className="space-y-2">
+              {Array.isArray(awards) &&
+                awards.map((aw) => (
+                  <ProfileItemCard
+                    key={aw.id}
+                    icon={award}
+                    title={aw.awardName}
+                    subtitle={aw.issuerName}
+                    date={formatMonthYear(aw.issueDate)}
+                    linkLabel="Certificate ↗"
+                    linkUrl={aw.awardUrl}
+                    showEditEducation={true}
+                    editEducationIcon={pencil}
+                    onEditEducationClick={() => {
+                      setAwardEditData(aw);
+                      setAwardEditMode("edit");
+                      setAwardOpen(true);
+                    }}
+
+                  />
                 ))}
-              </div>
-            </SectionCard>
 
-            {/* Medical Specialties */}
-            <SectionCard
-              variant="subtle"
-              title="Medical Specialties"
-              subtitle="Visible to Patient"
-              action={<button className="text-blue-600 text-sm inline-flex items-center gap-1" title="Edit">✎</button>}
-            >
-              <div className="flex flex-wrap gap-2">
-                {profile.specialties.map((s,i)=>(<span key={i} className="text-xs px-2 py-1 rounded border bg-gray-50 text-gray-700">{s}</span>))}
-              </div>
-            </SectionCard>
+              {Array.isArray(publications) &&
+                publications.map((pub) => (
+                  <ProfileItemCard
+                    key={pub.id}
+                    icon={publication}
+                    title={pub.title}
+                    subtitle={pub.publisher || pub.associatedWith}
+                    date={pub.publicationDate ? formatMonthYear(pub.publicationDate) : undefined}
+                    linkLabel="Publication ↗"
+                    linkUrl={pub.publicationUrl}
+                    description={pub.description}
+                    rightActions={
+                      <button
+                        onClick={() => {
+                          setAccreditationEditData(pub);
+                          setAccreditationEditMode("edit");
+                          setAccreditationOpen(true);
+                        }}
+                        className="text-gray-400 hover:text-blue-600 transition"
+                        title="Edit"
+                      >
+                        <img src={pencil} alt="edit" className="w-4 h-4" />
+                      </button>
+                    }
+                  />
+                ))}
+            </div>
+          </SectionCard>
 
-            {/* Services & Facilities */}
-            <SectionCard
-              variant="subtle"
-              title="Hospital Services & Facilities"
-              subtitle="Visible to Patient"
-              action={<button className="text-blue-600 text-sm inline-flex items-center gap-1" title="Edit">✎</button>}
-            >
-              <div className="flex flex-wrap gap-2">
-                {profile.services.map((s,i)=>(<span key={i} className="text-xs px-2 py-1 rounded border bg-gray-50 text-gray-700">{s}</span>))}
-              </div>
-            </SectionCard>
+        </div>
 
-            {/* Awards */}
-            <SectionCard
-              variant="subtle"
-              title="Awards & Accreditations"
-              subtitle="Visible to Patient"
-              action={<button className="text-blue-600 text-sm inline-flex items-center gap-1"><Upload size={14}/> Add</button>}
-            >
-              <div className="space-y-3">
-                <div className="p-3 border border-gray-200 rounded-md">
-                  <div className="text-sm text-gray-900 font-medium">Best Plasticene Award</div>
-                  <div className="text-[12px] text-gray-600">Manipal hospital</div>
-                </div>
-              </div>
-            </SectionCard>
-          </div>
+        {/* Right Column (5/12) */}
+        <div className="col-span-12 xl:col-span-6 space-y-6">
 
-          <div className="col-span-12 xl:col-span-5 space-y-4">
-            {/* Basic Info on right */}
-            <SectionCard variant="subtle" title="Basic Info" subtitle="Visible to Patient">
-              <div className="grid grid-cols-2 gap-3 text-[13px]">
-                <InfoField label="Mobile Number" value={profile.phone} right={<span className="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full bg-green-50 text-green-700 border border-green-200"><CheckCircle2 size={14}/> Verified</span>} />
-                <InfoField label="Email" value={profile.email} right={<span className="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full bg-green-50 text-green-700 border border-green-200"><CheckCircle2 size={14}/> Verified</span>} />
-                <InfoField label="Gender" value={profile.gender} />
-                <InfoField label="City" value={profile.city} />
-                <InfoField label="Designation" value={profile.designation} />
-                <InfoField label="Role" value={profile.role} />
-              </div>
-            </SectionCard>
+          {/* Address */}
+          <SectionCard title="Hospital Address" subtitle="Visible to Patient" Icon={pencil} onIconClick={() => setHospitalInfoOpen(true)}>
+            <InputWithMeta
+              label="Map Location"
+              showInput={false}
+              infoIcon
+            />
 
-            {/* Verification Documents */}
-            <SectionCard title="Verification Documents" subtitle="Visible to Patient" action={<span className="text-[12px] text-gray-500">To Change your Medical proof please <a href="#" className="text-blue-600" onClick={(e)=>e.preventDefault()}>Call Us</a></span>}>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <div className="text-[12px] text-gray-500 mb-2">GST Details</div>
-                  <InfoField label="GST Number" value={profile.gst.number} />
-                </div>
-                <div>
-                  <div className="text-[12px] text-gray-500 mb-2">Proof of GST Registration</div>
-                  <div className="mt-1 flex items-center justify-between gap-2 w-full max-w-xs border rounded px-2 py-1 text-[12px] bg-gray-50">
-                    <span className="inline-flex items-center gap-1 text-gray-700"><FileText size={14}/> {profile.gst.proof}</span>
-                    <button className="text-gray-500 hover:text-gray-700" title="More">⋮</button>
+            <div className="h-[100px] bg-gray-100 rounded-lg border border-gray-200 mb-3 overflow-hidden relative">
+              <MapLocation overlay={false} />
+            </div>
+            <div className="grid grid-cols-1 gap-3">
+              <div className="grid grid-cols-2 gap-8">
+                <InfoField label="Block no./Shop no./House no." value={profile.address?.block || "Survey No 111/11/1"} />
+                <InfoField label="Road/Area/Street" value={profile.address?.road || "Veerbhadra Nagar Road, Mhalunge Main Road, Baner"} />
+              </div>
+              <div className="grid grid-cols-2 gap-8">
+                <InfoField label="Landmark" value={profile.address?.landmark || "Near Chowk"} />
+                <InfoField label="Pincode" value={profile.address?.pincode || "444001"} />
+              </div>
+              <div className="grid grid-cols-2 gap-8">
+                <InfoField label="City" value={profile.city || "Akola"} />
+                <InfoField label="State" value={profile.state || "Maharashtra"} />
+              </div>
+            </div>
+          </SectionCard>
+
+          {/* Primary Admin */}
+          <SectionCard title="Primary Admin Account Details" subo="To Change Admin Details" headerRight={<></>}>
+            <div className="grid grid-cols-2 gap-x-7 gap-y-3">
+              <InfoField label="First Name" value={profile.admin?.firstName || "Milind"} />
+              <InfoField label="Last Name" value={profile.admin?.lastName || "Chauhan"} />
+              <InfoField label="Mobile Number" value={profile.admin?.phone || "91753 67487"} right={<VerifiedBadge />} />
+              <InfoField label="Email" value={profile.admin?.email || "milindchachun.gmail.com"} right={<VerifiedBadge />} />
+              <InfoField label="Gender" value={profile.admin?.gender || "Male"} />
+              <InfoField label="City" value={profile.admin?.city || "Akola, Maharashtra"} />
+              <InfoField label="Designation" value={profile.admin?.designation || "Business Owner"} />
+              <InfoField label="Role" value={profile.admin?.role || "Super Admin"} />
+            </div>
+          </SectionCard>
+
+          {/* Verification Documents - Grid Layout */}
+          <SectionCard title="Verification Documents" subtitle="Visible to Patient" subo="To change your Medical proof please">
+            <div className="space-y-3">
+
+              {/* GST */}
+              <div className='flex flex-col gap-2'>
+                <h4 className="text-sm font-medium text-secondary-grey400">
+                  <span className="relative inline-block pb-2">
+                    GST Details
+                    <span className="absolute left-1/2 bottom-0 h-[2px] w-full -translate-x-3/4 scale-x-50 bg-blue-primary150/50"></span>
+                  </span>
+                </h4>
+
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-7">
+                  <div><InfoField label="GST Number" value={profile.gst?.number || "27AAECA1234F1Z5"} /></div>
+                  <div>
+                    <div className="text-[14px] text-secondary-grey200 mb-1">Proof of GST Registration</div>
+                    <InputWithMeta imageUpload={true} fileName="GST Proof.pdf" showInput={false} />
                   </div>
                 </div>
               </div>
 
-              <div className="my-3 h-px bg-gray-200" />
+              {/* CIN */}
+              <div className='flex flex-col gap-2'>
+                <h4 className="text-sm font-semibold text-secondary-grey400">
+                  <span className="relative inline-block pb-2">
+                    CIN Details
+                    <span className="absolute left-1/2 bottom-0 h-[2px] w-full -translate-x-3/4 scale-x-50 bg-blue-primary150/50"></span>
+                  </span>
+                </h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-7 gap-y-4">
+                  <InfoField label="CIN Number" value={profile.cin?.number || "27AAECA1234F1Z5"} />
+                  <InfoField label="Registered Company Name" value={profile.cin?.company || "Manipal Hospital Pvt. Ltd."} />
+                  <InfoField label="Company Type" value={profile.cin?.type || "Private Limited"} />
+                  <InfoField label="Date of Incorporation" value={profile.cin?.incorporation || "02/05/2015"} />
+                  <InfoField label="Registered Office Address" value={profile.cin?.address || "101, FC Road, Pune"} />
+                  <InfoField label="State and ROC Code" value={profile.cin?.stateCode || "PN (Maharashtra)"} />
+                  <InfoField label="Authorized Director" value={profile.cin?.director || "Dr. R. Mehta"} />
+                  <InfoField label="Registration Number" value="012345" />
+                  <InfoField label="Authorized Email (From MCA)" value="info@manipalhospital.in" />
+                  <div>
 
-              <div className="mt-2">
-                <div className="text-[12px] text-gray-500 mb-2">CIN Details</div>
-                <div className="grid grid-cols-2 gap-3 text-[13px]">
-                  <InfoField label="CIN Number" value={profile.cin.number} />
-                  <InfoField label="Registered Company Name" value={profile.cin.company} />
-                  <InfoField label="Company Type" value={profile.cin.type} />
-                  <InfoField label="Date of Incorporation" value={profile.cin.incorporation} />
-                  <InfoField label="Registered Office Address" value={profile.cin.address} />
-                  <InfoField label="State and ROC Code" value={profile.cin.stateCode} />
-                  <InfoField label="Authorized Director" value={profile.cin.director} />
-                  <InfoField label="Director Code" value={profile.cin.code} />
+
+                    <div>
+                      <div className="text-[14px] text-secondary-grey200 mb-">Proof of CIN Registration</div>
+                      <InputWithMeta imageUpload={true} fileName="CIN Proof.pdf" showInput={false} />
+                    </div>
+
+                  </div>
                 </div>
               </div>
-            </SectionCard>
-          </div>
+
+              {/* State Health Registration */}
+              <div className="flex flex-col pt-2 gap-2">
+                <h4 className="text-sm font-semibold text-secondary-grey400">
+                  <span className="relative inline-block pb-2">
+                    State Health Registration Details
+                    <span className="absolute left-1/2 bottom-0 h-[2px] w-full -translate-x-3/4 scale-x-50 bg-blue-primary150/50"></span>
+                  </span>
+                </h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-7">
+                  <InfoField label="State Health Registartion Number" value="27AAECA1234F1Z5" />
+                  <div>
+                    <div className="text-[14px] text-secondary-grey200 ">Proof of State Health Registration</div>
+                    <InputWithMeta imageUpload={true} fileName="SHR Proof.pdf" showInput={false} />
+                  </div>
+                </div>
+              </div>
+
+              {/* PAN Card */}
+              <div className="pt-2 gap-2 flex flex-col">
+                <h4 className="text-sm font-semibold text-secondary-grey400">
+                  <span className="relative inline-block pb-2">
+                    PAN CardQ3 Details
+                    <span className="absolute left-1/2 bottom-0 h-[2px] w-full -translate-x-3/4 scale-x-50 bg-blue-primary150/50"></span>
+                  </span>
+                </h4>              <div className="grid grid-cols-1 md:grid-cols-2 gap-7">
+                  <InfoField label="Pan Card Number" value="27AAECA1234F1Z5" />
+                  <div>
+                    <div className="text-[14px] text-secondary-grey200 ">Proof of Pan Card</div>
+                    <InputWithMeta imageUpload={true} fileName="PAN Proof.pdf" showInput={false} />
+                  </div>
+                </div>
+              </div>
+
+              {/* Rohini */}
+              <div className="pt-2 gap-2 flex flex-col">
+                <h4 className="text-sm font-semibold text-secondary-grey400">
+                  <span className="relative inline-block pb-2">
+                    Rohini Details
+                    <span className="absolute left-1/2 bottom-0 h-[2px] w-full -translate-x-3/4 scale-x-50 bg-blue-primary150/50"></span>
+                  </span>
+                </h4>              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <InfoField label="Rohini ID" value="27AAECA1234F1Z5" />
+                  <div>
+                    <div className="text-[14px] text-secondary-grey200 mb-1">Proof of Rohini</div>
+                    <InputWithMeta imageUpload={true} fileName="Rohini Proof.pdf" showInput={false} />
+                  </div>
+                </div>
+              </div>
+
+              {/* NABH */}
+              <div className="pt-2 flex flex-col gap-2">
+                <h4 className="text-sm font-semibold text-secondary-grey400">
+                  <span className="relative inline-block pb-2">
+                    NABH Accreditation Details
+                    <span className="absolute left-1/2 bottom-0 h-[2px] w-full -translate-x-3/4 scale-x-50 bg-blue-primary150/50"></span>
+                  </span>
+                </h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <InfoField label="NABH Number" value="27AAECA1234F1Z5" />
+                  <div>
+                    <div className="text-[14px] text-secondary-grey200 mb-1">Proof of NABH</div>
+                    <InputWithMeta imageUpload={true} fileName="NABH Proof.pdf" showInput={false} />
+                  </div>
+                </div>
+              </div>
+
+            </div>
+          </SectionCard>
+
         </div>
-      )}
-    </div>
+      </div>
+
+      <HospitalInfoDrawer
+        open={hospitalInfoOpen}
+        onClose={() => setHospitalInfoOpen(false)}
+        initial={profile}
+        onSave={(updatedData) => {
+          console.log("Updated Hospital Info:", updatedData);
+          // Here you would typically call an API to update the profile
+        }}
+      />
+      <MedicalSpecialtiesDrawer
+        open={specialtiesOpen}
+        onClose={() => setSpecialtiesOpen(false)}
+        selectedItems={profile.specialties || ['Anaesthesiology', 'Cardiology', 'Dermatology', 'Orthopedics']}
+        onSave={(items) => console.log('Updated Specialties:', items)}
+      />
+      <HospitalServicesDrawer
+        open={servicesOpen}
+        onClose={() => setServicesOpen(false)}
+        selectedItems={profile.services || ['MRI Scan', 'CT Scan', 'Blood Bank', 'Parking']}
+        onSave={(items) => console.log('Updated Services:', items)}
+      />
+      <AddAwardDrawer
+        open={awardOpen}
+        onClose={() => setAwardOpen(false)}
+        mode={awardEditMode}
+        initial={awardEditData || {}}
+        onSave={(data) => console.log("Saved Award:", data)}
+      />
+      <AccreditationDrawer
+        open={accreditationOpen}
+        onClose={() => setAccreditationOpen(false)}
+        mode={accreditationEditMode}
+        initial={accreditationEditData || {}}
+        onSave={(data) => console.log("Saved Accreditation:", data)}
+      />
+    </>
   )
 }

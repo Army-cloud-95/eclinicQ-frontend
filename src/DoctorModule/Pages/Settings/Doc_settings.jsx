@@ -1350,27 +1350,7 @@ const Doc_settings = () => {
                       setEduEditMode("edit");
                       setEduOpen(true);
                     }}
-                  // rightActions={
-                  //   <button
-                  //     onClick={() => {
-                  //       setEduEditData({
-                  //         id: ed.id,
-                  //         school: ed.instituteName,
-                  //         gradType: ed.graduationType,
-                  //         degree: ed.degree,
-                  //         field: ed.fieldOfStudy || "",
-                  //         start: ed.startYear?.toString() || "",
-                  //         end: ed.completionYear?.toString() || "",
-                  //         proof: ed.proofDocumentUrl || "",
-                  //       });
-                  //       setEduEditMode("edit");
-                  //       setEduOpen(true);
-                  //     }}
-                  //     className="text-gray-400 hover:text-blue-600"
-                  //     title="Edit"
-                  //   ></button>
-                  // }
-                  />
+                 />
                 ))}
               </div>
             </SectionCard>

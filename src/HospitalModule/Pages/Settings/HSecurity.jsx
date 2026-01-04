@@ -1,99 +1,52 @@
-import React, { useMemo, useState, useEffect } from 'react'
-import { useLocation, useNavigate } from 'react-router-dom'
-import AvatarCircle from '../../../components/AvatarCircle'
-import Input from '../../../components/FormItems/Input'
-import { hospital as coverImg } from '../../../../public/index.js'
+import React, { useState } from 'react'
 
-const SectionCard = ({ title, children }) => (
-  <div className="bg-white rounded-lg border border-gray-200">
-    <div className="px-4 py-3 border-b border-gray-200">
-      <div className="text-sm font-medium text-gray-900">{title}</div>
+const PasswordInput = ({ label, placeholder, value, onChange }) => (
+  <div className="flex flex-col gap-1.5">
+    <label className="text-[14px] text-gray-700 font-medium">{label}</label>
+    <div className="relative">
+      <input type="password" value={value} onChange={onChange} placeholder={placeholder} className="w-full h-10 px-3 rounded-lg border border-gray-300 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 text-sm transition-all" />
     </div>
-    <div className="p-4">{children}</div>
   </div>
 )
 
-export default function HSecurity(){
-  const location = useLocation()
-  const navigate = useNavigate()
-
-  const tabs = [
-    { key: 'account', label: 'Account Details', path: '/hospital/settings/account' },
-    { key: 'timing', label: 'Timing and Schedule', path: '/hospital/settings/timing' },
-    { key: 'surgeries', label: 'Surgeries', path: '/hospital/settings/surgeries' },
-    { key: 'staff', label: 'Staff Permissions', path: '/hospital/settings/staff-permissions' },
-    { key: 'security', label: 'Security Settings', path: '/hospital/settings/security' },
-  ]
-
-  const activeKey = useMemo(() => {
-    const p = location.pathname
-    if (p.endsWith('/settings/account')) return 'account'
-    if (p.endsWith('/settings/timing')) return 'timing'
-    if (p.endsWith('/settings/surgeries')) return 'surgeries'
-    if (p.endsWith('/settings/staff-permissions')) return 'staff'
-    if (p.endsWith('/settings/security')) return 'security'
-    return 'security'
-  }, [location.pathname])
-
-  const [activeTab, setActiveTab] = useState(activeKey)
-  useEffect(() => setActiveTab(activeKey), [activeKey])
-
-  const profile = useMemo(() => ({ name: 'Manipal Hospital - Baner', status: 'Active', location: 'Baner, Pune' }), [])
-
-  // Local UI state for password fields (UI-only)
-  const [form, setForm] = useState({ current: '', next: '', confirm: '' })
-  const onChange = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }))
+export default function HSecurity() {
+  const [currentPass, setCurrentPass] = useState('')
+  const [newPass, setNewPass] = useState('')
+  const [confirmPass, setConfirmPass] = useState('')
 
   return (
-    <div className="px-6 pb-10">
-      <div className="-mx-6">
-        <div className="relative">
-          <img src={coverImg} alt="cover" className="w-full h-40 object-cover" />
-          <div className="absolute -bottom-10 left-1/2 -translate-x-1/2">
-            <div className="rounded-full ring-4 ring-white shadow-md">
-              <AvatarCircle name={profile.name} size="l" color="blue" className="w-24 h-24 text-3xl" />
-            </div>
-          </div>
-        </div>
-        <div className="bg-white border-b border-gray-200">
-          <div className="px-6 pt-10">
-            <div className="flex items-center justify-between">
-              <div className="text-center mx-auto">
-                <div className="text-lg font-medium text-gray-900">{profile.name}</div>
-                <div className="text-green-600 text-sm">{profile.status}</div>
-              </div>
-              <div className="text-sm text-gray-600">{profile.location}</div>
-            </div>
-            <nav className="mt-3 flex items-center gap-6 overflow-x-auto text-sm">
-              {tabs.map((t) => (
-                <button key={t.key} onClick={() => navigate(t.path)} className={`whitespace-nowrap pb-3 border-b-2 transition-colors ${activeTab===t.key? 'border-blue-600 text-gray-900' : 'border-transparent text-gray-600 hover:text-gray-900'}`}>
-                  {t.label}
-                </button>
-              ))}
-            </nav>
-          </div>
-        </div>
+    <div className="bg-white rounded-lg border border-gray-200">
+      <div className="px-5 py-4 border-b border-gray-200">
+        <h3 className="text-[16px] font-semibold text-gray-900">Change Password</h3>
+        <p className="text-[13px] text-gray-500 mt-0.5">Ensure your account is using a long, random password to stay secure.</p>
       </div>
-
-      <div className="mt-4">
-        <SectionCard title="Security Settings">
-          <div className="max-w-xl space-y-3">
-            <Input label="Enter Current Password" compulsory type="password" placeholder="Enter Password" value={form.current} onChange={onChange('current')} />
-            <Input label="New Password" compulsory type="password" placeholder="Enter Password" value={form.next} onChange={onChange('next')} />
-            <Input label="Confirm Password" compulsory type="password" placeholder="Enter Password" value={form.confirm} onChange={onChange('confirm')} />
-            <button type="button" className="px-4 py-2 rounded-md bg-blue-600 text-white text-sm">Send OTP and Verify</button>
-            <div className="mt-4">
-              <div className="text-sm font-medium text-gray-800 mb-2">Password Requirements</div>
-              <ul className="text-[13px] text-gray-700 space-y-1">
-                <li>○ At least 8 -15 characters long</li>
-                <li>○ Contains uppercase letter (A-Z)</li>
-                <li>○ Contains lowercase letter (a-z)</li>
-                <li>○ Contains number (0-9)</li>
-                <li>○ Contains special character (!@#$%*^&*)</li>
-              </ul>
-            </div>
+      <div className="p-5 grid grid-cols-1 md:grid-cols-2 gap-8">
+        <div className="space-y-5">
+          <PasswordInput label="Current Password" placeholder="Enter current password" value={currentPass} onChange={(e) => setCurrentPass(e.target.value)} />
+          <PasswordInput label="New Password" placeholder="Enter new password" value={newPass} onChange={(e) => setNewPass(e.target.value)} />
+          <PasswordInput label="Confirm New Password" placeholder="Retype new password" value={confirmPass} onChange={(e) => setConfirmPass(e.target.value)} />
+          <div className="pt-2">
+            <button className="bg-blue-600 hover:bg-blue-700 text-white text-[14px] font-medium h-10 px-6 rounded-lg transition-colors shadow-sm">
+              Change Password
+            </button>
           </div>
-        </SectionCard>
+        </div>
+        <div className="bg-gray-50 rounded-lg p-5 border border-gray-100 h-fit">
+          <h4 className="text-[14px] font-semibold text-gray-800 mb-3">Password Requirements</h4>
+          <ul className="space-y-2.5">
+            {[
+              "Minimum 8 characters long - the more, the better",
+              "At least one lowercase character",
+              "At least one uppercase character",
+              "At least one number, symbol, or whitespace character"
+            ].map((req, i) => (
+              <li key={i} className="flex items-start gap-2.5 text-[13px] text-gray-600">
+                <div className="w-1.5 h-1.5 rounded-full bg-gray-400 mt-1.5 shrink-0" />
+                <span>{req}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
       </div>
     </div>
   )
