@@ -31,7 +31,7 @@ export default function RadioButton({
       {/* Custom radio visual */}
       <span
         className={
-          "relative inline-flex items-center justify-center w-5 h-5 rounded-full border " +
+          "relative inline-flex items-center justify-center w-4 h-4 rounded-full border " +
           (checked
             ? "border-blue-600 bg-blue-primary250"
             : "border-secondary-grey200 bg-white")
@@ -41,13 +41,13 @@ export default function RadioButton({
         {/* inner dot */}
         <span
           className={
-            "block rounded-full " + (checked ? "w-[10px] h-[10px] bg-white" : "w-0 h-0")
+            "block rounded-full " + (checked ? "w-2 h-2 bg-white" : "w-0 h-0")
           }
         />
       </span>
 
       {/* Label */}
-      <span className="text-sm text-secondary-grey300 text-base">{label}</span>
+      <span className="text-xs text-secondary-grey300 text-base">{label}</span>
     </label>
   );
 }

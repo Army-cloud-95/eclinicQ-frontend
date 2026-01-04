@@ -5,90 +5,10 @@ import {
 } from '../../../../components/FormItems';
 import useDoctorRegistrationStore from '../../../../store/useDoctorRegistrationStore';
 import InputWithMeta from '../../../../components/GeneralDrawer/InputWithMeta';
-import useImageUploadStore from '../../../../store/useImageUploadStore';
 import { ChevronDown } from 'lucide-react';
 import RadioButton from '../../../../components/GeneralDrawer/RadioButton';
+import CustomUpload from './CustomUpload';
 
-
-const upload = '/upload_blue.png';
-
-const CustomUpload = ({ label, onUpload, meta, compulsory, uploadedKey, fileName }) => {
-  const fileInputRef = useRef(null);
-  const [uploading, setUploading] = useState(false);
-  const [error, setError] = useState(null);
-  const getUploadUrl = useImageUploadStore((state) => state.getUploadUrl);
-
-  const handleFileChange = async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    setError(null);
-    setUploading(true);
-
-    try {
-      const uploadData = await getUploadUrl(file.type, file);
-      if (!uploadData || !uploadData.uploadUrl || !uploadData.key) {
-        throw new Error('Failed to get upload URL');
-      }
-
-      const res = await fetch(uploadData.uploadUrl, {
-        method: 'PUT',
-        headers: { 'Content-Type': file.type },
-        body: file,
-      });
-
-      if (!res.ok) throw new Error("Upload failed");
-
-      if (onUpload) onUpload(uploadData.key, file.name);
-    } catch (err) {
-      console.error(err);
-      setError("Upload failed");
-    } finally {
-      setUploading(false);
-    }
-  };
-
-  if (uploadedKey) {
-    return (
-      <InputWithMeta
-        label={label}
-        infoIcon
-        imageUpload={true}
-        showDivider
-        fileName={fileName || uploadedKey}
-        showReupload={true}
-        onFileSelect={(file) => {
-          handleFileChange({ target: { files: [file] } });
-        }}
-      />
-    );
-  }
-
-  return (
-    <div className='flex flex-col '>
-      <InputWithMeta
-        label={label}
-        showInput={false}
-        infoIcon
-      />
-      <div
-        onClick={() => !uploading && fileInputRef.current.click()}
-        className='cursor-pointer p-1 px-2 rounded-sm border-[0.5px] border-dashed border-blue-primary150 h-8 hover:bg-gray-50 transition-colors text-blue-primary250 text-sm mb-1'
-      >
-        {uploading ? 'Uploading...' : 'Upload Image'}
-      </div>
-
-      <input
-        type="file"
-        ref={fileInputRef}
-        onChange={handleFileChange}
-        className="hidden"
-        accept="image/*,.pdf,.doc,.docx"
-      />
-      {meta && <span className="text-xs text-secondary-grey200 mb-1">{meta}</span>}
-
-    </div>
-  );
-};
 
 const Step2 = () => {
   const {
@@ -253,7 +173,7 @@ const Step2 = () => {
         subtitle="Provide your Professional details and Document for verification"
       />
 
-      <div className="flex-1 overflow-y-auto p-8">
+      <div className="flex-1 overflow-y-auto p-6">
         <div className="max-w-[700px] mx-auto space-y-6">
           {/* Medical Registration */}
           <div className="space-y-3 border-b pb-4">
@@ -387,32 +307,32 @@ const Step2 = () => {
             {/* Post Graduation Radio */}
             <div className="space-y-4">
               <div className="flex gap-6 py-2">
- <label className="text-sm text-secondary-grey400">Do you have Post Graduation Degree?</label>
-              <div className="flex gap-3">
-                <RadioButton
-                  name="hasPG"
-                  value="yes"
-                  label="Yes"
-                  checked={pgMedicalDegreeType !== null}
-                  onChange={() => {
-                    // Check if it was null (meaning swiching to yes)
-                    if (pgMedicalDegreeType === null) setField('pgMedicalDegreeType', '');
-                  }}
-                />
-                <RadioButton
-                  name="hasPG"
-                  value="no"
-                  label="No"
-                  checked={pgMedicalDegreeType === null}
-                  onChange={() => {
-                    setField('pgMedicalDegreeType', null);
-                    setField('pgMedicalDegreeUniversityName', '');
-                    setField('pgMedicalDegreeYearOfCompletion', '');
-                  }}
-                />
+                <label className="text-sm text-secondary-grey400">Do you have Post Graduation Degree?</label>
+                <div className="flex gap-3">
+                  <RadioButton
+                    name="hasPG"
+                    value="yes"
+                    label="Yes"
+                    checked={pgMedicalDegreeType !== null}
+                    onChange={() => {
+                      // Check if it was null (meaning swiching to yes)
+                      if (pgMedicalDegreeType === null) setField('pgMedicalDegreeType', '');
+                    }}
+                  />
+                  <RadioButton
+                    name="hasPG"
+                    value="no"
+                    label="No"
+                    checked={pgMedicalDegreeType === null}
+                    onChange={() => {
+                      setField('pgMedicalDegreeType', null);
+                      setField('pgMedicalDegreeUniversityName', '');
+                      setField('pgMedicalDegreeYearOfCompletion', '');
+                    }}
+                  />
+                </div>
               </div>
-              </div>
-             
+
 
 
               {/* Conditional Post Graduation Fields */}
@@ -515,7 +435,7 @@ const Step2 = () => {
               </div>
             </FormFieldRow>
 
-            
+
             {Array.isArray(additionalPractices) && additionalPractices.length > 0 && (
               <div className="space-y-2">
                 {additionalPractices.map((p, idx) => (

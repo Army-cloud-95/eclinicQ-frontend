@@ -188,15 +188,17 @@ export default function InputWithMeta({
 
 
                 {/* View */}
-                <button
-                  type="button"
-                  title="View"
-                  className="hover:text-secondary-grey400"
-                  onClick={() => onFileView?.(fileName)}
-                >
-                  {/* simple eye */}
-                  <img src="/Doctor_module/settings/eye.png" alt="" className="w-3.5 h-3.5" />
-                </button>
+                {onFileView && (
+                  <button
+                    type="button"
+                    title="View"
+                    className="hover:text-secondary-grey400"
+                    onClick={() => onFileView?.(fileName)}
+                  >
+                    {/* simple eye */}
+                    <img src="/Doctor_module/settings/eye.png" alt="" className="w-3.5 h-3.5" />
+                  </button>
+                )}
               </span>
             </div>
           </label>
@@ -324,5 +326,5 @@ export default function InputWithMeta({
         )}
       {meta && <p className="text-[12px] text-secondary-grey200 leading-tight ">{meta}</p>}
     </div>
-  );0
+  );
 }

@@ -144,7 +144,7 @@ const Step1 = forwardRef((props, ref) => {
       />
 
       {/* 2. Form Section (Body) - Scrollable */}
-      <div className="flex-1 overflow-y-auto p-8">
+      <div className="flex-1 overflow-y-auto p-6">
         <div className="max-w-[700px] mx-auto space-y-6">
           {/* Name Row */}
           <FormFieldRow>

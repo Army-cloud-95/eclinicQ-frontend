@@ -6,18 +6,14 @@ const sizeMap = {
   xl: 'w-16 h-16 text-[30px]', // 64px
   l: 'w-12 h-12 text-xl', // 48px
   md: 'w-10 h-10 text-lg', // 40px
-  s: 'w-8 h-8 text-base', // 32px
+  s: 'w-8 h-8 text-sm', // 32px
   xs: 'w-6 h-6 text-sm', // 24px
 };
 
-// Color tokens from specs
-// blue: bg #F8FAFF, border #96BFFF
-// orange: bg #FFF7F0, border #EC7600
-// grey: bg #F9F9F9, border #D6D6D6
 const colorTokens = {
   blue: { bg: '#F8FAFF', border: '#96BFFF', text: '#2372EC' },
   orange: { bg: '#FFF7F0', border: '#EC7600', text: '#EC7600' },
-  grey: { bg: '#F9F9F9', border: '#D6D6D6', text: '#6B7280' },
+  grey: { bg: '#F9F9F9', border: '#D6D6D6', text: '#424242' },
 };
 
 /**
@@ -34,13 +30,13 @@ const AvatarCircle = ({ name, size = 'md', color = 'blue', className = '', icon 
 
   return (
     <span
-      className={`inline-flex items-center justify-center rounded-full font-base ${sz} ${className}`}
+      className={`inline-flex items-center justify-center rounded-full  ${sz} ${className}`}
       style={{
         backgroundColor: bg,
         color: text,
         borderColor: border,
         borderStyle: 'solid',
-        borderWidth: '1px', // approximates 0.5px across displays
+        borderWidth: '0.5px', // approximates 0.5px across displays
       }}
     >
       {icon || initial}
