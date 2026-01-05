@@ -71,14 +71,14 @@ const Overview_cards = ({
           </div>
           <div className="flex items-center gap-2 text-[11px] sm:text-xs font-normal text-[#626060] mt-1">
             <span
-              className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded leading-none ${badgeTone}`}
+              className={`inline-flex  items-center gap-1 px-1.5 py-0.5 rounded leading-none ${badgeTone}`}
             >
               <BadgeIcon className="w-3 h-3" /> {percent}%
             </span>
             <span className="leading-none">{periodText}</span>
           </div>
         </div>
-        <RightIcon className="self-center" />
+        <RightIcon className="self-center mb-8" />
       </div>
     </div>
   );

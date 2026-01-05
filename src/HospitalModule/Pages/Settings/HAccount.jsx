@@ -551,16 +551,16 @@ export default function HAccount({ profile }) {
               <div className="pt-2 gap-2 flex flex-col">
                 <h4 className="text-sm font-semibold text-secondary-grey400">
                   <span className="relative inline-block pb-2">
-                    PAN CardQ3 Details
+                    PAN Card Details
                     <span className="absolute left-1/2 bottom-0 h-[2px] w-full -translate-x-3/4 scale-x-50 bg-blue-primary150/50"></span>
                   </span>
-                </h4>              <div className="grid grid-cols-1 md:grid-cols-2 gap-7">
+                </h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-7">
                   <InfoField label="Pan Card Number" value="27AAECA1234F1Z5" />
                   <div>
                     <div className="text-[14px] text-secondary-grey200 ">Proof of Pan Card</div>
                     <InputWithMeta imageUpload={true} fileName="PAN Proof.pdf" showInput={false} />
                   </div>
-                </div> 
                 </div>
               </div>
 
