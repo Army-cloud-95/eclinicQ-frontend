@@ -13,7 +13,7 @@ import add from './Doctor_module/settings/add.png';
 import pdf_blue from './Doctor_module/settings/pdf_blue.png';
 // Images from /public/images
 import hospitalLogo from "./images/hospital_logo.png";
-import hospital from "./images/hospital.png";
+import hospital from "./superAdmin/dashboard/hospital.svg";
 
 // Images from /public/package_page
 import package1 from "./package_page/1.png";
@@ -43,7 +43,15 @@ import review from "./icons/Sidebar/Registration_Steps/Review/review.png";
 import userAvatar from "./superAdmin/dashboard/useravatar.svg";
 import calenderCheck from "./superAdmin/dashboard/calendarCheck.svg";
 import angledown from "./superAdmin/dashboard/angledown.svg";
+import dash_sthethoscope from "./superAdmin/dashboard/doct_scope.svg";
+import patient from "./superAdmin/dashboard/patient.svg";
+import clinic from "./superAdmin/dashboard/clinic.svg";
 
+import checkCalendar from "./superAdmin/dashboard/checkCalendar.svg";
+
+import hand from "./superAdmin/dashboard/hand.svg";
+import crossCalendar from "./superAdmin/dashboard/crossCalendar.svg";
+import clock from "./superAdmin/dashboard/clock.svg";
 // Sidebar MainSidebar Icons
 import dashboardSelected from "./superAdmin/main_sidebar/dashboardSelected.svg";
 import dashboardUnselect from "./superAdmin/main_sidebar/dashboardUnselect.svg";
@@ -237,7 +245,15 @@ chevdown,
   queueWhite,
   settingBlue,
   helpWhite,
+// dashboard icons
+  dash_sthethoscope,
+  patient,
+  clinic,
+  checkCalendar,
 
+  hand,
+  crossCalendar,
+  clock,
   //queue icons
   morningQueue,
   eveningQueue,
