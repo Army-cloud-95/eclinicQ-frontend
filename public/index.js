@@ -1,6 +1,6 @@
 import checkbox from "./checkbox.png";
 import iIcon from "./i-icon.png";
-import logo from "./logo.svg";
+import logo from "./superAdmin/main_sidebar/logo.svg";
 import normalTick from "./normal-tick.png";
 import tick from "./tick.png";
 // Newly added contact icons
@@ -29,31 +29,35 @@ import reviewBlue from "./superAdmin/sideBar/reviewBlue.svg";
 import packageBlue from "./superAdmin/sideBar/packageBlue.svg";
 import checkCircle from './superAdmin/sideBar/checkCircle.svg';
 import ChevronRight from './superAdmin/sideBar/chevronRight.svg';
-
+import chevdown from './superAdmin/chevdown.svg';
 import stethoscope from "./icons/Sidebar/Registration_Steps/Doctor/sthesoscope.png";
-import stethoscopeBlue from "./icons/Sidebar/Registration_Steps/Doctor/sthesoscope_blue.png";
+import stethoscopeBlue from "./superAdmin/Add_new/stethoscopeBlue.svg";
 import document from "./icons/Sidebar/Registration_Steps/Document/document.png";
-
-
+import patientunselect from "./superAdmin/Add_new/patientUnselect.svg";
+import arrowRight from "./superAdmin/main_sidebar/arrowRight.svg";
 import hospitalGrey from "./icons/Sidebar/Registration_Steps/Hospital/hospital_grey.png";
 // import packageIcon from "./icons/Sidebar/Registration_Steps/Package/package.png";
 
 import review from "./icons/Sidebar/Registration_Steps/Review/review.png";
-
+import userAvatar from "./superAdmin/dashboard/useravatar.svg";
+import calenderCheck from "./superAdmin/dashboard/calendarCheck.svg";
+import angledown from "./superAdmin/dashboard/angledown.svg";
 
 // Sidebar MainSidebar Icons
-import dashboardSelected from "./icons/Sidebar/MainSidebar/dashboard_selected.png";
+import dashboardSelected from "./superAdmin/main_sidebar/dashboardSelected.svg";
 import dashboardUnselect from "./icons/Sidebar/MainSidebar/dashboard_unselect.png";
-import doctorSelect from "./icons/Sidebar/MainSidebar/doctor_select.png";
+import doctorSelect from "./superAdmin/main_sidebar/doctorSelect.svg";
 import doctorUnselect from "./icons/Sidebar/MainSidebar/doctor_unselect.png";
-import hospitalSelected from "./icons/Sidebar/MainSidebar/hos_selected.png";
+import hospitalSelected from "./superAdmin/main_sidebar/hospitalSelected.svg";
 import hospitalUnselect from "./icons/Sidebar/MainSidebar/hospital_unselect.png";
-import patientUnselect from "./icons/Sidebar/MainSidebar/patient_unselect.png";
-import settingUnselect from "./icons/Sidebar/MainSidebar/setting_unselect.png";
+import patientUnselect from "./superAdmin/main_sidebar/patientUnselect.svg";
+import settingUnselect from "./superAdmin/main_sidebar/settingUnselect.svg";
+import helpCircle from "./superAdmin/main_sidebar/helpCircle.svg";
 
 // Navbar icons
-import bell from "./icons/Navbar/bell.png";
-import appointement from "./Doctor_module/appointement.png";
+import bell from "./superAdmin/bell.svg";
+import appointement from "./superAdmin/Add_new/appointment.svg";
+import hospitalicon from "./superAdmin/Add_new/hospitalicon.svg";
 // Doctor module navbar avatar icons
 import blueCall from "./Doctor_module/navbar/avatar/blue_call.png";
 import blueId from "./Doctor_module/navbar/avatar/blue_id.png";
@@ -112,7 +116,7 @@ import afternoonQueue from "./Doctor_module/queue/afternoonQueue.svg";
 import scheduleCalender from "./schedule-calender.svg";
 import calendarMinimalistic from "./Calendar-Minimalistic.svg";
 import arrowLeft from "./arrow-left.svg";
-import arrowRight from "./arrow-right.svg";
+
 import verifiedTick from "./verified-tick.svg";
 import inviteUserIcon from "./invite-user-icon.svg";
 import searchIcon from "./search-icon.svg";
@@ -153,6 +157,9 @@ export {
   package3,
   package4,
   // Sidebar Registration Steps Icons
+ userAvatar,
+ angledown,
+  patientunselect,
   accountBlue,
   ChevronRight,
   checkCircle,
@@ -162,7 +169,9 @@ export {
   documentBlue,
   hospitalIcon,
   hospitalGrey,
+  calenderCheck,
   // packageIcon,
+  hospitalicon,
   packageBlue,
   review,
   reviewBlue,
@@ -179,7 +188,9 @@ export {
   hospitalUnselect,
   patientUnselect,
   settingUnselect,
+  helpCircle,
   // Navbar icons
+chevdown,
   bell,
   blueCall,
   blueId,
@@ -223,6 +234,7 @@ export {
   queueWhite,
   settingBlue,
   helpWhite,
+
   //queue icons
   morningQueue,
   eveningQueue,
