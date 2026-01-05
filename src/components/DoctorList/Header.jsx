@@ -95,16 +95,16 @@ export default function Header({
           className="p-1.5 rounded hover:bg-gray-100 text-gray-600"
           aria-label="Search"
         >
-          <img src={searchIcon} alt="Search" className="h-5 w-5" />
+          <img src={searchIcon} alt="Search" className="h-7 w-7" />
         </button>
-        <div className="w-[0.5px] h-5 bg-secondary-grey150"></div>
+        <div className="w-[1px] h-5 bg-secondary-grey100/50"></div>
         <button
           className="p-1.5 rounded hover:bg-gray-100 text-gray-600"
           aria-label="Filter"
         >
-          <img src={filerIcon} alt="Filter" className="h-5 w-5" />
+          <img src={filerIcon} alt="Filter" className="h-7 w-7" />
         </button>
-        <div className="w-[0.5px] h-5 bg-secondary-grey150"></div>
+        <div className="w-[1px] h-5 bg-secondary-grey100/50 mr-2"></div>
         {/* Blue button matching Walk-in Appointment style */}
         <button
           onClick={() => {

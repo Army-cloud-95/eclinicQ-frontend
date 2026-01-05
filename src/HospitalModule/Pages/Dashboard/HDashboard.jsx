@@ -1,11 +1,15 @@
 import React, { useState, useRef, useEffect } from 'react'
 import { Download, ChevronLeft, ChevronRight, UserPlus, Check, ChevronsUpDown } from 'lucide-react'
+import { angelDown, calenderArrowLeft, calenderArrowRight } from '../../../../public/index.js'
 import Overview_cards from '../../../components/Dashboard/Overview_cards'
 import AvatarCircle from '../../../components/AvatarCircle'
 import BookAppointmentDrawer from '../../../components/Appointment/BookAppointmentDrawer.jsx'
 import SampleTable from '../../../pages/SampleTable'
 import TableHeader from '../../../components/TableHeader'
+import {
+  walkInBlue,
 
+} from "../../../../public/index.js";
 const PeriodTabs = ({ value, onChange }) => {
   const ranges = ['Daily', 'Weekly', 'Monthly', 'Yearly']
   return (
@@ -81,8 +85,15 @@ export default function HDashboard() {
         <p className="text-sm text-[#626060]">Welcome, Manipal Hospital. Here's an overview of your practice.</p>
         <div className="flex items-center gap-2">
           <div className="hidden sm:block w-px h-6 bg-[#E5F0FF]" />
-          <button onClick={() => setBookOpen(true)} className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md border text-sm border-[#BFD6FF] bg-[#F3F8FF] text-[#2372EC] hover:bg-[#E9F2FF]">
-            <UserPlus className="w-4 h-4" />
+          <button
+            onClick={() => setBookOpen(true)}
+            className=" group inline-flex items-center gap-2 h-[32px] min-w-[32px] p-2 rounded-md border text-sm border-[#BFD6FF] bg-[#F3F8FF] text-[#2372EC] hover:bg-[#2372EC] hover:text-white transition-colors"
+          >
+            <img
+              src={walkInBlue}
+              alt=""
+              className="h-4  group-hover:invert group-hover:brightness-0"
+            />
             <span>Walk-In Appointment</span>
           </button>
         </div>
@@ -143,6 +154,14 @@ export default function HDashboard() {
                   </div>
                 )}
               </div>
+              <button
+                type="button"
+                className={`inline-flex items-center gap-1 px-2 h-8 rounded-md border border-secondary-grey200 bg-white text-sm text-[#424242]`}
+              >
+                <img src={calenderArrowLeft} alt="Previous" className="w-3 h-3" />
+                <span className="text-secondary-grey400 font-medium">2025</span>
+                <img src={calenderArrowRight} alt="Next" className="w-3 h-3" />
+              </button>
             </div>
           </div>
         )}
@@ -179,6 +198,14 @@ export default function HDashboard() {
                   </div>
                 )}
               </div>
+              <button
+                type="button"
+                className={`inline-flex items-center gap-1 px-2 h-8 rounded-md border border-secondary-grey200 bg-white text-sm text-[#424242]`}
+              >
+                <img src={calenderArrowLeft} alt="Previous" className="w-3 h-3" />
+                <span className="text-secondary-grey400 font-medium">2025</span>
+                <img src={calenderArrowRight} alt="Next" className="w-3 h-3" />
+              </button>
             </div>
           </div>
         )}
@@ -201,10 +228,14 @@ export default function HDashboard() {
         <>
           <div className="flex items-center justify-between mb-2">
             <span className="text-sm sm:text-base font-medium text-[#424242]">Analytics Overview</span>
-            <div className="inline-flex items-center gap-2 px-3 h-8 rounded-md border border-gray-200 bg-white text-sm text-[#424242]">
-              <span>2025</span>
-              <ChevronRight className="w-4 h-4 text-gray-500" />
-            </div>
+            <button
+              type="button"
+              className={`inline-flex items-center gap-1 px-2 h-8 rounded-md border border-secondary-grey200 bg-white text-sm text-[#424242]`}
+            >
+              <img src={calenderArrowLeft} alt="Previous" className="w-3 h-3" />
+              <span className="text-secondary-grey400 font-medium">2025</span>
+              <img src={calenderArrowRight} alt="Next" className="w-3 h-3" />
+            </button>
           </div>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4 mb-4 sm:mb-6">
             <SectionCard title="Patients Count Per Month" right={<span className="text-xs text-[#626060]">Patients added over the Year</span>}>
@@ -281,7 +312,7 @@ export default function HDashboard() {
                   columns={[
                     {
                       key: 'name',
-                      header: <TableHeader label="Doctor Name"  />,
+                      header: <TableHeader label="Doctor Name" />,
                       width: 280,
                       render: (row) => (
                         <div className="flex items-center gap-3">
