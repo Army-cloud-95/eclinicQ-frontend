@@ -1,137 +1,215 @@
-import React, { useEffect, useState } from 'react'
+import React, { useState, useEffect } from 'react'
+import {
+  pencil,
+  add,
+  verifiedTick,
+  award,
+  publication
+} from '../../../../../../../public/index.js'
+import MapLocation from '../../../../../../components/FormItems/MapLocation'
+import InputWithMeta from '../../../../../../components/GeneralDrawer/InputWithMeta'
 import { getDownloadUrl } from '../../../../../../services/uploadsService'
+import { ChevronDown } from 'lucide-react'
 
-// Fixed label width to keep consistent spacing between labels and values
-const labelWidth = 'min-w-[220px]'
+// --- Components adapted from HAccount.jsx ---
 
-const InfoRow = ({ label, value, link, verified = false, valueClassName = '' }) => (
-  <div className="flex gap-36 py-[2px] items-start">
-    <span className={`font-normal ${labelWidth} text-sm text-[#626060]`}>{label}</span>
-    {link ? (
-      <a
-        href={link}
-        className="font-medium text-sm text-blue-600 underline inline-flex items-center"
-        target="_blank"
-        rel="noreferrer"
-      >
-        <span>{value}</span>
-        {verified ? <img src="/normal-tick.png" alt="verified" className="ml-2 h-4 w-4" /> : null}
-      </a>
-    ) : (
-  <span className={`font-medium text-sm inline-flex items-center ${valueClassName || 'text-[#424242]'}`}>
-        <span>{value}</span>
-        {verified ? <img src="/normal-tick.png" alt="verified" className="ml-2 h-4 w-4" /> : null}
-      </span>
-    )}
-  </div>
-)
-
-const InfoSection = ({ title, children }) => (
-  <div className="flex flex-col gap-1 w-full m ">
-    <span className="text-[#424242] font-medium text-sm">{title}</span>
-    <div className="border-t border-[#D6D6D6] flex flex-col">{children}</div>
-  </div>
-)
-
-const Chips = ({ title, items = [] }) => (
-  <div className="flex flex-col gap-2 w-full">
-    <span className="text-[#424242] font-medium text-sm">{title}</span>
-    <div className="border-t border-[#D6D6D6] pt-2 flex flex-wrap gap-2">
-      {items.map((t, i) => (
-        <span
-          key={i}
-          className="px-3 py-1 rounded-md text-sm bg-[#F2F2F2] text-[#424242]"
-        >
-          {t}
-        </span>
-      ))}
+const InfoField = ({ label, value, right, className: Class }) => (
+  <div
+    className={`${Class} flex flex-col gap-1 text-[14px] border-b-[0.5px] pb-[6px] border-secondary-grey100`}
+  >
+    <div className="col-span-4  text-secondary-grey200">{label}</div>
+    <div className="col-span-8 text-secondary-grey400 flex items-center justify-between">
+      <span className="truncate">{value || "-"}</span>
+      {right}
     </div>
   </div>
-)
+);
 
-const DocLink = ({ label, value }) => {
-  const text = typeof value === 'object' ? (value.text ?? '-') : (value ?? '-')
-  const href = typeof value === 'object' ? value.href : undefined
-  const linkText = typeof value === 'object' ? (value.linkText || (href ? 'View' : '')) : ''
+const SectionCard = ({
+  title,
+  subtitle,
+  subo,
+  Icon,
+  onIconClick,
+  headerRight,
+  children,
+}) => (
+  <div className="px-4 py-3 flex flex-col gap-3 bg-white rounded-lg ">
+    <div className="flex items-center justify-between">
+      {/* LEFT */}
+      <div className='flex items-center justify-between w-full'>
+        <div className="flex items-center gap-1 text-sm">
+          <div className="font-medium text-[14px] text-gray-900">{title}</div>
+          {subtitle && (
+            <div className="px-1 border border-secondary-grey50 bg-secondary-grey50 rounded-[2px] text-[12px] text-gray-500 hover:border hover:border-blue-primary150 hover:text-blue-primary250 cursor-pointer">
+              {subtitle}
+            </div>
+          )}
+        </div>
+        {subo && (
+          <div className="flex gap-1 text-[12px] text-secondary-grey200">
+            <span>{subo}</span>
+            <span className="text-blue-primary250 cursor-pointer">Edit</span>
+          </div>
+        )}
+      </div>
+      {/* RIGHT */}
+      <div className="flex items-center gap-3 shrink-0">
+        {headerRight}
+        {Icon && (
+          <button
+            onClick={onIconClick}
+            className="p-1 text-gray-500 hover:bg-gray-50"
+          >
+            {typeof Icon === "string" ? (
+              <img src={Icon} alt="icon" className="w-6 h-6" />
+            ) : (
+              <Icon className="w-6 h-6" />
+            )}
+          </button>
+        )}
+      </div>
+    </div>
+    <div>{children}</div>
+  </div>
+);
+
+const ProfileItemCard = ({
+  icon,
+  title,
+  badge,
+  subtitle,
+  date,
+  location,
+  linkLabel,
+  linkUrl,
+  description,
+  initiallyExpanded = false,
+  rightActions,
+}) => {
+  const [expanded, setExpanded] = useState(!!initiallyExpanded);
+  const MAX_CHARS = 220;
+  const showSeeMore = !linkUrl && typeof description === 'string' && description.length > MAX_CHARS;
+  const visibleText =
+    !linkUrl && typeof description === 'string'
+      ? expanded
+        ? description
+        : description.length > MAX_CHARS
+          ? description.slice(0, MAX_CHARS).trimEnd() + '…'
+          : description
+      : '';
   return (
-    <div className="border-b border-[#F0F0F0] flex items-center py-2">
-      <span className={`font-normal ${labelWidth} text-sm text-[#626060] mr-36`}>{label}</span>
-      <span className="text-sm font-medium text-[#424242]">{text}</span>
-      {href ? (
-        <a
-          href={href}
-          className="ml-auto text-sm font-medium text-[#2F66F6] underline"
-          target="_blank"
-          rel="noreferrer"
-        >
-          {linkText || 'View'}
-        </a>
-      ) : null}
+    <div className="flex  py-2.5 pt-1.5 border-b rounded-md bg-white">
+      <div className="w-[64px] mr-4 h-[64px] rounded-full border border-secondary-grey50 bg-gray-100 flex items-center justify-center text-gray-600 shrink-0">
+        {typeof icon === "string" ? (
+          <img src={icon} alt="" className="w-8 h-8 object-contain" />
+        ) : (
+          icon
+        )}
+      </div>
+      <div className="flex  flex-col gap-[2px] w-full">
+        <div className="flex items-center justify-between">
+          <div className="flex flex-shrink-0  items-center gap-1 text-sm text-secondary-grey400">
+            <span className="font-semibold">{title}</span>
+            {badge && (
+              <span className="text-[12px]   min-w-[18px]  text-secondary-grey400 bg-secondary-grey50 rounded px-1 ">
+                {badge}
+              </span>
+            )}
+          </div>
+        </div>
+        {subtitle && <div className="text-sm text-secondary-grey400 w-4/5">{subtitle}</div>}
+        {date && <div className="text-sm text-secondary-grey200">{date}</div>}
+        {linkUrl ? (
+          <div className="flex items-center gap-1">
+            <a
+              href={linkUrl}
+              className="inline-flex items-center gap-1 text-sm text-blue-primary250"
+              target="_blank"
+              rel="noreferrer"
+            >
+              {linkLabel}
+            </a>
+          </div>
+        ) : (
+          description ? (
+            <div className="mt-2">
+              <div className="text-[13px] text-secondary-grey400">{visibleText}</div>
+              {showSeeMore && (
+                <button
+                  type="button"
+                  className="mt-1 text-[13px] text-secondary-grey200 inline-flex items-center gap-1 hover:text-secondary-grey300"
+                  onClick={() => setExpanded((v) => !v)}
+                >
+                  {expanded ? 'See Less' : 'See More'}
+                  <ChevronDown className={`w-3 h-3 transition-transform ${expanded ? 'rotate-180' : ''}`} />
+                </button>
+              )}
+            </div>
+          ) : null
+        )}
+      </div>
+      {rightActions && (
+        <div className="flex items-center gap-2">{rightActions}</div>
+      )}
     </div>
-  )
-}
+  );
+};
+
+const VerifiedBadge = () => (
+  <span className="inline-flex items-center text-success-300 border bg-success-100 border-success-300 py-0.5 px-1 rounded-md text-[12px]">
+    <img src={verifiedTick} alt="Verified" className="w-3.5 h-3.5 mr-1" />
+    Verified
+  </span>
+)
+
+// --- End Components ---
 
 const Details = ({ hospital }) => {
-  const name = hospital?.name || '-'
-  const estYear = hospital?.establishmentYear || '-'
-  const estWithExp = estYear && estYear !== '-' ? `${estYear} (${new Date().getFullYear() - parseInt(estYear || '0')} Years of Experience)` : '-'
-  const contactEmail = hospital?.emailId || '-'
-  const contactPhone = hospital?.phone || '-'
-  const emailVerified = Boolean(hospital?.isEmailVerified || hospital?.emailVerified)
-  const phoneVerified = Boolean(hospital?.isPhoneVerified || hospital?.phoneVerified)
-  
-  // Flexible OPD/Appointment timing formatter
-  const format12 = (t) => {
-    if (!t || typeof t !== 'string') return null
-    const [hh, mm] = t.split(':')
-    if (isNaN(parseInt(hh))) return t
-    let h = parseInt(hh, 10)
-    const m = parseInt(mm || '0', 10)
-    const ampm = h >= 12 ? 'PM' : 'AM'
-    h = h % 12 || 12
-    return `${h}:${String(m).padStart(2, '0')} ${ampm}`
+  // Data mapping
+  const profile = {
+    hospitalName: hospital?.name,
+    type: hospital?.type,
+    phone: hospital?.phone,
+    email: hospital?.emailId || hospital?.email,
+    estDate: hospital?.establishmentYear,
+    website: hospital?.url || hospital?.website,
+    emergencyPhone: hospital?.emergencyContactNumber,
+    beds: hospital?.noOfBeds,
+    icuBeds: hospital?.noOfICUBeds,
+    ambulances: hospital?.noOfAmbulances,
+    ambulancePhone: hospital?.ambulanceNumber,
+    bloodBank: hospital?.isBloodBankAvailable,
+    bloodBankPhone: hospital?.bloodBankContactNumber,
+    address: hospital?.address,
+    city: hospital?.city,
+    state: hospital?.state,
+    about: hospital?.about || "About text not available.",
+    photos: hospital?.photos || hospital?.images,
+    specialties: (hospital?.specialties || []).map(s => s?.specialty?.name || s?.name || s),
+    services: (hospital?.hospitalServices || []).map(s => s?.name || s),
+    admin: (hospital?.adminDetails || [])[0] || {},
+    gst: {
+      number: hospital?.gstNumber,
+      doc: hospital?.documents?.find(d => d.docType?.toLowerCase().includes('gst'))
+    },
+    cin: {
+      number: hospital?.cinNumber,
+      // mapping other CIN fields if available from backend, otherwise defaults or '-'
+    },
+    documents: hospital?.documents || []
   }
-  const startT = hospital?.opdStartTime || hospital?.startTime
-  const endT = hospital?.opdEndTime || hospital?.endTime
-  const days = hospital?.opdDays || hospital?.workingDays || hospital?.days
-  const daysText = Array.isArray(days) && days.length
-    ? (days.length > 1 ? `${days[0]} to ${days[days.length - 1]}` : days[0])
-    : (typeof days === 'string' ? days : null)
-  const formattedTiming = (startT && endT)
-    ? `${format12(startT) || startT} - ${format12(endT) || endT}${daysText ? ` (${daysText})` : ''}`
-    : (hospital?.appointmentAndOpdTiming || hospital?.opdTiming || hospital?.timings || '-')
 
-  const emergencyContact = hospital?.emergencyContactNumber || hospital?.phone || hospital?.emergencyContact || '-'
-  const ambulanceContact = hospital?.phone || hospital?.ambulanceNumber || '-'
-  const bloodBankContact = hospital?.bloodBankContactNumber || hospital?.phone || '-'
-  const addressLine = [hospital?.address?.street, hospital?.address?.blockNo, hospital?.address?.landmark].filter(Boolean).join(', ')
-  const city = hospital?.city || '-'
-  const state = hospital?.state || '-'
-  const zip = hospital?.pincode || '-'
-  const specialties = (hospital?.specialties || hospital?.specialtiesList || []).map(s => s?.specialty?.name || s?.name).filter(Boolean)
-  const services = hospital?.hospitalServices || []
-  const accreditations = hospital?.accreditation || []
-  const documents = hospital?.documents || []
+  const awards = hospital?.awards || []
+  const publications = hospital?.publications || []
 
-  // Helpers to resolve document details by type keywords
-  const findDoc = (keywords = []) => {
-    const lower = (v) => String(v || '').toLowerCase()
-    return documents.find((d) => keywords.some((k) => lower(d?.docType).includes(lower(k)))) || null
-  }
-  const docVal = (primary, keys = []) => primary || findDoc(keys)?.docNo || '-'
-  const docUrl = (keys = []) => findDoc(keys)?.docUrl || undefined
-  const primaryAdmin = Array.isArray(hospital?.adminDetails) && hospital.adminDetails.length ? hospital.adminDetails[0] : null
-  const photos = Array.isArray(hospital?.photos)
-      ? hospital.photos
-      : (Array.isArray(hospital?.images) ? hospital.images : [])
-
-  // Resolve photo keys to URLs (best-effort, memoized via internal state)
+  // Resolve photo keys to URLs
   const [resolvedPhotos, setResolvedPhotos] = useState([])
   useEffect(() => {
     let ignore = false
     const run = async () => {
       try {
-        const keys = photos || []
+        const keys = profile.photos || []
         const urls = await Promise.all(keys.map((k) => getDownloadUrl(k)))
         if (!ignore) setResolvedPhotos(urls.map((u) => u || ''))
       } catch {
@@ -140,104 +218,209 @@ const Details = ({ hospital }) => {
     }
     run()
     return () => { ignore = true }
-  }, [JSON.stringify(photos)])
+  }, [JSON.stringify(profile.photos)])
+
+  const formatMonthYear = (dateStr) => dateStr // Placeholder
+
   return (
-    <div className="flex flex-col pt-3 px-3 pb-6 gap-6">
-      {/* About Hospital */}
-      <div className="border flex flex-col p-3 gap-2 border-[#B8B8B8] rounded-lg">
-        <div className="flex gap-1 items-center">
-          <span className="text-[#424242] text-sm font-semibold">About Hospital</span>
-        </div>
-        <span className="font-normal text-[#626060] text-xs">
-          {name} provides comprehensive healthcare services. It has specialties in {specialties.length ? specialties.join(', ') : '—'}.
-        </span>
-      </div>
+    <div className="grid grid-cols-12 gap-6 bg-secondary-grey50 p-4">
+      {/* Left Column (7/12) */}
+      <div className="col-span-12 xl:col-span-6 space-y-6">
 
-      {/* Info + Address using a fixed 7/5 grid like the reference */}
-      <div className="grid grid-cols-12 gap-16">
-        <div className="col-span-12 md:col-span-6">
-          <InfoSection title="Info">
-            <InfoRow label="Name:" value={name} />
-            <InfoRow label="Establishment Year:" value={estWithExp} />
-            <InfoRow label="Appointment & OPD timing:" value={formattedTiming} />
-            <InfoRow label="Hospital Contact Email:" value={contactEmail} verified={emailVerified} />
-            <InfoRow label="Hospital Contact Number:" value={contactPhone} verified={phoneVerified} />
-            <InfoRow label="Emergency Contact Number:" value={emergencyContact} />
-            <InfoRow label="Ambulance Contact Number:" value={ambulanceContact} />
-            <InfoRow label="Blood Bank Contact Number:" value={bloodBankContact} />
-          </InfoSection>
+        {/* Hospital Info */}
+        <SectionCard
+          title="Hospital Info"
+          Icon={pencil}
+          onIconClick={() => console.log('Edit Info')}
+        >
+          <div className="grid grid-cols-2 gap-x-8 gap-y-4">
+            <InfoField label="Hospital Name" value={profile.hospitalName} />
+            <InfoField label="Hospital Type" value={profile.type} />
+            <InfoField label="Mobile Number" value={profile.phone} right={<VerifiedBadge />} />
+            <InfoField label="Email" value={profile.email} right={<VerifiedBadge />} />
+            <InfoField label="Establishment Date" value={profile.estDate} />
 
-          <div className="mt-6 flex flex-col gap-6">
-            <Chips title="Medical Specialties" items={specialties} />
-            <Chips
-              title="Hospital Services & Facilities"
-              items={services}
-            />
-            <Chips title="Accreditations" items={accreditations} />
-
-            <div className="flex flex-col gap-1">
-              <span className="text-[#424242] font-medium text-sm">Certificates & Documents</span>
-              <div className="border-t border-[#D6D6D6] flex flex-col">
-                <DocLink label="GST Number:" value={{ text: docVal(hospital?.gstNumber, ['gst']), href: docUrl(['gst']), linkText: 'GST Number.pdf' }} />
-                <DocLink label="ABHA Facility ID:" value={{ text: docVal(hospital?.abhaFacilityId, ['abha']), href: docUrl(['abha']) }} />
-                <DocLink label="CIN Number:" value={docVal(hospital?.cinNumber, ['cin'])} />
-                <DocLink label="State Health Registration Number:" value={{ text: docVal(hospital?.stateHealthRegistrationNumber, ['state health','shrn']), href: docUrl(['state health','shrn']) }} />
-                <DocLink label="PAN Card of Hospital:" value={{ text: docVal(hospital?.panNumber, ['pan']), href: docUrl(['pan']) }} />
-                <DocLink label="Rohini ID:" value={{ text: docVal(hospital?.rohiniId, ['rohini']), href: docUrl(['rohini']) }} />
-                <DocLink label="NABH Accreditation:" value={{ text: docVal(hospital?.nabhAccreditation, ['nabh']), href: docUrl(['nabh']) }} />
-              </div>
-            </div>
-          </div>
-        </div>
-
-    <div className="col-span-12 md:col-span-6">
-          <InfoSection title="Hospital Address">
-            <InfoRow label="Address:" value={addressLine || '-'} />
-            <InfoRow label="City:" value={city} />
-            <InfoRow label="State:" value={state} />
-            <InfoRow label="Zip Code:" value={zip} />
-      <InfoRow label="Map Location"  />
-            <div className="mt-2 border rounded-md overflow-hidden border-[#E1E1E1] w-full h-[220px]">
-              <iframe
-                title="Hospital Map"
-                className="w-full h-full"
-                loading="lazy"
-                referrerPolicy="no-referrer-when-downgrade"
-                src="https://www.openstreetmap.org/export/embed.html?bbox=72.84%2C18.96%2C72.88%2C19.00&layer=mapnik&marker=18.98%2C72.86"
+            {/* Establishment Proof */}
+            <div>
+              <div className="text-[14px] text-secondary-grey200 mb-1">Establishment Proof</div>
+              <InputWithMeta
+                imageUpload={true}
+                fileName={"Establishment.pdf"}
+                onFileView={(f) => console.log('view', f)}
+                showInput={false}
               />
             </div>
-          </InfoSection>
 
-          <div className="mt-6 flex flex-col gap-4">
-            <div className="flex flex-col gap-2">
-              <span className="text-[#424242] font-medium text-sm">Hospital Photos</span>
-                  <div className="border-t border-[#D6D6D6] pt-3 grid grid-cols-[repeat(auto-fill,minmax(100px,100px))] justify-start gap-4">
-                    {(resolvedPhotos && resolvedPhotos.filter(Boolean).length ? resolvedPhotos.filter(Boolean) : [
-                      '/hospital-sample.png',
-                      '/hospital-sample.png',
-                      '/hospital-sample.png',
-                      '/hospital-sample.png'
-                    ]).map((src, idx) => (
-                      <div key={idx} className="w-[100px] h-[100px] rounded-lg overflow-hidden border border-[#E3E3E3] bg-white">
-                        <img src={src} alt={`Hospital photo ${idx+1}`} className="w-full h-full object-cover" loading="lazy" onError={(e)=>{e.currentTarget.onerror=null; e.currentTarget.src='/hospital-sample.png';}} />
-                      </div>
-                    ))}
-                  </div>
+            <InfoField label="Website" value={profile.website} />
+            <InfoField label="Emergency Contact Number" value={profile.emergencyPhone} />
+            <InfoField label="Number of Beds" value={profile.beds} />
+            <InfoField label="Number of ICU Beds" value={profile.icuBeds} />
+            <InfoField label="Number of Ambulances" value={profile.ambulances} />
+            <InfoField label="Ambulance Contact Number" value={profile.ambulancePhone} />
+            <InfoField label="Do you have Blood Bank" value={profile.bloodBank ? "Yes" : "No"} />
+            <InfoField label="Blood Bank Contact Number" value={profile.bloodBankPhone} />
+          </div>
+
+          <div className="pt-4 pb-4">
+            <div className="text-sm text-secondary-grey200 mb-1">About</div>
+            <p className="text-sm leading-relaxed text-secondary-grey400">{profile.about}</p>
+          </div>
+
+          <InputWithMeta
+            label="Hospital Photos"
+            showInput={false}
+          >
+          </InputWithMeta>
+          <div className="flex gap-4 overflow-x-auto pb-1">
+            {(resolvedPhotos && resolvedPhotos.length > 0 ? resolvedPhotos : ['/placeholder_clinic.jpg']).map((src, i) => (
+              <img key={i} src={src} alt="hospital" className="w-[120px] h-[120px] rounded-md object-cover border border-gray-100" />
+            ))}
+          </div>
+        </SectionCard>
+
+        {/* Medical Specialties */}
+        <SectionCard title="Medical Specialties" Icon={pencil} onIconClick={() => { }}>
+          <div className="flex flex-wrap gap-2">
+            {(profile.specialties && profile.specialties.length > 0 ? profile.specialties : ['-']).map((s, i) => (
+              <span key={i} className="px-1 rounded-[2px] border border-gray-100 bg-gray-50 text-sm text-secondary-grey400 hover:border-blue-primary150 hover:text-blue-primary250 cursor-pointer">{s}</span>
+            ))}
+          </div>
+        </SectionCard>
+
+        {/* Services & Facilities */}
+        <SectionCard title="Hospital Services & Facilities" Icon={pencil} onIconClick={() => { }}>
+          <div className="flex flex-wrap gap-3">
+            {(profile.services && profile.services.length > 0 ? profile.services : ['-']).map((s, i) => (
+              <span key={i} className="px-1 rounded-[2px] border border-gray-100 bg-gray-50 text-sm text-secondary-grey400 hover:border-blue-primary150 hover:text-blue-primary250 cursor-pointer">{s}</span>
+            ))}
+          </div>
+        </SectionCard>
+
+        {/* Awards & Publications */}
+        <SectionCard
+          title="Awards & Publications"
+          Icon={add}
+          onIconClick={() => { }}
+        >
+          <div className="space-y-2">
+            {awards.length === 0 && publications.length === 0 && <div className="text-sm text-gray-400">No awards or publications listed.</div>}
+
+            {awards.map((aw) => (
+              <ProfileItemCard
+                key={aw.id}
+                icon={award}
+                title={aw.awardName}
+                subtitle={aw.issuerName}
+                date={formatMonthYear(aw.issueDate)}
+                linkLabel="Certificate ↗"
+                linkUrl={aw.awardUrl}
+              />
+            ))}
+
+            {publications.map((pub) => (
+              <ProfileItemCard
+                key={pub.id}
+                icon={publication}
+                title={pub.title}
+                subtitle={pub.publisher || pub.associatedWith}
+                date={pub.publicationDate ? formatMonthYear(pub.publicationDate) : undefined}
+                linkLabel="Publication ↗"
+                linkUrl={pub.publicationUrl}
+                description={pub.description}
+              />
+            ))}
+          </div>
+        </SectionCard>
+
+      </div>
+
+      {/* Right Column (5/12) */}
+      <div className="col-span-12 xl:col-span-6 space-y-6">
+
+        {/* Address */}
+        <SectionCard title="Hospital Address" Icon={pencil} onIconClick={() => { }}>
+          <InputWithMeta
+            label="Map Location"
+            showInput={false}
+            infoIcon
+          />
+          <div className="h-[100px] bg-gray-100 rounded-lg border border-gray-200 mb-3 overflow-hidden relative">
+            <MapLocation overlay={false} />
+          </div>
+          <div className="grid grid-cols-1 gap-3">
+            <div className="grid grid-cols-2 gap-8">
+              <InfoField label="Block no./Shop no./House no." value={profile.address?.blockNo || profile.address?.block} />
+              <InfoField label="Road/Area/Street" value={profile.address?.street || profile.address?.road} />
             </div>
-
-      <div className="flex flex-col gap-1">
-              <span className="text-[#424242] font-medium text-sm">Primary Admin Account Details</span>
-              <div className="border-t border-[#D6D6D6] flex flex-col">
-        <InfoRow label="User Name:" value={primaryAdmin?.name || '-'} />
-        <InfoRow label="Email:" value={primaryAdmin?.emailId || '-'} />
-        <InfoRow label="Designation:" value="Super Admin" />
-        <InfoRow label="Contact:" value={primaryAdmin?.phone || '-'} />
-  <InfoRow label="Role:" value="Admin" />
-  <InfoRow label="MFA Status:" value="Done" valueClassName="text-[#3EAF3F]" />
-              </div>
+            <div className="grid grid-cols-2 gap-8">
+              <InfoField label="Landmark" value={profile.address?.landmark} />
+              <InfoField label="Pincode" value={profile.address?.pincode} />
+            </div>
+            <div className="grid grid-cols-2 gap-8">
+              <InfoField label="City" value={profile.city} />
+              <InfoField label="State" value={profile.state} />
             </div>
           </div>
-        </div>
+        </SectionCard>
+
+        {/* Primary Admin */}
+        <SectionCard title="Primary Admin Account Details" subo="To Change Admin Details" headerRight={<></>}>
+          <div className="grid grid-cols-2 gap-x-7 gap-y-3">
+            <InfoField label="First Name" value={profile.admin?.firstName || (profile.admin?.name || '').split(' ')[0]} />
+            <InfoField label="Last Name" value={profile.admin?.lastName || (profile.admin?.name || '').split(' ').slice(1).join(' ')} />
+            <InfoField label="Mobile Number" value={profile.admin?.phone} right={<VerifiedBadge />} />
+            <InfoField label="Email" value={profile.admin?.emailId || profile.admin?.email} right={<VerifiedBadge />} />
+            <InfoField label="Gender" value={profile.admin?.gender} />
+            <InfoField label="City" value={profile.admin?.city} />
+            <InfoField label="Designation" value={profile.admin?.designation || "Super Admin"} />
+            <InfoField label="Role" value={profile.admin?.role || "Admin"} />
+          </div>
+        </SectionCard>
+
+        {/* Verification Documents */}
+        <SectionCard title="Verification Documents" subo="To change your Medical proof please">
+          <div className="space-y-3">
+
+            {/* GST */}
+            <div className='flex flex-col gap-2'>
+              <h4 className="text-sm font-medium text-secondary-grey400">
+                <span className="relative inline-block pb-2">
+                  GST Details
+                  <span className="absolute left-1/2 bottom-0 h-[2px] w-full -translate-x-3/4 scale-x-50 bg-blue-primary150/50"></span>
+                </span>
+              </h4>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-7">
+                <div><InfoField label="GST Number" value={profile.gst?.number} /></div>
+                <div>
+                  <div className="text-[14px] text-secondary-grey200 mb-1">Proof of GST Registration</div>
+                  <InputWithMeta imageUpload={true} fileName="GST Proof.pdf" showInput={false} />
+                </div>
+              </div>
+            </div>
+
+            {/* CIN */}
+            <div className='flex flex-col gap-2'>
+              <h4 className="text-sm font-semibold text-secondary-grey400">
+                <span className="relative inline-block pb-2">
+                  CIN Details
+                  <span className="absolute left-1/2 bottom-0 h-[2px] w-full -translate-x-3/4 scale-x-50 bg-blue-primary150/50"></span>
+                </span>
+              </h4>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-7 gap-y-4">
+                <InfoField label="CIN Number" value={profile.cin?.number} />
+                <div className="col-span-2 md:col-span-1">
+                  <div className="text-[14px] text-secondary-grey200 mb-">Proof of CIN Registration</div>
+                  <InputWithMeta imageUpload={true} fileName="CIN Proof.pdf" showInput={false} />
+                </div>
+              </div>
+            </div>
+
+            {/* Other docs could be mapped here similarly if data exists in specific fields */}
+            {/* For now, just rendering placeholders/mapped docs logic similar to HAccount */}
+
+          </div>
+        </SectionCard>
+
       </div>
     </div>
   )

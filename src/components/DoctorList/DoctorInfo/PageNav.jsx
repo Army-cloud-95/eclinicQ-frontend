@@ -33,7 +33,7 @@ const PageNav = ({ doctor }) => {
   };
 
   return (
-    <div className="w-full ">
+    <div className="w-full bg-white">
       {/* Tabs */}
       <div className="px-2 border-b border-secondary-grey100">
         <nav className="px-2 flex items-center gap-2 overflow-x-auto text-sm">
