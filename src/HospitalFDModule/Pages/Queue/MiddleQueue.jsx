@@ -1,9 +1,10 @@
 import React, { useEffect, useMemo, useState, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { bookWalkInAppointment, checkInAppointment, markNoShowAppointment, startSlotEta, endSlotEta, getSlotEtaStatus, startPatientSessionEta, endPatientSessionEta, findPatientSlots, pauseSlotEta, resumeSlotEta } from '../../../services/authService';
-import { Calendar, ChevronDown, Sunrise, Sun, Sunset, Moon, X, Play, ArrowRight, User, BedDouble, CalendarPlus, UserX, RotateCcw } from 'lucide-react';
+import { Calendar, ChevronDown, Sunrise, Sun, Sunset, Moon, X, Play, ArrowRight, User, BedDouble, CalendarPlus, UserX, RotateCcw, CheckCircle, HeartPulse, BriefcaseMedical, PauseCircle } from 'lucide-react';
 import QueueDatePicker from '../../../components/QueueDatePicker';
 import AvatarCircle from '../../../components/AvatarCircle';
+import BookAppointmentDrawer from '../../../components/Appointment/BookAppointmentDrawer';
 import Badge from '../../../components/Badge';
 import Toggle from '../../../components/FormItems/Toggle';
 import SampleTable from '../../../pages/SampleTable';
@@ -13,8 +14,12 @@ import useAuthStore from '../../../store/useAuthStore';
 import { getDoctorMe } from '../../../services/authService';
 import { classifyISTDayPart, buildISTRangeLabel } from '../../../lib/timeUtils';
 import Button from '@/components/Button';
+import SessionTimer from '../../../components/SessionTimer';
 const search = '/superAdmin/Doctors/SearchIcon.svg';
 const pause = '/fd/Pause.svg';
+const checkRound = '/fd/Check Round.svg';
+const verified = '/verified-tick.svg'
+
 
 // Dummy Data for UI Demo
 const DUMMY_ACTIVE_PATIENT = {
@@ -64,7 +69,7 @@ const DUMMY_PATIENTS = [
 // Assuming "Same as previous" for drawers to keep tool usage concise, but since this is overwrite, I need to include them.
 // I will include condensed versions for safety.
 
-const WalkInAppointmentDrawer = ({ show, onClose }) => (!show ? null : <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30"><div className="bg-white p-6 rounded relative"> <button onClick={onClose} className="absolute top-2 right-2">X</button> Walk-In Drawer Content </div></div>);
+
 
 export default function MiddleQueue({ doctorId: propsDoctorId, dummyMode = false }) {
 	// ... (existing states)
@@ -73,8 +78,10 @@ export default function MiddleQueue({ doctorId: propsDoctorId, dummyMode = false
 	const [slotOpen, setSlotOpen] = useState(false);
 	const [currentDate, setCurrentDate] = useState(new Date());
 	const [checkedInTokens, setCheckedInTokens] = useState({});
+
 	const [activeActionMenuToken, setActiveActionMenuToken] = useState(null);
 	const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0 });
+	const [sessionStatus, setSessionStatus] = useState('idle'); // 'idle' | 'ongoing' | 'completed'
 
 	useEffect(() => {
 		const handleClickOutside = () => setActiveActionMenuToken(null);
@@ -106,7 +113,8 @@ export default function MiddleQueue({ doctorId: propsDoctorId, dummyMode = false
 	const queueData = DUMMY_PATIENTS; // Queue list is always visible for the selected doctor
 
 	// Real logic state placeholders (if not dummyMode)
-	const [realSessionStarted, setRealSessionStarted] = useState(false);
+
+	const [showWalkInDrawer, setShowWalkInDrawer] = useState(false);
 	// ...
 
 	const filters = ['In Waiting', 'Checked-In', 'Engaged', 'No show', 'Admitted'];
@@ -180,19 +188,18 @@ export default function MiddleQueue({ doctorId: propsDoctorId, dummyMode = false
 					{/* Active Patient Card */}
 					{sessionActive && activePatient && (
 						<div
-							className="
-    flex items-center justify-between
-    rounded-xl
-    border border-blue-primary250
-    px-4 py-3
-	mb-4
-    bg-white
-    bg-[linear-gradient(90deg,rgba(35,114,236,0.08)_0%,rgba(35,114,236,0)_25%,rgba(35,114,236,0)_75%,rgba(35,114,236,0.08)_100%)]
-  "
+							className={`
+                              flex items-center justify-between
+                              rounded-xl
+                              px-4 py-3
+                              mb-4
+                              bg-white
+                              ${sessionStatus === 'completed'
+									? 'border border-success-200 bg-[linear-gradient(90deg,rgba(39,202,64,0.08)_0%,rgba(39,202,64,0)_25%,rgba(39,202,64,0)_75%,rgba(39,202,64,0.08)_100%)]'
+									: 'border border-blue-primary250 bg-[linear-gradient(90deg,rgba(35,114,236,0.08)_0%,rgba(35,114,236,0)_25%,rgba(35,114,236,0)_75%,rgba(35,114,236,0.08)_100%)]'
+								}
+                            `}
 						>
-
-
-
 							<div className='flex items-center gap-3'>
 								<AvatarCircle name={activePatient.patientName} size="lg" className="h-12 w-12 text-lg" />
 								<div className="flex gap-6 items-center">
@@ -214,17 +221,43 @@ export default function MiddleQueue({ doctorId: propsDoctorId, dummyMode = false
 								</div>
 							</div>
 							<div className='flex gap-2 items-center'>
-								<Button
-									variant="primary"
-									size="small"
-									className=" text-white flex items-center gap-2 px-4 py-2 font-medium"
-								>
-									<Play className="w-3.5 h-3.5 " />
-									Start Session
-								</Button>
-								<button className=' px-2'>
-									<img src={more} alt="" />
-								</button>
+								{sessionStatus === 'idle' && (
+									<Button
+										variant="primary"
+										size="small"
+										onClick={() => setSessionStatus('ongoing')}
+										className=" text-white flex items-center gap-2 px-4 py-2 font-medium"
+									>
+										<Play className="w-3.5 h-3.5 " />
+										Start Session
+									</Button>
+								)}
+								{sessionStatus === 'ongoing' && (
+									<div className="flex items-center gap-3">
+										<SessionTimer />
+										<button
+											onClick={() => setSessionStatus('completed')}
+											className="flex items-center gap-2 bg-white border border-secondary-grey200/50 px-4 py-2 rounded-md text-sm font-medium text-secondary-grey400 hover:bg-gray-50 transition-colors"
+										>
+											<img src={checkRound} alt="" />
+											<span>End Session</span>
+										</button>
+									</div>
+								)}
+								{sessionStatus === 'completed' && (
+									<div className="flex items-center gap-2 text-success-300 font-medium text-sm mr-6">
+										<img src={verified} alt="" className="w-5 h-5" />
+										<span>Visit Completed</span>
+									</div>
+								)}
+								{sessionStatus !== 'completed' && (
+									<button
+										onClick={(e) => handleActionMenuClick(e, 'active_patient_card')}
+										className={`px-2 rounded-full transition-colors ${activeActionMenuToken === 'active_patient_card' ? 'bg-gray-100' : ''}`}
+									>
+										<img src={more} alt="" />
+									</button>
+								)}
 							</div>
 						</div>
 					)}
@@ -245,7 +278,12 @@ export default function MiddleQueue({ doctorId: propsDoctorId, dummyMode = false
 							</button>
 
 							<div className='h-6 bg-secondary-grey100/50 mx-1 w-[1px]'></div>
-							<button className='inline-flex items-center gap-2 h-[32px] min-w-[32px] p-2 rounded-sm border-[1px] text-sm font-medium border-[#BFD6FF] bg-[#F3F8FF] text-[#2372EC] hover:bg-[#2372EC] hover:text-white transition-colors'>Walk-In Appointment</button>
+							<button
+								onClick={() => setShowWalkInDrawer(true)}
+								className='inline-flex items-center gap-2 h-[32px] min-w-[32px] p-2 rounded-sm border-[1px] text-sm font-medium border-[#BFD6FF] bg-[#F3F8FF] text-[#2372EC] hover:bg-[#2372EC] hover:text-white transition-colors'
+							>
+								Walk-In Appointment
+							</button>
 						</div>
 					</div>
 
@@ -346,7 +384,11 @@ export default function MiddleQueue({ doctorId: propsDoctorId, dummyMode = false
 				</div>
 			</div>
 
-			<WalkInAppointmentDrawer show={false} onClose={() => { }} />
+			<BookAppointmentDrawer
+				open={showWalkInDrawer}
+				onClose={() => setShowWalkInDrawer(false)}
+				doctorId={propsDoctorId}
+			/>
 
 			{/* Dropdown Menu Portal */}
 			{activeActionMenuToken && createPortal(
@@ -355,22 +397,48 @@ export default function MiddleQueue({ doctorId: propsDoctorId, dummyMode = false
 					style={{ top: dropdownPosition.top, left: dropdownPosition.left }}
 					onClick={(e) => e.stopPropagation()}
 				>
-					<button className="flex items-center gap-2 px-4 py-2 text-sm text-secondary-grey400 hover:bg-gray-50 text-left w-full">
-						<User className="h-4 w-4" /> View Profile
-					</button>
-					<button className="flex items-center gap-2 px-4 py-2 text-sm text-secondary-grey400 hover:bg-gray-50 text-left w-full">
-						<BedDouble className="h-4 w-4" /> Mark as Admitted
-					</button>
-					<button className="flex items-center gap-2 px-4 py-2 text-sm text-secondary-grey400 hover:bg-gray-50 text-left w-full">
-						<CalendarPlus className="h-4 w-4" /> Schedule Follow-up
-					</button>
-					<div className="my-1 border-t border-gray-100"></div>
-					<button className="flex items-center gap-2 px-4 py-2 text-sm text-[#ef4444] hover:bg-red-50 text-left w-full">
-						<UserX className="h-4 w-4" /> Mark as No-Show
-					</button>
-					<button className="flex items-center gap-2 px-4 py-2 text-sm text-[#ef4444] hover:bg-red-50 text-left w-full">
-						<RotateCcw className="h-4 w-4" /> Revoke Check-In
-					</button>
+					{activeActionMenuToken === 'active_patient_card' ? (
+						<>
+							<button className="flex items-center gap-2 px-4 py-2 text-sm text-secondary-grey400 hover:bg-gray-50 text-left w-full">
+								<User className="h-4 w-4" /> View Profile
+							</button>
+							<button className="flex items-center gap-2 px-4 py-2 text-sm text-secondary-grey400 hover:bg-gray-50 text-left w-full">
+								<CalendarPlus className="h-4 w-4" /> Schedule Follow-up
+							</button>
+							<button className="flex items-center gap-2 px-4 py-2 text-sm text-secondary-grey400 hover:bg-gray-50 text-left w-full">
+								<BedDouble className="h-4 w-4" /> Mark as Admitted
+							</button>
+							<button className="flex items-center gap-2 px-4 py-2 text-sm text-secondary-grey400 hover:bg-gray-50 text-left w-full">
+								<HeartPulse className="h-4 w-4" /> Add Vitals & Biometric
+							</button>
+							<button className="flex items-center gap-2 px-4 py-2 text-sm text-secondary-grey400 hover:bg-gray-50 text-left w-full">
+								<BriefcaseMedical className="h-4 w-4" /> Add Medical History
+							</button>
+							<div className="my-1 border-t border-gray-100"></div>
+							<button className="flex items-center gap-2 px-4 py-2 text-sm text-[#ef4444] hover:bg-red-50 text-left w-full">
+								<PauseCircle className="h-4 w-4" /> Pause Consultation
+							</button>
+						</>
+					) : (
+						<>
+							<button className="flex items-center gap-2 px-4 py-2 text-sm text-secondary-grey400 hover:bg-gray-50 text-left w-full">
+								<User className="h-4 w-4" /> View Profile
+							</button>
+							<button className="flex items-center gap-2 px-4 py-2 text-sm text-secondary-grey400 hover:bg-gray-50 text-left w-full">
+								<BedDouble className="h-4 w-4" /> Mark as Admitted
+							</button>
+							<button className="flex items-center gap-2 px-4 py-2 text-sm text-secondary-grey400 hover:bg-gray-50 text-left w-full">
+								<CalendarPlus className="h-4 w-4" /> Schedule Follow-up
+							</button>
+							<div className="my-1 border-t border-gray-100"></div>
+							<button className="flex items-center gap-2 px-4 py-2 text-sm text-[#ef4444] hover:bg-red-50 text-left w-full">
+								<UserX className="h-4 w-4" /> Mark as No-Show
+							</button>
+							<button className="flex items-center gap-2 px-4 py-2 text-sm text-[#ef4444] hover:bg-red-50 text-left w-full">
+								<RotateCcw className="h-4 w-4" /> Revoke Check-In
+							</button>
+						</>
+					)}
 				</div>,
 				document.body
 			)}

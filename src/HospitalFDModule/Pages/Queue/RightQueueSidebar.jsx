@@ -1,6 +1,7 @@
 
 import React, { useState } from 'react';
-import { Calendar, Clock, ChevronRight, Play, ArrowRight, ClipboardList } from 'lucide-react';
+import { Calendar, Clock, ChevronRight, Play, ArrowRight, ClipboardList, CheckCircle } from 'lucide-react';
+import SessionTimer from '../../../components/SessionTimer';
 import AvatarCircle from '../../../components/AvatarCircle';
 import Button from '../../../components/Button';
 const more = '/superAdmin/Doctors/Threedots.svg'
@@ -35,6 +36,7 @@ export default function RightQueueSidebar({
     error
 }) {
     // Internal activeTab state removed, controlled by parent HFDQueue
+    const [startedSessions, setStartedSessions] = useState({});
 
     return (
         <div className="flex flex-col h-full bg-white">
@@ -46,66 +48,66 @@ export default function RightQueueSidebar({
                     {activeTab === 'appt_request' && (
                         <div className="flex flex-col">
                             {loading && <div className="p-4 text-sm text-gray-500 text-center">Loading requests...</div>}
-                            
+
                             {!loading && appointmentRequests.length === 0 && (
                                 <div className="p-8 text-center text-gray-500 text-sm">No new appointment requests</div>
                             )}
 
                             {appointmentRequests.map((request, index) => (
                                 <div key={request.id || index} className="border-b border-gray-100 flex flex-col gap-3 last:border-0 p-3 bg-white  transition-colors">
-                                    
+
                                     {/* Patient Header */}
                                     <div className="flex items-center justify-between">
-                                            <div className="flex items-center gap-2">
-                                                <AvatarCircle name={request.name} size="l"  />
-                                                <div className="flex flex-col">
-                                                    <div className="flex items-center gap-1">
-                                                        <span className="text-[16px] font-semibold text-secondary-grey400">{request.name}</span>
-                                                        <ArrowRight className="h-3 w-3 text-gray-400 -rotate-45" />
-                                                    </div>
-                                                    <div className="text-[12px] text-secondary-grey300">{request.gender} | {request.dob}</div>
+                                        <div className="flex items-center gap-2">
+                                            <AvatarCircle name={request.name} size="l" />
+                                            <div className="flex flex-col">
+                                                <div className="flex items-center gap-1">
+                                                    <span className="text-[16px] font-semibold text-secondary-grey400">{request.name}</span>
+                                                    <ArrowRight className="h-3 w-3 text-gray-400 -rotate-45" />
                                                 </div>
+                                                <div className="text-[12px] text-secondary-grey300">{request.gender} | {request.dob}</div>
                                             </div>
-                                            <button className="text-gray-400 hover:bg-secondary-grey50">
-                                                <img src={more} alt="" />
-                                            </button>
                                         </div>
+                                        <button className="text-gray-400 hover:bg-secondary-grey50">
+                                            <img src={more} alt="" />
+                                        </button>
+                                    </div>
 
                                     {/* Date & Time */}
                                     <div className="flex flex-col gap-1">
                                         <div className='flex flex-col gap-1 text-sm text-secondary-grey400'>
                                             <div className="flex items-center gap-2">
-                                            <img src={CalendarMinimalistic} alt="" />
-                                            <span>{request.date}</span>
+                                                <img src={CalendarMinimalistic} alt="" />
+                                                <span>{request.date}</span>
+                                            </div>
+                                            {request.time && (
+                                                <div className="flex items-center gap-2 ">
+                                                    <img src={ClockCircle} alt="" />
+                                                    <span>{request.time}</span>
                                                 </div>
-                                        {request.time && (
-                                            <div className="flex items-center gap-2 ">
-                                                <img src={ClockCircle} alt="" />
-                                                <span>{request.time}</span>
-                                            </div>
-                                        )}
+                                            )}
                                         </div>
-                                        
+
                                         {/* Request For */}
-                                    <div className="flex flex-col gap-1">
-                                        <div className="text-sm text-secondary-grey200">Request For</div>
-                                        <div className="flex items-center gap-2">
-                                            <AvatarCircle 
-                                                name={request.doctorName || 'Doctor'} 
-                                                size="s" 
-                                                className="shrink-0 text-orange-500 border border-orange-200 bg-orange-50" 
-                                                color="orange" 
-                                            />
-                                            <div>
-                                                <div className="text-sm font-medium text-secondary-grey400 leading-tight">{request.doctorName}</div>
-                                                <div className="text-xs text-secondary-grey300">{request.doctorSpecialty}</div>
+                                        <div className="flex flex-col gap-1">
+                                            <div className="text-sm text-secondary-grey200">Request For</div>
+                                            <div className="flex items-center gap-2">
+                                                <AvatarCircle
+                                                    name={request.doctorName || 'Doctor'}
+                                                    size="s"
+                                                    className="shrink-0 text-orange-500 border border-orange-200 bg-orange-50"
+                                                    color="orange"
+                                                />
+                                                <div>
+                                                    <div className="text-sm font-medium text-secondary-grey400 leading-tight">{request.doctorName}</div>
+                                                    <div className="text-xs text-secondary-grey300">{request.doctorSpecialty}</div>
+                                                </div>
                                             </div>
                                         </div>
-                                    </div>
 
                                     </div>
 
-                                    
+
 
                                     {/* Buttons */}
                                     <div className="flex gap-3">
@@ -148,7 +150,7 @@ export default function RightQueueSidebar({
                                     <div className="p-3 bg-white flex flex-col gap-3 border-b border-secondary-grey100/50">
                                         <div className="flex items-start justify-between">
                                             <div className="flex gap-2">
-                                                <AvatarCircle name={session.patient.name} size="md"  />
+                                                <AvatarCircle name={session.patient.name} size="md" />
                                                 <div>
                                                     <div className="flex items-center gap-1">
                                                         <span className="text-[16px] font-semibold text-secondary-grey400">{session.patient.name}</span>
@@ -169,14 +171,28 @@ export default function RightQueueSidebar({
                                                     {session.patient.token}
                                                 </div>
                                             </div>
-                                            <Button
-                                                variant="primary"
-                                                size="small"
-                                                className=" text-white flex items-center gap-2 px-4 py-2 font-medium"
-                                            >
-                                                <Play className="w-3.5 h-3.5 " />
-                                                Start Session
-                                            </Button>
+                                            {!startedSessions[session.id] ? (
+                                                <Button
+                                                    variant="primary"
+                                                    size="small"
+                                                    onClick={() => setStartedSessions(prev => ({ ...prev, [session.id]: true }))}
+                                                    className=" text-white flex items-center gap-2 px-4 py-2 font-medium"
+                                                >
+                                                    <Play className="w-3.5 h-3.5 " />
+                                                    Start Session
+                                                </Button>
+                                            ) : (
+                                                <div className="flex items-center gap-3">
+                                                    <SessionTimer />
+                                                    <button
+                                                        onClick={() => setStartedSessions(prev => ({ ...prev, [session.id]: false }))}
+                                                        className="flex items-center gap-2 bg-white border border-gray-300 px-3 py-[7px] rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+                                                    >
+                                                        <CheckCircle className="w-4 h-4 text-green-500 fill-current text-white bg-green-500 rounded-full" />
+                                                        <span>End Session</span>
+                                                    </button>
+                                                </div>
+                                            )}
                                         </div>
                                     </div>
                                 </div>
