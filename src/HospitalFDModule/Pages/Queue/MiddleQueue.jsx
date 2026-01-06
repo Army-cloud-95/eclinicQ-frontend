@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { bookWalkInAppointment, checkInAppointment, markNoShowAppointment, startSlotEta, endSlotEta, getSlotEtaStatus, startPatientSessionEta, endPatientSessionEta, findPatientSlots, pauseSlotEta, resumeSlotEta } from '../../../services/authService';
-import { Calendar, ChevronDown, Sunrise, Sun, Sunset, Moon, X, Play, ArrowRight, User, BedDouble, CalendarPlus, UserX, RotateCcw, CheckCircle, HeartPulse, BriefcaseMedical, PauseCircle } from 'lucide-react';
+import { Calendar, ChevronDown, Sunrise, Sun, Sunset, Moon, X, Play, ArrowRight, User, BedDouble, CalendarPlus, UserX, RotateCcw, CheckCircle, HeartPulse, BriefcaseMedical, PauseCircle, CheckCheck, CalendarMinus, CalendarX } from 'lucide-react';
 import QueueDatePicker from '../../../components/QueueDatePicker';
 import AvatarCircle from '../../../components/AvatarCircle';
 import BookAppointmentDrawer from '../../../components/Appointment/BookAppointmentDrawer';
@@ -64,6 +64,17 @@ const DUMMY_PATIENTS = [
 	{ token: 30, patientName: 'Alia Bhatt', gender: 'F', dob: '15/03/1993', age: '31Y', appointmentType: 'Follow-up Consultation', expectedTime: '8:00 PM', bookingType: 'Online', reason: 'Routine Checkup', status: 'Waiting' }
 ];
 
+const DUMMY_ENGAGED_DATA = [
+	{ token: 1, patientName: 'Rahul Sharma', gender: 'M', dob: '12/05/1985', age: '39Y', appointmentType: 'New', startTime: '11:00 AM', endTime: '11:08 AM', bookingType: 'Online', reason: 'Annual Checkup' }
+];
+
+const DUMMY_NO_SHOW_DATA = [
+	{ isHeader: true, label: "Within Grace Period" },
+	{ token: 11, patientName: 'Manish Choudhary', gender: 'M', dob: '02/12/1986', age: '37Y', appointmentType: 'Follow-up Consultation', expectedTime: '5:45 PM', bookingType: 'Online', reason: 'Anxiety & Stress', isGrace: true },
+	{ isHeader: true, label: "Outside Grace Period" },
+	{ token: 5, patientName: 'Kunal Joshi', gender: 'M', dob: '05/02/1990', age: '34Y', appointmentType: 'Follow-up Consultation', expectedTime: '1:30 PM', bookingType: 'Online', reason: 'Anxiety & Stress', isGrace: false },
+];
+
 // ... (PreScreeningDrawer and WalkInAppointmentDrawer components remain same as previous overwrite)
 // For brevity, skipping full re-declaration of drawers in this snippet but they MUST be included in final file.
 // Assuming "Same as previous" for drawers to keep tool usage concise, but since this is overwrite, I need to include them.
@@ -82,6 +93,14 @@ export default function MiddleQueue({ doctorId: propsDoctorId, dummyMode = false
 	const [activeActionMenuToken, setActiveActionMenuToken] = useState(null);
 	const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0 });
 	const [sessionStatus, setSessionStatus] = useState('idle'); // 'idle' | 'ongoing' | 'completed'
+
+	const slotOptions = [
+		{ id: 'morning', label: 'Morning', time: '10:00am-12:00pm', icon: Sunrise },
+		{ id: 'afternoon', label: 'Afternoon', time: '2:00pm-4:00pm', icon: Sun },
+		{ id: 'evening', label: 'Evening', time: '6:00pm-8:00pm', icon: Sunset },
+		{ id: 'night', label: 'Night', time: '8:30pm-10:30pm', icon: Moon },
+	];
+	const [selectedSlot, setSelectedSlot] = useState(slotOptions[0]);
 
 	useEffect(() => {
 		const handleClickOutside = () => setActiveActionMenuToken(null);
@@ -133,13 +152,17 @@ export default function MiddleQueue({ doctorId: propsDoctorId, dummyMode = false
 
 	return (
 		<div className='h-full overflow-hidden bg-gray-50 flex flex-col font-sans'>
-			<div className='sticky top-0 z-10 bg-white border-b-[0.5px] border-gray-200 px-4 py-2 shrink-0'>
-				<div className='flex items-center'>
+			<div className='sticky top-0 z-10 bg-white border-b-[0.5px] border-secondary-grey100 px-4 py-2 shrink-0'>
+				<div className='flex items-center justify-between'>
 					{/* Slot Dropdown */}
-					<div className='relative mr-6'>
-						<button type='button' className='flex items-center bg-white rounded-md border border-gray-200 shadow-sm px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-50'>
-							<span className='font-medium mr-1'>Morning (10:00 am - 12:30 pm)</span>
-							<ChevronDown className='ml-2 h-4 w-4 text-gray-500' />
+					<div className='relative '>
+						<button
+							type='button'
+							onClick={(e) => handleActionMenuClick(e, 'slot_dropdown')}
+							className='flex w-[300px] items-center bg-white gap-1 text-[16px] text-secondary-grey400 hover:w-fit hover:bg-gray-50'
+						>
+							<span className='mr-1'>{selectedSlot.label} ({selectedSlot.time})</span>
+							<ChevronDown className='pl-1 h-4 border-l-[0.5px] border-secondary-grey100/50 text-gray-500' />
 						</button>
 					</div>
 					{/* Date Picker */}
@@ -147,12 +170,18 @@ export default function MiddleQueue({ doctorId: propsDoctorId, dummyMode = false
 						<QueueDatePicker date={currentDate} onChange={setCurrentDate} />
 					</div>
 					{/* Walk-in */}
-					<div className='ml-auto flex items-center gap-4'>
-						<div className="flex items-center gap-2 text-sm text-gray-500">
+					<div className='flex items-center gap-[10px]'>
+						<div className="flex items-center gap-1 text-sm text-secondary-grey300">
 							<span>Tokens Available</span>
-							<span className="text-green-600 font-medium">5 Out of 100</span>
+							<span className="bg-success-100 px-2 text-success-300 rounded-sm h-[22px] text-sm  border border-transparent hover:border-success-300/50 transition-colors cursor-pointer">5 Out of 100</span>
 						</div>
-						<button className='text-gray-400 font-bold px-2'>•••</button>
+						<div className='bg-secondary-grey100/50 h-5 w-[1px]' ></div>
+						<button
+							onClick={(e) => handleActionMenuClick(e, 'queue_actions_dropdown')}
+							className='hover:bg-secondary-grey50 rounded-sm'
+						>
+							<img src={more} alt="" />
+						</button>
 					</div>
 				</div>
 			</div>
@@ -291,7 +320,112 @@ export default function MiddleQueue({ doctorId: propsDoctorId, dummyMode = false
 					<div className='w-full flex flex-col flex-1 min-h-0 overflow-hidden bg-white rounded-lg border border-gray-200 relative'>
 						<div className='absolute inset-0 overflow-auto'>
 							<SampleTable
-								columns={[
+								columns={activeFilter === 'Engaged' ? [
+									{
+										key: "token",
+										header: <div className="w-full text-center text-secondary-grey400 font-medium">T. No</div>,
+										icon: true,
+										width: 80,
+										render: (row) => (
+											<span className="text-secondary-grey500 items-center flex justify-center font-medium text-[14px] pl-2">{String(row.token).padStart(2, '0')}</span>
+										)
+									},
+									{
+										key: "patient",
+										header: "Patient",
+										icon: true,
+										width: 250,
+										render: (row) => (
+											<div className="flex items-center gap-2 ">
+												<AvatarCircle name={row.patientName} size="md" className="shrink-0 bg-blue-50 text-blue-600" />
+												<div>
+													<div className="text-secondary-grey400 font-semibold text-sm">{row.patientName}</div>
+													<div className="text-secondary-grey300 text-xs">{row.gender} | {row.dob} ({row.age})</div>
+												</div>
+											</div>
+										)
+									},
+									{ key: "appointmentType", header: "Appt. Type", icon: true, width: 120 },
+									{ key: "startTime", header: "Start Time", icon: true, width: 100 },
+									{ key: "endTime", header: "End Time", icon: true, width: 100 },
+									{ key: "bookingType", header: "Booking Type", icon: true, width: 120 },
+									{ key: "reason", header: "Reason For Visit", icon: false, width: 180 },
+									{
+										key: "actions",
+										header: "Actions",
+										icon: false,
+										sticky: "right",
+										width: 160,
+										render: (row) => (
+											<div className="flex items-center gap-2">
+												<button className="bg-[#2372EC] text-white text-sm font-medium px-3 py-1.5 rounded-md hover:bg-blue-700 transition-colors">
+													Mark as Paid
+												</button>
+												<button
+													onClick={(e) => handleActionMenuClick(e, row.token)}
+													className="text-gray-400 hover:text-gray-600 p-1 rounded-full hover:bg-gray-100"
+												>
+													<img src={more} alt="" />
+												</button>
+											</div>
+										)
+									}
+								] : activeFilter === 'No show' ? [
+									{
+										key: "token",
+										header: <div className="w-full text-center text-secondary-grey400 font-medium">Token</div>,
+										icon: false,
+										width: 80,
+										render: (row) => (
+											<span className="text-blue-primary250 items-center flex justify-center font-medium text-[20px] pl-2">{String(row.token).padStart(2, '0')}</span>
+										)
+									},
+									{
+										key: "patient",
+										header: "Patient",
+										icon: true,
+										width: 280,
+										render: (row) => (
+											<div className="flex items-center gap-2 ">
+												<AvatarCircle name={row.patientName} size="md" className="shrink-0 bg-blue-50 text-blue-600" />
+												<div>
+													<div className="text-secondary-grey400 font-semibold text-sm">{row.patientName}</div>
+													<div className="text-secondary-grey300 text-xs">{row.gender} | {row.dob} ({row.age})</div>
+												</div>
+											</div>
+										)
+									},
+									{ key: "appointmentType", header: "Appt. Type", icon: true, width: 150 },
+									{ key: "expectedTime", header: "Expt. Time", icon: true, width: 120 },
+									{ key: "bookingType", header: "Booking Type", icon: true, width: 130 },
+									{ key: "reason", header: "Reason For Visit", icon: true, width: 200 },
+									{
+										key: "actions",
+										header: "Actions",
+										icon: false,
+										sticky: "right",
+										width: 190,
+										render: (row) => (
+											<div className="flex items-center gap-2">
+												{row.isGrace ? (
+													<button className="w-full px-3 py-1 border border-gray-300 rounded text-sm text-gray-700 hover:bg-gray-50 bg-white">
+														Check-In
+													</button>
+												) : (
+													<button className='w-full px-3 py-1 border border-gray-300 rounded text-sm text-gray-500 hover:bg-gray-50 bg-white'>
+														Rescheduled
+													</button>
+												)}
+												<button
+													onClick={(e) => handleActionMenuClick(e, row.token)}
+													className="text-gray-400 mx-2 hover:text-gray-600 rounded-full p-1 transition-colors"
+												>
+													<img src={more} alt="" />
+												</button>
+											</div>
+										)
+									}
+								] : [
 									{
 										key: "token",
 										header: <div className="w-full text-center text-secondary-grey400 font-medium">Token</div>,
@@ -306,7 +440,6 @@ export default function MiddleQueue({ doctorId: propsDoctorId, dummyMode = false
 										header: "Patient",
 										icon: true,
 										width: 280,
-
 										render: (row) => (
 											<div className="flex items-center gap-2 ">
 												<AvatarCircle name={row.patientName} size="md" className="shrink-0 bg-blue-50 text-blue-600" />
@@ -317,30 +450,10 @@ export default function MiddleQueue({ doctorId: propsDoctorId, dummyMode = false
 											</div>
 										)
 									},
-									{
-										key: "appointmentType",
-										header: "Appt. Type",
-										icon: true,
-										width: 150
-									},
-									{
-										key: "expectedTime",
-										header: "Expt. Time",
-										icon: true,
-										width: 120
-									},
-									{
-										key: "bookingType",
-										header: "Booking Type",
-										icon: true,
-										width: 130
-									},
-									{
-										key: "reason",
-										header: "Reason For Visit",
-										icon: true,
-										width: 200
-									},
+									{ key: "appointmentType", header: "Appt. Type", icon: true, width: 150 },
+									{ key: "expectedTime", header: "Expt. Time", icon: true, width: 120 },
+									{ key: "bookingType", header: "Booking Type", icon: true, width: 130 },
+									{ key: "reason", header: "Reason For Visit", icon: true, width: 200 },
 									{
 										key: "actions",
 										header: "Actions",
@@ -374,7 +487,7 @@ export default function MiddleQueue({ doctorId: propsDoctorId, dummyMode = false
 										}
 									}
 								]}
-								data={queueData}
+								data={activeFilter === 'Engaged' ? DUMMY_ENGAGED_DATA : activeFilter === 'No show' ? DUMMY_NO_SHOW_DATA : queueData}
 								hideSeparators={false}
 								stickyLeftWidth={280}
 								stickyRightWidth={190}
@@ -397,26 +510,65 @@ export default function MiddleQueue({ doctorId: propsDoctorId, dummyMode = false
 					style={{ top: dropdownPosition.top, left: dropdownPosition.left }}
 					onClick={(e) => e.stopPropagation()}
 				>
-					{activeActionMenuToken === 'active_patient_card' ? (
+					{activeActionMenuToken === 'slot_dropdown' ? (
+						<div className="py-1">
+							{slotOptions.map((option) => (
+								<button
+									key={option.id}
+									onClick={() => {
+										setSelectedSlot(option);
+										setActiveActionMenuToken(null);
+									}}
+									className={`flex items-center gap-3 px-4 py-3 text-left w-full transition-colors
+										${selectedSlot.id === option.id
+											? 'bg-blue-600 text-white'
+											: 'text-gray-700 hover:bg-gray-50'
+										}`}
+								>
+									<option.icon className={`h-5 w-5 ${selectedSlot.id === option.id ? 'text-white' : 'text-gray-500'}`} />
+									<div>
+										<div className={`font-medium ${selectedSlot.id === option.id ? 'text-white' : 'text-gray-900'}`}>
+											{option.label}
+										</div>
+										<div className={`text-xs ${selectedSlot.id === option.id ? 'text-blue-100' : 'text-gray-500'}`}>
+											({option.time})
+										</div>
+									</div>
+								</button>
+							))}
+						</div>
+					) : activeActionMenuToken === 'queue_actions_dropdown' ? (
+						<>
+							<button className="flex items-center gap-2 px-4 py-2 text-sm text-secondary-grey400 hover:bg-gray-50 text-left w-full">
+								<RotateCcw className="h-4 w-4" /> Refresh Queue
+							</button>
+							<button className="flex items-center gap-2 px-4 py-2 text-sm text-secondary-grey400 hover:bg-gray-50 text-left w-full">
+								<CalendarMinus className="h-4 w-4" /> Set Doctor Out of Office
+							</button>
+							<div className="my-1 border-t border-gray-100"></div>
+							<button className="flex items-center gap-2 px-4 py-2 text-sm text-[#ef4444] hover:bg-red-50 text-left w-full">
+								<CalendarX className="h-4 w-4" /> Terminate Queue
+							</button>
+						</>
+					) : activeActionMenuToken === 'active_patient_card' ? (
 						<>
 							<button className="flex items-center gap-2 px-4 py-2 text-sm text-secondary-grey400 hover:bg-gray-50 text-left w-full">
 								<User className="h-4 w-4" /> View Profile
 							</button>
 							<button className="flex items-center gap-2 px-4 py-2 text-sm text-secondary-grey400 hover:bg-gray-50 text-left w-full">
-								<CalendarPlus className="h-4 w-4" /> Schedule Follow-up
+								<Calendar className="h-4 w-4" /> Reschedule
 							</button>
 							<button className="flex items-center gap-2 px-4 py-2 text-sm text-secondary-grey400 hover:bg-gray-50 text-left w-full">
 								<BedDouble className="h-4 w-4" /> Mark as Admitted
 							</button>
-							<button className="flex items-center gap-2 px-4 py-2 text-sm text-secondary-grey400 hover:bg-gray-50 text-left w-full">
-								<HeartPulse className="h-4 w-4" /> Add Vitals & Biometric
-							</button>
-							<button className="flex items-center gap-2 px-4 py-2 text-sm text-secondary-grey400 hover:bg-gray-50 text-left w-full">
-								<BriefcaseMedical className="h-4 w-4" /> Add Medical History
-							</button>
-							<div className="my-1 border-t border-gray-100"></div>
-							<button className="flex items-center gap-2 px-4 py-2 text-sm text-[#ef4444] hover:bg-red-50 text-left w-full">
-								<PauseCircle className="h-4 w-4" /> Pause Consultation
+							<button
+								onClick={() => {
+									setSessionStatus('completed');
+									setActiveActionMenuToken(null);
+								}}
+								className="flex items-center gap-2 px-4 py-2 text-sm text-secondary-grey400 hover:bg-gray-50 text-left w-full"
+							>
+								<CheckCheck className="h-4 w-4" /> End Visit
 							</button>
 						</>
 					) : (
