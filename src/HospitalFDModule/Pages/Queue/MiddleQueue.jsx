@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { bookWalkInAppointment, checkInAppointment, markNoShowAppointment, startSlotEta, endSlotEta, getSlotEtaStatus, startPatientSessionEta, endPatientSessionEta, findPatientSlots, pauseSlotEta, resumeSlotEta } from '../../../services/authService';
-import { Calendar, ChevronDown, Sunrise, Sun, Sunset, Moon, X, Play, ArrowRight, User, BedDouble, CalendarPlus, UserX, RotateCcw, CheckCircle, HeartPulse, BriefcaseMedical, PauseCircle, CheckCheck, CalendarMinus, CalendarX } from 'lucide-react';
+import { Calendar, ChevronDown, Sunrise, Sun, Sunset, Moon, X, Play, ArrowRight, User, BedDouble, CalendarPlus, UserX, RotateCcw, CheckCircle, HeartPulse, BriefcaseMedical, PauseCircle, CheckCheck, CalendarMinus, CalendarX, Bell } from 'lucide-react';
 import QueueDatePicker from '../../../components/QueueDatePicker';
 import AvatarCircle from '../../../components/AvatarCircle';
 import BookAppointmentDrawer from '../../../components/Appointment/BookAppointmentDrawer';
@@ -73,6 +73,10 @@ const DUMMY_NO_SHOW_DATA = [
 	{ token: 11, patientName: 'Manish Choudhary', gender: 'M', dob: '02/12/1986', age: '37Y', appointmentType: 'Follow-up Consultation', expectedTime: '5:45 PM', bookingType: 'Online', reason: 'Anxiety & Stress', isGrace: true },
 	{ isHeader: true, label: "Outside Grace Period" },
 	{ token: 5, patientName: 'Kunal Joshi', gender: 'M', dob: '05/02/1990', age: '34Y', appointmentType: 'Follow-up Consultation', expectedTime: '1:30 PM', bookingType: 'Online', reason: 'Anxiety & Stress', isGrace: false },
+];
+
+const DUMMY_ADMITTED_DATA = [
+	{ token: 1, patientName: 'Rahul Sharma', gender: 'M', dob: '12/05/1985', age: '39Y', appointmentType: 'New', startTime: '11:00 AM', endTime: '11:08 AM', bookingType: 'Online', reason: 'Annual Checkup' }
 ];
 
 // ... (PreScreeningDrawer and WalkInAppointmentDrawer components remain same as previous overwrite)
@@ -331,11 +335,11 @@ export default function MiddleQueue({ doctorId: propsDoctorId, dummyMode = false
 								columns={activeFilter === 'Engaged' ? [
 									{
 										key: "token",
-										header: <div className="w-full text-center text-secondary-grey400 font-medium">T. No</div>,
+										header: 'T.no',
 										icon: true,
 										width: 80,
 										render: (row) => (
-											<span className="text-secondary-grey500 items-center flex justify-center font-medium text-[14px] pl-2">{String(row.token).padStart(2, '0')}</span>
+											<span className="text-secondary-grey400 items-center flex justify-center font-medium text-[14px] ">{String(row.token).padStart(2, '0')}</span>
 										)
 									},
 									{
@@ -353,27 +357,27 @@ export default function MiddleQueue({ doctorId: propsDoctorId, dummyMode = false
 											</div>
 										)
 									},
-									{ key: "appointmentType", header: "Appt. Type", icon: true, width: 120 },
-									{ key: "startTime", header: "Start Time", icon: true, width: 100 },
-									{ key: "endTime", header: "End Time", icon: true, width: 100 },
-									{ key: "bookingType", header: "Booking Type", icon: true, width: 120 },
-									{ key: "reason", header: "Reason For Visit", icon: false, width: 180 },
+									{ key: "appointmentType", header: "Appt. Type", icon: true, width: 156 },
+									{ key: "startTime", header: "Start Time", icon: true, width: 120 },
+									{ key: "endTime", header: "End Time", icon: true, width: 120 },
+									{ key: "bookingType", header: "Booking Type", icon: true, width: 156 },
+									{ key: "reason", header: "Reason For Visit", icon: false, width: 200 },
 									{
 										key: "actions",
 										header: "Actions",
 										icon: false,
 										sticky: "right",
-										width: 160,
+										width: 180,
 										render: (row) => (
-											<div className="flex items-center gap-2">
-												<button className="bg-[#2372EC] text-white text-sm font-medium px-3 py-1.5 rounded-md hover:bg-blue-700 transition-colors">
+											<div className="flex items-center justify-between">
+												<button className="bg-[#2372EC] w-full text-white text-sm font-medium px-3 py-1.5 rounded-md hover:bg-blue-700 transition-colors">
 													Mark as Paid
 												</button>
 												<button
 													onClick={(e) => handleActionMenuClick(e, row.token)}
 													className="text-gray-400 hover:text-gray-600 p-1 rounded-full hover:bg-gray-100"
 												>
-													<img src={more} alt="" />
+													<img src={more} alt="" className='w-8 h-8' />
 												</button>
 											</div>
 										)
@@ -385,27 +389,27 @@ export default function MiddleQueue({ doctorId: propsDoctorId, dummyMode = false
 										icon: false,
 										width: 80,
 										render: (row) => (
-											<span className="text-blue-primary250 items-center flex justify-center font-medium text-[20px] pl-2">{String(row.token).padStart(2, '0')}</span>
+											<span className="text-blue-primary250 items-center flex justify-center font-medium text-[20px] ">{String(row.token).padStart(2, '0')}</span>
 										)
 									},
 									{
 										key: "patient",
 										header: "Patient",
 										icon: true,
-										width: 280,
+										width: 205,
 										render: (row) => (
 											<div className="flex items-center gap-2 ">
-												<AvatarCircle name={row.patientName} size="md" className="shrink-0 bg-blue-50 text-blue-600" />
+												<AvatarCircle name={row.patientName} size="md" color={!row.isGrace ? "grey" : "blue"} className="shrink-0" />
 												<div>
-													<div className="text-secondary-grey400 font-semibold text-sm">{row.patientName}</div>
+													<div className="text-secondary-grey400 font-medium text-sm">{row.patientName}</div>
 													<div className="text-secondary-grey300 text-xs">{row.gender} | {row.dob} ({row.age})</div>
 												</div>
 											</div>
 										)
 									},
-									{ key: "appointmentType", header: "Appt. Type", icon: true, width: 150 },
-									{ key: "expectedTime", header: "Expt. Time", icon: true, width: 120 },
-									{ key: "bookingType", header: "Booking Type", icon: true, width: 130 },
+									{ key: "appointmentType", header: "Appt. Type", icon: true, width: 156 },
+									{ key: "expectedTime", header: "Expt. Time", icon: true, width: 140 },
+									{ key: "bookingType", header: "Booking Type", icon: true, width: 156 },
 									{ key: "reason", header: "Reason For Visit", icon: true, width: 200 },
 									{
 										key: "actions",
@@ -413,22 +417,79 @@ export default function MiddleQueue({ doctorId: propsDoctorId, dummyMode = false
 										icon: false,
 										sticky: "right",
 										width: 190,
+										render: (row) => {
+											const isCheckedIn = checkedInTokens[row.token];
+											return (
+												<div className="flex items-center jusitfy-between">
+													{!isCheckedIn ? (
+														row.isGrace ? (
+															<button
+																onClick={() => setCheckedInTokens(prev => ({ ...prev, [row.token]: true }))}
+																className="w-full px-3 py-1 border border-gray-300 rounded text-sm text-secondary-grey400 hover:bg-gray-50 bg-white"
+															>
+																Check-In
+															</button>
+														) : (
+															<button
+																onClick={() => setCheckedInTokens(prev => ({ ...prev, [row.token]: true }))}
+																className='w-full px-3 py-1 border border-gray-300 rounded text-sm text-secondary-grey400 hover:bg-gray-50 bg-white'
+															>
+																Reschedule
+															</button>
+														)
+													) : (
+														<button className='w-full inline-flex justify-center items-center gap-2 h-[32px] min-w-[32px] p-2 rounded-sm border-[1px] text-sm font-medium border-[#BFD6FF] bg-[#F3F8FF] text-[#2372EC] hover:bg-[#2372EC] hover:text-white transition-colors'>
+															Add Pre-screening
+														</button>
+													)}
+													<button
+														onClick={(e) => handleActionMenuClick(e, row.token)}
+														className="text-gray-400 ml-2 hover:text-gray-600 rounded-full  transition-colors"
+													>
+														<img src={more} alt="" />
+													</button>
+												</div>
+											);
+										}
+									}
+								] : activeFilter === 'Admitted' ? [
+
+									{
+										key: "patient",
+										header: "Patient",
+										icon: true,
+										width: 205,
 										render: (row) => (
-											<div className="flex items-center gap-2">
-												{row.isGrace ? (
-													<button className="w-full px-3 py-1 border border-gray-300 rounded text-sm text-gray-700 hover:bg-gray-50 bg-white">
-														Check-In
-													</button>
-												) : (
-													<button className='w-full px-3 py-1 border border-gray-300 rounded text-sm text-gray-500 hover:bg-gray-50 bg-white'>
-														Rescheduled
-													</button>
-												)}
+											<div className="flex items-center gap-2 ">
+												<AvatarCircle name={row.patientName} size="md" className="shrink-0 bg-blue-50 text-blue-600" />
+												<div>
+													<div className="text-secondary-grey400 font-medium text-sm">{row.patientName}</div>
+													<div className="text-secondary-grey300 text-xs">{row.gender} | {row.dob} ({row.age})</div>
+												</div>
+											</div>
+										)
+									},
+									{ key: "appointmentType", header: "Appt. Type", icon: true, width: 156 },
+									{ key: "startTime", header: "Start Time", icon: true, width: 120 },
+									{ key: "endTime", header: "End Time", icon: true, width: 120 },
+									{ key: "bookingType", header: "Booking Type", icon: true, width: 156 },
+									{ key: "reason", header: "Reason For Visit", icon: false, width: 200 },
+									{
+										key: "actions",
+										header: "Actions",
+										icon: false,
+										sticky: "right",
+										width: 180,
+										render: (row) => (
+											<div className="flex items-center justify-between">
+												<button className="bg-[#2372EC] w-full text-white text-sm font-medium px-3 py-1.5 rounded-md hover:bg-blue-700 transition-colors">
+													Discharge
+												</button>
 												<button
 													onClick={(e) => handleActionMenuClick(e, row.token)}
-													className="text-gray-400 mx-2 hover:text-gray-600 rounded-full p-1 transition-colors"
+													className="text-gray-400 ml-2 hover:text-gray-600 rounded-full  transition-colors"
 												>
-													<img src={more} alt="" />
+													<img src={more} alt="" className='w-8 h-8' />
 												</button>
 											</div>
 										)
@@ -486,19 +547,19 @@ export default function MiddleQueue({ doctorId: propsDoctorId, dummyMode = false
 													)}
 													<button
 														onClick={(e) => handleActionMenuClick(e, row.token)}
-														className={`text-gray-400 mx-2 hover:text-gray-600 rounded-full p-1 transition-colors ${activeActionMenuToken === row.token ? 'bg-gray-100 text-gray-600' : ''}`}
+														className={`text-gray-400 ml-2 hover:text-gray-600 rounded-full p-1 transition-colors ${activeActionMenuToken === row.token ? 'bg-gray-100 text-gray-600' : ''}`}
 													>
-														<img src={more} alt="" />
+														<img src={more} alt="" className='w-8 h-8' />
 													</button>
 												</div>
 											);
 										}
 									}
 								]}
-								data={activeFilter === 'Engaged' ? DUMMY_ENGAGED_DATA : activeFilter === 'No show' ? DUMMY_NO_SHOW_DATA : queueData}
+								data={activeFilter === 'Engaged' ? DUMMY_ENGAGED_DATA : activeFilter === 'No show' ? DUMMY_NO_SHOW_DATA : activeFilter === 'Admitted' ? DUMMY_ADMITTED_DATA : queueData}
 								hideSeparators={false}
 								stickyLeftWidth={280}
-								stickyRightWidth={190}
+								stickyRightWidth={180}
 							/>
 						</div>
 					</div>
@@ -583,6 +644,40 @@ export default function MiddleQueue({ doctorId: propsDoctorId, dummyMode = false
 								className="flex items-center gap-2 px-4 py-2 text-sm text-secondary-grey400 hover:bg-gray-50 text-left w-full"
 							>
 								<CheckCheck className="h-4 w-4" /> End Visit
+							</button>
+						</>
+					) : activeFilter === 'No show' ? (
+						<>
+							<button className="flex items-center gap-2 px-4 py-2 text-sm text-secondary-grey400 hover:bg-gray-50 text-left w-full">
+								<User className="h-4 w-4" /> View Profile
+							</button>
+							<button className="flex items-center gap-2 px-4 py-2 text-sm text-secondary-grey400 hover:bg-gray-50 text-left w-full">
+								<Bell className="h-4 w-4" /> Send Reminder
+							</button>
+							<button className="flex items-center gap-2 px-4 py-2 text-sm text-secondary-grey400 hover:bg-gray-50 text-left w-full">
+								<Calendar className="h-4 w-4" /> Reschedule
+							</button>
+							<div className="my-1 border-t border-gray-100"></div>
+							<button className="flex items-center gap-2 px-4 py-2 text-sm text-[#ef4444] hover:bg-red-50 text-left w-full">
+								<CalendarX className="h-4 w-4" /> Cancel Appointment
+							</button>
+						</>
+					) : activeFilter === 'Engaged' ? (
+						<>
+							<button className="flex items-center gap-2 px-4 py-2 text-sm text-secondary-grey400 hover:bg-gray-50 text-left w-full">
+								<CalendarPlus className="h-4 w-4" /> Schedule Follow-up
+							</button>
+							<button
+								onClick={() => {
+									setSessionStatus('admitted');
+									setActiveActionMenuToken(null);
+								}}
+								className="flex items-center gap-2 px-4 py-2 text-sm text-secondary-grey400 hover:bg-gray-50 text-left w-full"
+							>
+								<BedDouble className="h-4 w-4" /> Mark as Admitted
+							</button>
+							<button className="flex items-center gap-2 px-4 py-2 text-sm text-secondary-grey400 hover:bg-gray-50 text-left w-full">
+								<User className="h-4 w-4" /> View Profile
 							</button>
 						</>
 					) : (

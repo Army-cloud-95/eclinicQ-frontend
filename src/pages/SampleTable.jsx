@@ -245,12 +245,12 @@ export default function SampleTable({
           <tbody>
             {data.map((row, i) => (
               row.isHeader ? (
-                <tr key={i} className="bg-gray-50/50">
+                <tr key={i} className="">
                   <td
                     colSpan={columns.length}
-                    className="px-3 py-2 text-xs font-semibold text-gray-500 border-b w-full"
+                    className="px-[10px] py-1 text-[12px] text-secondary-grey400 border-b w-full"
                   >
-                    {row.label}
+                    <span className="bg-secondary-grey50 px-1 py-[2px]">{row.label}</span>
                   </td>
                 </tr>
               ) : (
