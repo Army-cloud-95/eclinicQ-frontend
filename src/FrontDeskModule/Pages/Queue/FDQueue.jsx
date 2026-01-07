@@ -1,16 +1,15 @@
 import React, { useEffect, useMemo, useState, useRef } from 'react';
 import { createPortal } from 'react-dom';
 // Front Desk Queue: full API-integrated version copied from original before doctor static simplification
-import { ChevronDown, Sunrise, Sun, Sunset, Moon, X, RotateCcw, CalendarMinus, CalendarX, User, BedDouble, CheckCheck, Bell, CalendarPlus, UserX, Calendar, Clock } from 'lucide-react';
+import { ChevronDown, Sunrise, Sun, Sunset, Moon, X, RotateCcw, CalendarMinus, CalendarX, User, BedDouble, CheckCheck, Bell, CalendarPlus, UserX, Calendar, Clock, ArrowRight, Play, PauseCircle } from 'lucide-react';
 import QueueDatePicker from '../../../components/QueueDatePicker';
 import AvatarCircle from '../../../components/AvatarCircle';
 import Button from '../../../components/Button';
-import Badge from '../../../components/Badge';
-import OverviewStatCard from '../../../components/OverviewStatCard';
-import Toggle from '../../../components/FormItems/Toggle';
-import SampleTable from '../../../pages/SampleTable';
-import { classifyISTDayPart, buildISTRangeLabel } from '../../../lib/timeUtils';
 import { appointement } from '../../../../public/index.js';
+import SampleTable from '../../../pages/SampleTable';
+import PauseQueueModal from '../../../components/PauseQueueModal';
+import SessionTimer from '../../../components/SessionTimer';
+
 
 const more = '/superAdmin/Doctors/Threedots.svg'
 const search = '/superAdmin/Doctors/SearchIcon.svg';
@@ -112,27 +111,15 @@ const WalkInAppointmentDrawer = ({ show, onClose }) => {
 };
 
 export default function FDQueue() {
-	const [slotEnding, setSlotEnding] = useState(false);
 	const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0 }); // Fix: Define dropdownPosition
 	// Dummy Stubs to prevent crash
 	const pauseSlotEta = async () => ({});
-	const approveAppointment = async () => {};
-	const loadAppointmentsForSelectedSlot = async () => {};
 
 	const [activeFilter, setActiveFilter] = useState('In Waiting');
 	const [slotOpen, setSlotOpen] = useState(false);
 	const [currentDate, setCurrentDate] = useState(new Date());
 	const [checkedInTokens, setCheckedInTokens] = useState({});
-	// const [cancelledTokens, setCancelledTokens] = useState(new Set()); // Removed in favor of FDQueue logic if we use MiddleQueue's exact logic we don't need this separate state unless we keep it. MiddleQueue uses 'checkedInTokens' object. I will remove cancelledTokens to match MiddleQueue exact, or keep it if I need to merge. The user said COPY EXACTLY. MiddleQueue doesn't seem to have valid cancellation logic in the provided snippet? Wait, in No Show it has 'Cancel Appointment' in dropdown but no handler shown in my snippet. I will keep minimal state.
-	// const [checkingInTokens, setCheckingInTokens] = useState(new Set()); // Removed
-	const [rightPanelOpen, setRightPanelOpen] = useState(true);
-	const [activeTab, setActiveTab] = useState('appt_request');
-	const slotAnchorRef = useRef(null);
-	const slotMenuRef = useRef(null);
-	const [slotPos, setSlotPos] = useState({ top: 0, left: 0, width: 320 });
-	const [sessionStarted, setSessionStarted] = useState(false);
-	const [slotStarting, setSlotStarting] = useState(false);
-	const [startError, setStartError] = useState(null);
+	const [sessionStarted, setSessionStarted] = useState(true);
 	const [queuePaused, setQueuePaused] = useState(false);
 	// Paused state UI: countdown to auto-resume
 	const [pauseEndsAt, setPauseEndsAt] = useState(null); // ms timestamp
@@ -143,15 +130,9 @@ export default function FDQueue() {
 	const [pauseMinutes, setPauseMinutes] = useState(null); // in minutes
 	const [pauseSubmitting, setPauseSubmitting] = useState(false);
 	const [pauseError, setPauseError] = useState('');
-	const [resumeSubmitting, setResumeSubmitting] = useState(false);
-	const [resumeError, setResumeError] = useState('');
 	const autoResumeTimerRef = useRef(null);
 	const [currentIndex, setCurrentIndex] = useState(0);
-	// Timer state similar to Doctor Queue
-	const [runStartAt, setRunStartAt] = useState(null); // ms when timer last started/resumed
-	const [baseElapsed, setBaseElapsed] = useState(0); // accumulated seconds while not running
-	const [elapsed, setElapsed] = useState(0); // display seconds
-	const wasRunningOnPauseRef = useRef(false);
+	const [sessionStatus, setSessionStatus] = useState('idle'); // 'idle' | 'ongoing' | 'completed'
 	const [removingToken, setRemovingToken] = useState(null);
 	const [incomingToken, setIncomingToken] = useState(null);
 	// Current token reported by backend status, used to focus the engaged patient
@@ -215,46 +196,13 @@ export default function FDQueue() {
 		if (activeFilter === f) return queueData.length;
 		return 0;
 	};
-	const activePatient = useMemo(() => queueData[currentIndex] || null, [queueData, currentIndex]);
-	// Timer effect: elapsed = baseElapsed + (now - runStartAt)
-	useEffect(() => {
-		if (!sessionStarted || queuePaused || !runStartAt) { setElapsed(baseElapsed); return; }
-		const id = setInterval(() => { const now = Date.now(); setElapsed(baseElapsed + Math.max(0, Math.floor((now - runStartAt) / 1000))); }, 1000);
-		// initial tick
-		const now = Date.now(); setElapsed(baseElapsed + Math.max(0, Math.floor((now - runStartAt) / 1000)));
-		return () => clearInterval(id);
-	}, [sessionStarted, queuePaused, runStartAt, baseElapsed]);
-	const formatTime = s => { const mm = String(Math.floor(s / 60)).padStart(2, '0'); const ss = String(s % 60).padStart(2, '0'); return `${mm}:${ss}`; };
-	// Simplified Dummy Logic: Toggle local state
-	const handleToggleSession = () => {
-		if (sessionStarted) {
-			setSlotEnding(true);
-			setTimeout(() => {
-				setSessionStarted(false);
-				setQueuePaused(false);
-				setRunStartAt(null);
-				setSlotEnding(false);
-			}, 500);
-		} else {
-			setSlotStarting(true);
-			setTimeout(() => {
-				setSessionStarted(true);
-				setQueuePaused(false);
-				setRunStartAt(Date.now());
-				setActiveFilter('Engaged');
-				setSlotStarting(false);
-			}, 500);
-		}
-	};
+	// Priority: DUMMY_ACTIVE_PATIENT if session started (to match user request for Priya Mehta), else queue list
+	const activePatient = useMemo(() => {
+		if (sessionStarted) return DUMMY_ACTIVE_PATIENT;
+		return queueData[currentIndex] || null;
+	}, [sessionStarted, queueData, currentIndex]);
 
-	// Simplified Resume: Just unpause local state
-	const resumeQueue = () => {
-		setResumeSubmitting(true);
-		setTimeout(() => {
-			setQueuePaused(false);
-			setResumeSubmitting(false);
-		}, 500);
-	};
+
 	// Simplified Dummy Logic: Complete Patient
 	const completeCurrentPatient = async () => {
 		const ANIM_MS = 300;
@@ -274,26 +222,19 @@ export default function FDQueue() {
 	const [activeActionMenuToken, setActiveActionMenuToken] = useState(null);
 	const handleActionMenuClick = (e, token) => {
 		e.stopPropagation();
+		const rect = e.currentTarget.getBoundingClientRect();
+		// Align right edge of menu to right edge of button (approx width 200px)
+		const menuWidth = 200;
+		setDropdownPosition({
+			top: rect.bottom + window.scrollY + 4,
+			left: rect.left + window.scrollX - menuWidth + rect.width,
+		});
 		setActiveActionMenuToken(activeActionMenuToken === token ? null : token);
 	};
 
-	const [checkedInToken, setCheckedInToken] = useState(null);
-	// Track tokens currently being checked-in to show loading state on the button
-	const [showPreScreen, setShowPreScreen] = useState(false); // kept for future, but not used now
-	const [rightDivPatient, setRightDivPatient] = useState(null);
-	const [preScreenData, setPreScreenData] = useState({});
 	const [showWalkIn, setShowWalkIn] = useState(false);
 	// New: On check-in, call API and refresh; do not open pre-screening
-	const handleCheckIn = async (row) => {
-		// Dummy Check-In Logic
-		setCheckedInTokens(prev => ({ ...prev, [row.token]: true }));
-	};
-	const handlePreScreenClose = () => { /* disabled current flow */ };
-	// Cleanup auto-resume timer on unmount
-	useEffect(() => () => {
-		if (autoResumeTimerRef.current) { clearTimeout(autoResumeTimerRef.current); autoResumeTimerRef.current = null; }
-		if (pauseTickerRef.current) { clearInterval(pauseTickerRef.current); pauseTickerRef.current = null; }
-	}, []);
+
 
 	// While paused, tick remaining time every second
 	useEffect(() => {
@@ -333,14 +274,10 @@ export default function FDQueue() {
 
 							<div className='bg-secondary-grey100/50 h-5 w-[1px]' ></div>
 
-							<div className="flex items-center gap-2">
-								<Toggle
-									checked={sessionStarted}
-									onChange={handleToggleSession}
-									disabled={slotStarting || slotEnding || !selectedSlotId}
-								/>
-								<span className="text-sm font-medium text-secondary-grey400">Start Session</span>
-							</div>
+							<div className='bg-secondary-grey100/50 h-5 w-[1px]' ></div>
+							{/* Toggle Removed to match MiddleQueue Style */}
+
+							<div className='bg-secondary-grey100/50 h-5 w-[1px]' ></div>
 
 							<div className='bg-secondary-grey100/50 h-5 w-[1px]' ></div>
 							<button
@@ -357,6 +294,7 @@ export default function FDQueue() {
 				<div className='px-0 pt-0 pb-2 flex-1 flex flex-col overflow-hidden'>
 
 					{/* Session Bar - GREEN if session active */}
+					{/* Session Bar - GREEN if session active */}
 					{sessionStarted && (
 						<div className={`w-full ${queuePaused ? 'bg-warning-50 text-warning-400' : 'bg-[#27CA40] text-white'} h-[40px] px-4 flex items-center justify-between relative z-20`}>
 							{/* Centered Token Number */}
@@ -372,100 +310,129 @@ export default function FDQueue() {
 									}}></span>
 								<span className={`font-bold text-[20px] ${queuePaused ? 'text-warning-400' : 'text-white'}`}>10</span>
 								{queuePaused && (
-									<span className='inline-flex items-center gap-2 text-[13px] font-medium text-[#92400E] bg-[#FED7AA] px-2 py-0.5 rounded'>
-										<span className='inline-block w-2 h-2 rounded-full bg-[#F97316]'></span>
-										Paused ({formatTime(pauseRemaining)} Mins)
-									</span>
+									<div className='flex items-center ml-2 border border-warning-400 py-[2px] rounded px-[6px] bg-white gap-1'>
+										<img src={stopwatch} alt="" className='w-[14px] h-[14px]' />
+										<span className="text-[14px] text-warning-400 ">
+											Paused ({formatTime(pauseRemaining)} Mins)
+										</span>
+									</div>
 								)}
 							</div>
-							{!queuePaused ? (
-								<button
-									className='absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-1 border border-red-200 bg-white text-red-600 text-xs font-semibold px-2 py-1 rounded transition hover:bg-red-50'
-									onClick={() => { setPauseMinutes(null); setShowPauseModal(true); }}
-								/* Pause is allowed at any time during session; no need to end active patient first */
-								>
-									Pause Queue
-								</button>
-							) : (
-								<div className='absolute right-4 top-1/2 -translate-y-1/2 flex flex-col items-end'>
+							{/* Right Actions */}
+							<div className="ml-auto">
+								{!queuePaused ? (
 									<button
-										onClick={resumeQueue}
-										disabled={resumeSubmitting}
-										className={`flex items-center gap-2 bg-blue-600 text-white text-xs font-semibold px-3 py-1.5 rounded border border-blue-600 hover:bg-blue-700 ${resumeSubmitting ? 'opacity-70 cursor-not-allowed' : ''}`}
+										onClick={() => { setPauseMinutes(null); setShowPauseModal(true); }}
+										className='bg-white text-[#ef4444] h-[24px] py-1 px-[6px] rounded text-[12px] font-medium border border-error-200/50 flex items-center gap-2 hover:bg-error-400 hover:text-white transition-colors '
 									>
-										{resumeSubmitting ? 'Resuming…' : 'Restart Queue'}
+										<img src={pause} alt="" className='' /> Pause Queue
 									</button>
-									{resumeError && <span className='mt-1 text-[11px] text-red-600'>{resumeError}</span>}
-								</div>
-							)}
+								) : (
+									<button
+										onClick={() => setQueuePaused(false)}
+										className='bg-blue-primary250 text-white h-[24px] py-1 px-[6px] rounded text-[12px] font-medium flex items-center gap-1.5 hover:bg-blue-primary300 transition-colors '
+									>
+										<RotateCcw className='w-[14px] h-[14px] -scale-y-100 rotate-180' /> Restart Queue
+									</button>
+								)}
+							</div>
 						</div>
 					)}
 
 					<div className='p-2 flex flex-col flex-1 min-h-0'>
 						{/* Overview section removed for Front Desk queue per request */}
 						{sessionStarted && activePatient && (
-							<div
-								className={`
+							<>
+								<span className="text-[20px] font-medium text-secondary-grey400 mb-2">Ongoing Consulation</span>
+								<div
+									className={`
                               flex items-center justify-between
                               rounded-xl
                               px-4 py-3
                               mb-4
                               bg-white
-                              border border-blue-primary250 bg-[linear-gradient(90deg,rgba(35,114,236,0.08)_0%,rgba(35,114,236,0)_25%,rgba(35,114,236,0)_75%,rgba(35,114,236,0.08)_100%)]
+                              ${sessionStatus === 'completed'
+											? 'border border-success-200 bg-[linear-gradient(90deg,rgba(39,202,64,0.08)_0%,rgba(39,202,64,0)_25%,rgba(39,202,64,0)_75%,rgba(39,202,64,0.08)_100%)]'
+											: sessionStatus === 'admitted'
+												? 'border border-[#D4AF37] bg-[linear-gradient(90deg,rgba(212,175,55,0.15)_0%,rgba(212,175,55,0.05)_25%,rgba(212,175,55,0.05)_75%,rgba(212,175,55,0.15)_100%)]'
+												: 'border border-blue-primary250 bg-[linear-gradient(90deg,rgba(35,114,236,0.08)_0%,rgba(35,114,236,0)_25%,rgba(35,114,236,0)_75%,rgba(35,114,236,0.08)_100%)]'
+										}
                             `}
-							>
-								<div className='flex items-center gap-3'>
-									<AvatarCircle name={activePatient.patientName} size="lg" className="h-12 w-12 text-lg" />
-									<div className="flex gap-6 items-center">
-										<div>
-											<div className='flex items-center gap-2'>
-												<span className="font-semibold text-secondary-grey400 text-[16px]">{activePatient.patientName}</span>
-												{/* Arrow icon removed or replaced if needed */}
+								>
+									<div className='flex items-center gap-3'>
+										<AvatarCircle name={activePatient.patientName} size="lg" className="h-12 w-12 text-lg" />
+										<div className="flex gap-6 items-center">
+											<div>
+												<div className='flex items-center gap-2'>
+													<span className="font-semibold text-secondary-grey400 text-[16px]">{activePatient.patientName}</span>
+													<ArrowRight className="h-4 w-4 text-gray-400 -rotate-45" />
+												</div>
+												<div className='text-xs text-secondary-grey300'>{activePatient.gender} | {activePatient.age}</div>
 											</div>
-											<div className='text-xs text-secondary-grey300'>{activePatient.gender} | {activePatient.age}</div>
-										</div>
-										<div className="h-10 w-px bg-secondary-grey100/50"></div>
-										<div className="flex flex-col gap-1 text-sm text-secondary-grey200">
-											<div className="flex items-center gap-2">
-												<span className="">Token Number</span>
-												<span className="bg-blue-primary50 text-blue-primary250 h-[22px] px-[6px] py-[2px] rounded-sm border border-blue-primary250/50 text-center flex items-center justify-center ">{activePatient.token}</span>
+											<div className="h-10 w-px bg-secondary-grey100/50"></div>
+											<div className="flex flex-col gap-1 text-sm text-secondary-grey200">
+												<div className="flex items-center gap-2">
+													<span className="">Token Number</span>
+													<span className="bg-blue-primary50 text-blue-primary250 h-[22px] px-[6px] py-[2px] rounded-sm border border-blue-primary250/50 text-center flex items-center justify-center ">{activePatient.token}</span>
+												</div>
+												<div className="">Reason for Visit : <span className="text-secondary-grey400">{activePatient.reasonForVisit}</span></div>
 											</div>
-											<div className="">Reason for Visit : <span className="text-secondary-grey400">{activePatient.reasonForVisit}</span></div>
 										</div>
 									</div>
-								</div>
-								<div className='flex gap-2 items-center'>
-									{(
-										<div className="flex items-center gap-3">
-											{/* Timer */}
-											<div className='inline-flex items-center gap-1 rounded-md border border-green-200 bg-green-50 px-2 py-1 text-[12px] font-medium text-green-700'>
-												<span className='inline-block w-2 h-2 rounded-full bg-green-500' />
-												{formatTime(elapsed)}
-											</div>
-											<button
-												onClick={completeCurrentPatient}
-												className="flex items-center gap-2 bg-white border border-secondary-grey200/50 px-4 py-2 rounded-md text-sm font-medium text-secondary-grey400 hover:bg-gray-50 transition-colors"
+									<div className='flex gap-2 items-center'>
+										{sessionStatus === 'idle' && (
+											<Button
+												variant="primary"
+												size="small"
+												onClick={() => setSessionStatus('ongoing')}
+												className=" text-white flex items-center gap-2 px-4 py-2 font-medium"
 											>
-												<img src={checkRound} alt="" />
-												<span>End Session</span>
+												<Play className="w-3.5 h-3.5 " />
+												Start Session
+											</Button>
+										)}
+										{sessionStatus === 'ongoing' && (
+											<div className="flex items-center gap-3">
+												<SessionTimer />
+												<button
+													onClick={() => { setSessionStatus('completed'); completeCurrentPatient(); }}
+													className="flex items-center gap-2 bg-white border border-secondary-grey200/50 px-4 py-2 rounded-md text-sm font-medium text-secondary-grey400 hover:bg-gray-50 transition-colors"
+												>
+													<img src={checkRound} alt="" />
+													<span>End Session</span>
+												</button>
+											</div>
+										)}
+										{sessionStatus === 'admitted' && (
+											<div className="flex items-center gap-2 text-[#D4AF37] font-medium text-sm mr-6">
+												<img src={verifiedYellow} alt="" className='w-5 h-5' />
+												<span>Patient Admitted</span>
+											</div>
+										)}
+										{sessionStatus === 'completed' && (
+											<div className="flex items-center gap-2 text-success-300 font-medium text-sm mr-6">
+												<img src={verified} alt="" className="w-5 h-5" />
+												<span>Visit Completed</span>
+											</div>
+										)}
+										{sessionStatus !== 'completed' && sessionStatus !== 'admitted' && (
+											<button
+												onClick={(e) => handleActionMenuClick(e, 'active_patient_card')}
+												className={`px-2 rounded-full transition-colors ${activeActionMenuToken === 'active_patient_card' ? 'bg-gray-100' : ''}`}
+											>
+												<img src={more} alt="" />
 											</button>
-										</div>
-									)}
-									<button
-										onClick={(e) => handleActionMenuClick(e, 'active_patient_card')}
-										className={`px-2 rounded-full transition-colors ${activeActionMenuToken === 'active_patient_card' ? 'bg-gray-100' : ''}`}
-									>
-										<img src={more} alt="" />
-									</button>
+										)}
+									</div>
 								</div>
-							</div>
+							</>
 						)}
 
 						{/* Filters & Actions */}
 						<div className='flex items-center justify-between pb-2 '>
 							<div className='flex gap-3 items-center'>
 								{filters.map(f => (
-									<button key={f} onClick={() => { if (!sessionStarted) setActiveFilter(f); }} className={`px-[6px] flex items-center gap-2  border h-[28px] rounded-md text-sm font-medium transition-colors ${activeFilter === f ? 'border-blue-primary150 bg-blue-primary50 text-blue-primary250' : 'text-gray-500 hover:border-secondary-grey150 border-secondary-grey50'} ${sessionStarted ? 'opacity-60 cursor-not-allowed' : ''}`}>
+									<button key={f} onClick={() => setActiveFilter(f)} className={`px-[6px] flex items-center gap-2  border h-[28px] rounded-md text-sm font-medium transition-colors ${activeFilter === f ? 'border-blue-primary150 bg-blue-primary50 text-blue-primary250' : 'text-gray-500 hover:border-secondary-grey150 border-secondary-grey50'}`}>
 										{f} <span className={`min-w-[16px] text-[10px] h-[16px] rounded-sm px-1 border  flex ${activeFilter === f ? 'border-blue-primary150 bg-blue-primary50 text-blue-primary250' : 'text-gray-500 bg-white border-secondary-grey100'}  items-center justify-center`}>{getFilterCount(f)}</span>
 									</button>
 								))}
@@ -795,74 +762,48 @@ export default function FDQueue() {
 
 
 			{/* Pause Queue Modal */}
-			{
-				showPauseModal && createPortal(
-					<div className='fixed inset-0 z-[10000] flex items-center justify-center'>
-						<div className='absolute inset-0 bg-black/40' onClick={() => setShowPauseModal(false)} />
-						<div className='relative bg-white rounded-xl shadow-2xl border border-gray-200 w-[420px] max-w-[90vw] p-4'>
-							<div className='flex items-center justify-center mb-2'>
-								<div className='w-10 h-10 rounded-full border-2 border-red-300 flex items-center justify-center text-red-500'>⏸</div>
-							</div>
-							<h3 className='text-center text-[16px] font-semibold text-gray-900'>Set Pause Duration</h3>
-							<p className='text-center text-[12px] text-gray-600 mt-1'>Select the duration to pause your queue. It will resume automatically afterward.</p>
-							<div className='grid grid-cols-3 gap-2 mt-3'>
-								{[5, 10, 15, 20, 30, 45, 60].map(min => (
-									<button key={min} onClick={() => setPauseMinutes(min)} className={`px-3 py-2 rounded-md text-sm border ${pauseMinutes === min ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'}`}>{min} min</button>
-								))}
-							</div>
-							<div className='flex items-center gap-2 mt-4'>
-								<button className='flex-1 px-3 py-2 rounded-md border border-gray-300 text-sm text-gray-700 hover:bg-gray-50' onClick={() => setShowPauseModal(false)}>Cancel</button>
-								<button disabled={!pauseMinutes} className={`flex-1 px-3 py-2 rounded-md text-sm ${pauseMinutes ? 'bg-gray-900 text-white hover:bg-black' : 'bg-gray-200 text-gray-500 cursor-not-allowed'}`} onClick={() => {
-									if (!pauseMinutes || !selectedSlotId) return;
-									setPauseError('');
-									setPauseSubmitting(true);
-									(async () => {
-										try {
-											const pauseResp = await pauseSlotEta(selectedSlotId, pauseMinutes);
-											// Extract server-provided pauseEndsAt if available
-											const serverEnds = pauseResp?.data?.pauseEndsAt || pauseResp?.pauseEndsAt || null;
-											// Confirm pause locally only after API success
-											const wasRunning = !!runStartAt;
-											if (wasRunning) {
-												const delta = Math.floor((Date.now() - runStartAt) / 1000);
-												setBaseElapsed(b => b + Math.max(0, delta));
-												setRunStartAt(null);
-											}
-											wasRunningOnPauseRef.current = wasRunning;
-											setQueuePaused(true);
-											setShowPauseModal(false);
-											// Setup countdown and auto-resume using serverEnds if present
-											const ends = serverEnds ? new Date(serverEnds).getTime() : Date.now() + (pauseMinutes || 0) * 60 * 1000;
-											setPauseEndsAt(ends);
-											const initialRemaining = Math.max(0, Math.floor((ends - Date.now()) / 1000));
-											setPauseRemaining(initialRemaining);
-											if (autoResumeTimerRef.current) { clearTimeout(autoResumeTimerRef.current); }
-											autoResumeTimerRef.current = setTimeout(() => {
-												// Auto resume
-												if (wasRunningOnPauseRef.current) setRunStartAt(Date.now());
-												setQueuePaused(false);
-												if (pauseTickerRef.current) { clearInterval(pauseTickerRef.current); pauseTickerRef.current = null; }
-												setPauseEndsAt(null); setPauseRemaining(0);
-												autoResumeTimerRef.current = null;
-											}, (pauseMinutes || 0) * 60 * 1000);
-										} catch (err) {
-											setPauseError(err?.response?.data?.message || err.message || 'Failed to pause');
-										} finally {
-											setPauseSubmitting(false);
-										}
-									})();
-								}}>
-									{pauseSubmitting ? 'Pausing…' : 'Confirm'}
-								</button>
-							</div>
-							<div className='mt-2 text-[11px] text-gray-500 flex items-center'>
-								<span className='inline-block w-4 h-4 mr-1 text-gray-400'>ℹ️</span>
-								Queue will automatically resume after selected time.
-							</div>
-							{pauseError && <div className='mt-2 text-[12px] text-red-600 text-center'>{pauseError}</div>}
-						</div>
-					</div>, document.body)
-			}
+			{/* Pause Queue Modal */}
+
+			<PauseQueueModal
+				show={showPauseModal}
+				onClose={() => {
+					setShowPauseModal(false);
+					setPauseMinutes(null);
+				}}
+				pauseMinutes={pauseMinutes}
+				setPauseMinutes={setPauseMinutes}
+				pauseSubmitting={pauseSubmitting}
+				pauseError={pauseError}
+				onConfirm={async () => {
+					setPauseSubmitting(true);
+					setPauseError('');
+					try {
+						await new Promise(r => setTimeout(r, 500));
+						setQueuePaused(true);
+						setShowPauseModal(false);
+
+						// Setup countdown and auto-resume
+						const ends = Date.now() + (pauseMinutes || 0) * 60 * 1000;
+						setPauseEndsAt(ends);
+						const initialRemaining = Math.max(0, Math.floor((ends - Date.now()) / 1000));
+						setPauseRemaining(initialRemaining);
+
+						if (autoResumeTimerRef.current) { clearTimeout(autoResumeTimerRef.current); }
+						autoResumeTimerRef.current = setTimeout(() => {
+							setQueuePaused(false);
+							if (pauseTickerRef.current) { clearInterval(pauseTickerRef.current); pauseTickerRef.current = null; }
+							setPauseEndsAt(null); setPauseRemaining(0);
+							autoResumeTimerRef.current = null;
+						}, (pauseMinutes || 0) * 60 * 1000);
+
+					} catch (err) {
+						setPauseError(err.message || 'Failed to pause');
+					} finally {
+						setPauseSubmitting(false);
+					}
+				}}
+			/>
+
 
 			{/* Dropdown Menu Portal */}
 			{
@@ -900,6 +841,7 @@ export default function FDQueue() {
 								</button>
 								<button
 									onClick={() => {
+										setSessionStatus('admitted');
 										setActiveActionMenuToken(null);
 									}}
 									className="flex items-center gap-2 px-4 py-2 text-sm text-secondary-grey400 hover:bg-gray-50 text-left w-full"
@@ -908,6 +850,7 @@ export default function FDQueue() {
 								</button>
 								<button
 									onClick={() => {
+										setSessionStatus('completed');
 										completeCurrentPatient();
 										setActiveActionMenuToken(null);
 									}}
@@ -947,6 +890,7 @@ export default function FDQueue() {
 								</button>
 								<button
 									onClick={() => {
+										setSessionStatus('admitted');
 										setActiveActionMenuToken(null);
 									}}
 									className="flex items-center gap-2 px-4 py-2 text-sm text-secondary-grey400 hover:bg-gray-50 text-left w-full"
