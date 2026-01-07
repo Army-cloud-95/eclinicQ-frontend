@@ -19,7 +19,8 @@ const search = '/superAdmin/Doctors/SearchIcon.svg';
 const pause = '/fd/Pause.svg';
 const checkRound = '/fd/Check Round.svg';
 const verified = '/verified-tick.svg'
-
+const stopwatch = '/fd/Stopwatch.svg'
+const verifiedYellow = '/fd/verified_yellow.svg'
 
 // Dummy Data for UI Demo
 const DUMMY_ACTIVE_PATIENT = {
@@ -86,7 +87,31 @@ const DUMMY_ADMITTED_DATA = [
 
 
 
-export default function MiddleQueue({ doctorId: propsDoctorId, dummyMode = false }) {
+export default function MiddleQueue({ doctorId: propsDoctorId, dummyMode = false, onPauseQueue, isPaused, pauseDuration, pauseStartTime, onResumeQueue }) {
+	// Timer Logic for Pause
+	const [remainingTime, setRemainingTime] = useState('00:00');
+
+	useEffect(() => {
+		if (!isPaused || !pauseStartTime || !pauseDuration) return;
+
+		const interval = setInterval(() => {
+			const start = new Date(pauseStartTime).getTime();
+			const now = new Date().getTime();
+			const elapsedSec = Math.floor((now - start) / 1000);
+			const totalSec = pauseDuration * 60;
+			const remaining = Math.max(0, totalSec - elapsedSec);
+
+			const m = Math.floor(remaining / 60);
+			const s = remaining % 60;
+			setRemainingTime(`${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`);
+
+			if (remaining <= 0) {
+				clearInterval(interval);
+			}
+		}, 1000);
+
+		return () => clearInterval(interval);
+	}, [isPaused, pauseStartTime, pauseDuration]);
 	// ... (existing states)
 	const [slotEnding, setSlotEnding] = useState(false);
 	const [activeFilter, setActiveFilter] = useState('In Waiting');
@@ -133,7 +158,7 @@ export default function MiddleQueue({ doctorId: propsDoctorId, dummyMode = false
 	// Derived States for Dummy Mode
 	const sessionActive = dummyMode; // Controls Green Banner & Active Patient Card
 	const activePatient = dummyMode ? DUMMY_ACTIVE_PATIENT : null; // Only show active patient if session started
-	const queueData = DUMMY_PATIENTS; // Queue list is always visible for the selected doctor
+	const queueData = DUMMY_PATIENTS; 	// Props destructuring
 
 	// Real logic state placeholders (if not dummyMode)
 
@@ -195,19 +220,47 @@ export default function MiddleQueue({ doctorId: propsDoctorId, dummyMode = false
 
 				{/* Session Bar - GREEN if session active */}
 				{sessionActive && (
-					<div className='w-full bg-[#27CA40] text-white h-[40px] px-4 flex items-center justify-between relative z-20'>
+					<div className={`w-full ${isPaused ? 'bg-warning-50 text-warning-400' : 'bg-[#27CA40] text-white'} h-[40px] px-4 flex items-center justify-between relative z-20`}>
 						{/* Centered Token Number */}
-						<div className="absolute left-1/2 top-1/2 -translate-x-1/2 text-white -translate-y-1/2 flex items-center gap-2">
+						<div className={`absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center gap-1.5 ${isPaused ? 'text-secondary-grey200' : 'text-white'}`}>
 							<span className=' text-[20px] mr-3'>Current Token Number</span>
-							<span className="w-3 h-3 rounded-full bg-white animate-pulse"></span>
-							<span className="font-bold text-[20px]">00</span>
+							<span className={`w-4 h-4 rounded-full animate-colorBlink ${isPaused ? 'bg-warning-400' : 'bg-white '} transition-all duration-1000`}
+								style={!isPaused ? {
+									'--blink-on': '#22c55e',
+									'--blink-off': '#ffffff',
+								} : {
+									'--blink-on': '#EC7600',
+									'--blink-off': '#ffffff',
+								}}></span>
+							<span className={`font-bold text-[20px] ${isPaused ? 'text-warning-400' : 'text-white'}`}>00</span>
+							{isPaused && (
+								<div className='flex items-center ml-2 border border-warning-400 py-[2px] rounded px-[6px] bg-white gap-1'>
+									<img src={stopwatch} alt="" className='w-[14px] h-[14px]' />
+									<span className="text-[14px] text-warning-400 ">
+										Paused ({remainingTime} Mins)
+									</span>
+								</div>
+
+							)}
 						</div>
 
 						{/* Right Actions */}
 						<div className="ml-auto">
-							<button className='bg-white text-[#ef4444] h-[24px] py-1 px-[6px] rounded text-[12px] font-medium border border-error-200/50 flex items-center gap-2 hover:bg-error-400 hover:text-white transition-colors '>
-								<img src={pause} alt="" className='' /> Pause Queue
-							</button>
+							{!isPaused ? (
+								<button
+									onClick={onPauseQueue}
+									className='bg-white text-[#ef4444] h-[24px] py-1 px-[6px] rounded text-[12px] font-medium border border-error-200/50 flex items-center gap-2 hover:bg-error-400 hover:text-white transition-colors '
+								>
+									<img src={pause} alt="" className='' /> Pause Queue
+								</button>
+							) : (
+								<button
+									onClick={onResumeQueue}
+									className='bg-blue-primary250 text-white h-[24px] py-1 px-[6px] rounded text-[12px] font-medium flex items-center gap-1.5 hover:bg-blue-primary300 transition-colors '
+								>
+									<RotateCcw className='w-[14px] h-[14px] -scale-y-100 rotate-180' /> Restart Queue
+								</button>
+							)}
 						</div>
 					</div>
 				)}
@@ -281,7 +334,7 @@ export default function MiddleQueue({ doctorId: propsDoctorId, dummyMode = false
 								)}
 								{sessionStatus === 'admitted' && (
 									<div className="flex items-center gap-2 text-[#D4AF37] font-medium text-sm mr-6">
-										<img src={verified} alt="" className='w-5 h-5' />
+										<img src={verifiedYellow} alt="" className='w-5 h-5' />
 										<span>Patient Admitted</span>
 									</div>
 								)}
@@ -611,6 +664,7 @@ export default function MiddleQueue({ doctorId: propsDoctorId, dummyMode = false
 							<button className="flex items-center gap-2 px-4 py-2 text-sm text-secondary-grey400 hover:bg-gray-50 text-left w-full">
 								<RotateCcw className="h-4 w-4" /> Refresh Queue
 							</button>
+
 							<button className="flex items-center gap-2 px-4 py-2 text-sm text-secondary-grey400 hover:bg-gray-50 text-left w-full">
 								<CalendarMinus className="h-4 w-4" /> Set Doctor Out of Office
 							</button>

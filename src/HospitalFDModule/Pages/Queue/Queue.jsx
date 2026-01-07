@@ -14,6 +14,7 @@ import Toggle from '../../../components/FormItems/Toggle';
 import MiddleQueue from './MiddleQueue';
 import RightQueueSidebar from './RightQueueSidebar';
 import Badge from '../../../components/Badge';
+import PauseQueueModal from '../../../components/PauseQueueModal';
 const search = '/superAdmin/Doctors/SearchIcon.svg'
 import { useQueueLogic } from './useQueueLogic';
 const appt = '/fd/appt.svg'
@@ -24,11 +25,11 @@ const toggle_open = '/fd/toggle_open.svg'
 
 // Initial Data
 const INITIAL_DOCTORS = [
-  { id: 1, name: 'Dr. Arvind Mehta', specialty: 'General Physician', avatar: '', active: true, sessionStarted: true },
-  { id: 2, name: 'Dr. Sneha Deshmukh', specialty: 'Pediatrician', avatar: '', active: false, sessionStarted: false },
-  { id: 3, name: 'Dr. Rajesh Khanna', specialty: 'Cardiologist', avatar: '', active: false, sessionStarted: false },
-  { id: 4, name: 'Dr. Anil Kapoor', specialty: 'Orthopedic Surgeon', avatar: '', active: false, sessionStarted: false },
-  { id: 5, name: 'Dr. Priya Sharma', specialty: 'Neurologist', avatar: '', active: false, sessionStarted: false },
+  { id: 1, name: 'Dr. Arvind Mehta', specialty: 'General Physician', avatar: '', active: true, sessionStarted: true, paused: false, pauseDuration: null, pauseStartTime: null },
+  { id: 2, name: 'Dr. Sneha Deshmukh', specialty: 'Pediatrician', avatar: '', active: false, sessionStarted: false, paused: false, pauseDuration: null, pauseStartTime: null },
+  { id: 3, name: 'Dr. Rajesh Khanna', specialty: 'Cardiologist', avatar: '', active: false, sessionStarted: false, paused: false, pauseDuration: null, pauseStartTime: null },
+  { id: 4, name: 'Dr. Anil Kapoor', specialty: 'Orthopedic Surgeon', avatar: '', active: false, sessionStarted: false, paused: false, pauseDuration: null, pauseStartTime: null },
+  { id: 5, name: 'Dr. Priya Sharma', specialty: 'Neurologist', avatar: '', active: false, sessionStarted: false, paused: false, pauseDuration: null, pauseStartTime: null },
 ];
 
 export default function HFDQueue() {
@@ -50,9 +51,39 @@ export default function HFDQueue() {
     reloadAppointments
   } = useQueueLogic(selectedDoctorId);
 
+  const [showPauseModal, setShowPauseModal] = useState(false);
+  const [pauseMinutes, setPauseMinutes] = useState(null);
+  const [pendingPauseDocId, setPendingPauseDocId] = useState(null);
+
   const handleToggleSession = (docId) => {
+    const doc = doctors.find(d => d.id === docId);
+    if (doc?.sessionStarted) {
+      // If session is active, we are pausing it -> Open Modal
+      setPendingPauseDocId(docId);
+      setShowPauseModal(true);
+    } else {
+      // If session is inactive, just start it
+      setDoctors(prev => prev.map(d =>
+        d.id === docId ? { ...d, sessionStarted: true } : d
+      ));
+    }
+  };
+
+  const confirmPauseQueue = () => {
+    if (pendingPauseDocId) {
+      setDoctors(prev => prev.map(d =>
+        d.id === pendingPauseDocId ? { ...d, sessionStarted: true, paused: true, pauseDuration: pauseMinutes, pauseStartTime: new Date().toISOString() } : d
+      ));
+      setPendingPauseDocId(null);
+    }
+    console.log(`Queue paused for ${pauseMinutes} minutes`);
+    setShowPauseModal(false);
+    setPauseMinutes(null);
+  };
+
+  const handleResumeQueue = (docId) => {
     setDoctors(prev => prev.map(d =>
-      d.id === docId ? { ...d, sessionStarted: !d.sessionStarted } : d
+      d.id === docId ? { ...d, paused: false, pauseDuration: null } : d
     ));
   };
 
@@ -118,9 +149,13 @@ export default function HFDQueue() {
 
                 {/* Blinking Indicator if Session Started */}
                 {doc.sessionStarted && (
-                  <div className="flex items-center justify-center gap-1   animate-pulse">
-                    <div className='w-3 h-3 rounded-full bg-success-300'></div>
-                    <span className='text-[20px] font-bold text-success-300'>00</span>
+                  <div className="flex items-center justify-center gap-1  ">
+                    <div className={`w-3 h-3 rounded-full ${doc.paused ? 'bg-warning-400' : 'bg-success-300 animate-colorBlink'} transition-all duration-1000`}
+                      style={!doc.paused ? {
+                        '--blink-on': '#3EAF3F',
+                        '--blink-off': '#ffffff',
+                      } : {}}></div>
+                    <span className={`text-[20px] font-bold ${doc.paused ? 'text-warning-400' : 'text-success-300'}`}>00</span>
                   </div>
                 )}
               </div>
@@ -131,8 +166,32 @@ export default function HFDQueue() {
 
       {/* ---------------- MIDDLE COLUMN: QUEUE CONTENT ---------------- */}
       <div className="flex-1 flex flex-col min-w-0 bg-white border-r border-gray-200">
-        <MiddleQueue doctorId={selectedDoctorId} dummyMode={selectedDoctor?.sessionStarted} />
+        <MiddleQueue
+          doctorId={selectedDoctorId}
+          dummyMode={selectedDoctor?.sessionStarted}
+          isPaused={selectedDoctor?.paused}
+          pauseDuration={selectedDoctor?.pauseDuration}
+          pauseStartTime={selectedDoctor?.pauseStartTime}
+          onPauseQueue={() => {
+            setPendingPauseDocId(selectedDoctorId);
+            setShowPauseModal(true);
+          }}
+          onResumeQueue={() => handleResumeQueue(selectedDoctorId)}
+        />
       </div>
+
+      <PauseQueueModal
+        show={showPauseModal}
+        onClose={() => {
+          setShowPauseModal(false);
+          setPendingPauseDocId(null);
+        }}
+        pauseMinutes={pauseMinutes}
+        setPauseMinutes={setPauseMinutes}
+        pauseSubmitting={false}
+        pauseError={null}
+        onConfirm={confirmPauseQueue}
+      />
 
       {/* ---------------- RIGHT COLUMN: EXPANDABLE SIDEBAR ---------------- */}
       <div className={`shrink-0 bg-white flex flex-col transition-all duration-300 ease-in-out relative border-l-[1px] border-secondary-grey100/50 ${rightPanelOpen ? 'w-[400px]' : 'w-[44px] items-center'}`}>
