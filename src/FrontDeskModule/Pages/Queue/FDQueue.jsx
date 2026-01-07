@@ -9,7 +9,17 @@ import { appointement } from '../../../../public/index.js';
 import SampleTable from '../../../pages/SampleTable';
 import PauseQueueModal from '../../../components/PauseQueueModal';
 import SessionTimer from '../../../components/SessionTimer';
+import Toggle from '../../../components/FormItems/Toggle';
+import BookAppointmentDrawer from '../../../components/Appointment/BookAppointmentDrawer';
+import useAuthStore from '../../../store/useAuthStore';
 
+
+
+const formatTime = (seconds) => {
+	const m = Math.floor(seconds / 60);
+	const s = seconds % 60;
+	return `${m}:${s < 10 ? '0' : ''}${s}`;
+};
 
 const more = '/superAdmin/Doctors/Threedots.svg'
 const search = '/superAdmin/Doctors/SearchIcon.svg';
@@ -21,14 +31,16 @@ const verifiedYellow = '/fd/verified_yellow.svg'
 const toggle_open = '/fd/toggle_open.svg'
 const active = '/fd/active.svg'
 const appt = '/fd/appt.svg'
+const CalendarMinimalistic = '/fd/Calendar Minimalistic.svg'
+const ClockCircle = '/fd/Clock Circle.svg'
 
 // PreScreening drawer (same UI)
 const DUMMY_REQUESTS = [
-	{ id: 101, name: 'Alok Verma', gender: 'M', age: '39Y', date: 'Mon, 12 June 2024', time: 'Morning, 10:00 am - 12:30 pm', secondary: 'Ask to Reschedule' },
-	{ id: 102, name: 'Bhavna Mehta', gender: 'F', age: '44Y', date: 'Tuesday, 13 June 2024', time: 'Afternoon, 1:00 pm - 3:30 pm', secondary: 'Ask to Reschedule' },
-	{ id: 103, name: 'Chirag Modi', gender: 'M', age: '33Y', date: 'Wednesday, 14 June 2024', time: 'Evening, 5:00 pm - 6:30 pm', secondary: 'Ask to Reschedule' },
-	{ id: 104, name: 'Deepa Malhotra', gender: 'F', age: '48Y', date: 'Thursday, 15 June 2024', time: 'Morning, 9:00 am - 11:00 am', secondary: 'Ask to Reschedule' },
-	{ id: 105, name: 'Eshan Mehra', gender: 'M', age: '36Y', date: 'Friday, 16 June 2024', time: 'Morning, 10:00 am - 12:30 pm', secondary: 'Ask to Reschedule' }
+	{ id: 101, name: 'Alok Verma', gender: 'M', age: '39Y', dob: '12/05/1985', date: 'Mon, 12 June 2024', time: 'Morning, 10:00 am - 12:30 pm', secondary: 'Ask to Reschedule', doctorName: 'Dr. Arvind Mehta', doctorSpecialty: 'General Physician' },
+	{ id: 102, name: 'Bhavna Mehta', gender: 'F', age: '44Y', dob: '08/09/1980', date: 'Tuesday, 13 June 2024', time: 'Afternoon, 1:00 pm - 3:30 pm', secondary: 'Ask to Reschedule', doctorName: 'Dr. Sneha Deshmukh', doctorSpecialty: 'Pediatrician' },
+	{ id: 103, name: 'Chirag Modi', gender: 'M', age: '33Y', dob: '23/11/1990', date: 'Wednesday, 14 June 2024', time: 'Evening, 5:00 pm - 6:30 pm', secondary: 'Ask to Reschedule', doctorName: 'Dr. Arvind Mehta', doctorSpecialty: 'General Physician' },
+	{ id: 104, name: 'Deepa Malhotra', gender: 'F', age: '48Y', dob: '14/07/1976', date: 'Thursday, 15 June 2024', time: 'Morning, 9:00 am - 11:00 am', secondary: 'Ask to Reschedule', doctorName: 'Dr. Sneha Deshmukh', doctorSpecialty: 'Pediatrician' },
+	{ id: 105, name: 'Eshan Mehra', gender: 'M', age: '36Y', dob: '05/02/1988', date: 'Friday, 16 June 2024', time: 'Morning, 10:00 am - 12:30 pm', secondary: 'Ask to Reschedule', doctorName: 'Dr. Arvind Mehta', doctorSpecialty: 'General Physician' }
 ];
 
 const DUMMY_ACTIVE_PATIENT = {
@@ -90,27 +102,11 @@ const DUMMY_ADMITTED_DATA = [
 
 const filters = ['In Waiting', 'Engaged', 'Checked-In', 'No show', 'Admitted'];
 
-const WalkInAppointmentDrawer = ({ show, onClose }) => {
-	if (!show) return null;
-	return (
-		<div className="fixed inset-0 z-50 flex items-center justify-end bg-black/30" onClick={onClose}>
-			<div className="h-full w-[400px] bg-white p-4 shadow-xl" onClick={e => e.stopPropagation()}>
-				<div className="flex justify-between items-center mb-4 border-b pb-2">
-					<h2 className="text-lg font-semibold">Walk-In Appointment</h2>
-					<button onClick={onClose}><X className="w-5 h-5 text-gray-500" /></button>
-				</div>
-				<div className="text-gray-500 text-sm mb-4">
-					This is a static dummy drawer for demonstration.
-				</div>
-				<button onClick={onClose} className="bg-blue-600 text-white px-4 py-2 rounded w-full hover:bg-blue-700">
-					Book Dummy Appointment
-				</button>
-			</div>
-		</div>
-	);
-};
+
 
 export default function FDQueue() {
+	const { user } = useAuthStore();
+	const doctorId = user?.id;
 	const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0 }); // Fix: Define dropdownPosition
 	// Dummy Stubs to prevent crash
 	const pauseSlotEta = async () => ({});
@@ -121,6 +117,20 @@ export default function FDQueue() {
 	const [checkedInTokens, setCheckedInTokens] = useState({});
 	const [sessionStarted, setSessionStarted] = useState(true);
 	const [queuePaused, setQueuePaused] = useState(false);
+
+	const isToggleOn = sessionStarted && !queuePaused;
+
+	const handleToggleChange = () => {
+		if (isToggleOn) {
+			// Turning OFF -> Pause
+			setPauseMinutes(null);
+			setShowPauseModal(true);
+		} else {
+			// Turning ON -> Start or Resume
+			setSessionStarted(true);
+			setQueuePaused(false);
+		}
+	};
 	// Paused state UI: countdown to auto-resume
 	const [pauseEndsAt, setPauseEndsAt] = useState(null); // ms timestamp
 	const [pauseRemaining, setPauseRemaining] = useState(0); // seconds
@@ -247,7 +257,7 @@ export default function FDQueue() {
 	return (
 		<div className='flex h-full w-full bg-gray-50 overflow-hidden'>
 			{/* Middle Column: Queue Content (Table + Header) */}
-			<div className="flex-1 flex flex-col min-w-0 bg-white border-r border-gray-200">
+			<div className="flex-1 flex flex-col min-w-0 bg-secondary-grey50 border-r border-gray-200">
 				<div className='sticky top-0 z-10 bg-white border-b-[0.5px] border-secondary-grey100 px-4 py-2 shrink-0'>
 					<div className='flex items-center justify-between'>
 						{/* Slot Dropdown */}
@@ -274,12 +284,17 @@ export default function FDQueue() {
 
 							<div className='bg-secondary-grey100/50 h-5 w-[1px]' ></div>
 
-							<div className='bg-secondary-grey100/50 h-5 w-[1px]' ></div>
-							{/* Toggle Removed to match MiddleQueue Style */}
+
+							<div className='flex items-center gap-2'>
+								<Toggle
+									checked={isToggleOn}
+									onChange={handleToggleChange}
+								/>
+								<span className={`text-sm font-medium ${isToggleOn ? 'text-gray-700' : 'text-secondary-grey300'}`}>Start Session</span>
+							</div>
 
 							<div className='bg-secondary-grey100/50 h-5 w-[1px]' ></div>
 
-							<div className='bg-secondary-grey100/50 h-5 w-[1px]' ></div>
 							<button
 								onClick={(e) => handleActionMenuClick(e, 'queue_actions_dropdown')}
 								className='hover:bg-secondary-grey50 rounded-sm'
@@ -439,11 +454,6 @@ export default function FDQueue() {
 							</div>
 
 							<div className='flex items-center gap-2'>
-								<button>
-									<img src={search} alt="" className='' />
-								</button>
-
-								<div className='h-6 bg-secondary-grey100/50 mx-1 w-[1px]'></div>
 								<button
 									onClick={() => setShowWalkIn(true)}
 									className='inline-flex items-center gap-2 h-[32px] min-w-[32px] p-2 rounded-sm border-[1px] text-sm font-medium border-[#BFD6FF] bg-[#F3F8FF] text-[#2372EC] hover:bg-[#2372EC] hover:text-white transition-colors'
@@ -700,65 +710,84 @@ export default function FDQueue() {
 										<h2 className='text-[14px] font-medium'>Appointment Request</h2>
 									</div>
 								</div>
-								<div className='flex-1 overflow-y-auto p-3 flex flex-col gap-3'>
+								<div className='flex-1 overflow-y-auto  flex flex-col gap-3 no-scrollbar'>
 									{DUMMY_REQUESTS.map((request, index) => (
-										<div key={index} className='bg-white border border-gray-100 rounded-lg p-3 shadow-sm'>
-											<div className='flex items-start justify-between mb-2'>
-												<div className='flex gap-2'>
-													<AvatarCircle name={request.name} size='md' className="bg-blue-50 text-blue-600" />
-													<div>
-														<div className='font-semibold text-gray-900 text-sm'>{request.name}</div>
-														<div className='text-xs text-gray-500'>{request.gender} | {request.age}</div>
+										<div key={request.id || index} className="border-b border-gray-100 flex flex-col gap-3 last:border-0 p-3 bg-white  transition-colors">
+
+											{/* Patient Header */}
+											<div className="flex items-center justify-between">
+												<div className="flex items-center gap-2">
+													<AvatarCircle name={request.name} size="l" />
+													<div className="flex flex-col">
+														<div className="flex items-center gap-1">
+															<span className="text-[16px] font-semibold text-secondary-grey400">{request.name}</span>
+															<ArrowRight className="h-3 w-3 text-gray-400 -rotate-45" />
+														</div>
+														<div className="text-[12px] text-secondary-grey300">{request.gender} | {request.dob} ({request.age})</div>
 													</div>
 												</div>
-												<button className='text-gray-400 hover:text-gray-600'><img src={more} alt="" className="h-4" /></button>
+												<button className="text-gray-400 hover:bg-secondary-grey50">
+													<img src={more} alt="" />
+												</button>
 											</div>
 
-											<div className='space-y-1 mb-3'>
-												<div className='flex items-center gap-2 text-xs text-gray-600'>
-													<Calendar className='w-3.5 h-3.5 text-gray-400' />
-													<span>{request.date}</span>
-												</div>
-												{request.time && (
-													<div className='flex items-center gap-2 text-xs text-gray-600'>
-														<Clock className='w-3.5 h-3.5 text-gray-400' />
-														<span>{request.time}</span>
+											{/* Date & Time */}
+											<div className="flex flex-col gap-1">
+												<div className='flex flex-col gap-1 text-sm text-secondary-grey400'>
+													<div className="flex items-center gap-2">
+														<img src={CalendarMinimalistic} alt="" />
+														<span>{request.date}</span>
 													</div>
-												)}
+													{request.time && (
+														<div className="flex items-center gap-2 ">
+															<img src={ClockCircle} alt="" />
+															<span>{request.time}</span>
+														</div>
+													)}
+												</div>
+
+												
+
 											</div>
 
-											<div className='flex gap-2'>
-												<Button size='small' variant='primary' className='flex-1 h-8 text-xs' onClick={async () => {
+
+
+											{/* Buttons */}
+											<div className="flex gap-3">
+												<Button size='small' variant='primary' className='flex-1 h-9 text-xs font-medium' onClick={async () => {
 													try {
-														if (!request?.raw?.id) return;
-														setApprovingId(request.raw.id);
-														await approveAppointment(request.raw.id);
-														setAppointmentRequests(prev => prev.filter(r => r.raw?.id !== request.raw.id));
-														if (selectedSlotId) { await loadAppointmentsForSelectedSlot(); }
+														if (!request?.id) return; // Fix: use request.id from dummy
+														setApprovingId(request.id);
+														// await approveAppointment(request.id); // Dummy: simulate async
+														await new Promise(r => setTimeout(r, 1000));
+														setAppointmentRequests(prev => prev.filter(r => r.id !== request.id));
+														// if (selectedSlotId) { await loadAppointmentsForSelectedSlot(); }
 													} catch (e) {
-														console.error('Approve failed', e?.response?.data || e.message);
+														console.error('Approve failed', e);
 													} finally {
 														setApprovingId(null);
 													}
-												}} disabled={!!approvingId}>
-													{approvingId ? '...' : 'Accept'}
+												}} disabled={approvingId === request.id}>
+													{approvingId === request.id ? 'Accepting...' : 'Accept'}
 												</Button>
-												<button className='flex-1 h-8 text-xs font-medium border border-gray-200 rounded-md text-gray-600 hover:bg-gray-50 transition-colors whitespace-nowrap px-1'>
+												<button className='flex-1 h-9 text-xs font-medium border border-gray-200 rounded-md text-gray-600 hover:bg-gray-50 transition-colors whitespace-nowrap px-1'>
 													Ask to Reschedule
 												</button>
 											</div>
 										</div>
 									))}
 								</div>
-								<div className='p-3 border-t border-gray-200 text-center'>
-									<button className='text-sm font-medium text-blue-600 hover:text-blue-700'>View All Requests</button>
-								</div>
+								
 							</div>
 						</div>
 					</div></div></div>
 			{/* PreScreeningDrawer disabled for now per requirement */}
 			{/* Walk-in Drawer: Fix undefined props */}
-			<WalkInAppointmentDrawer show={showWalkIn} onClose={() => setShowWalkIn(false)} />
+			<BookAppointmentDrawer
+				open={showWalkIn}
+				onClose={() => setShowWalkIn(false)}
+				doctorId={doctorId}
+			/>
 
 
 			{/* Pause Queue Modal */}
