@@ -612,7 +612,7 @@ export default function MiddleQueue({ doctorId: propsDoctorId, dummyMode = false
 								data={activeFilter === 'Engaged' ? DUMMY_ENGAGED_DATA : activeFilter === 'No show' ? DUMMY_NO_SHOW_DATA : activeFilter === 'Admitted' ? DUMMY_ADMITTED_DATA : queueData}
 								hideSeparators={false}
 								stickyLeftWidth={280}
-								stickyRightWidth={180}
+								stickyRightWidth={210}
 							/>
 						</div>
 					</div>
