@@ -80,10 +80,6 @@ const DUMMY_ADMITTED_DATA = [
 	{ token: 1, patientName: 'Rahul Sharma', gender: 'M', dob: '12/05/1985', age: '39Y', appointmentType: 'New', startTime: '11:00 AM', endTime: '11:08 AM', bookingType: 'Online', reason: 'Annual Checkup' }
 ];
 
-// ... (PreScreeningDrawer and WalkInAppointmentDrawer components remain same as previous overwrite)
-// For brevity, skipping full re-declaration of drawers in this snippet but they MUST be included in final file.
-// Assuming "Same as previous" for drawers to keep tool usage concise, but since this is overwrite, I need to include them.
-// I will include condensed versions for safety.
 
 
 
