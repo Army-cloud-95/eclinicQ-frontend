@@ -12,7 +12,7 @@ import {
   Undo2,
   ChevronDown,
 } from "lucide-react";
-import { arrowLeft, arrowRight,calendarClock,chevronUpDown, } from "../../../../public/index.js";
+import { arrowLeft, arrowRight,calendarClock } from "../../../../public/index.js";
 
 // Dimensions for sticky columns (px)
 const COL_W = {

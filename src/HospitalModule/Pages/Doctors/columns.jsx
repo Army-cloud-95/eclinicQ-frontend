@@ -2,7 +2,7 @@ import React from 'react';
 import TableHeader from '../../../components/TableHeader';
 import AvatarCircle from '../../../components/AvatarCircle';
 import Badge from '../../../components/Badge';
-import { MoreVertical, Eye,  Briefcase, UserX } from 'lucide-react';
+import { MoreVertical, Eye,  Briefcase } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { createPortal } from 'react-dom';
 import {calendarClock,trash,link,userMinus} from "/Users/khushiagrawal1367/Desktop/eclinicQ-frontend/public/index.js";
